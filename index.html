@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Abfindung, Steuerlast &amp; Brutto</title>
+<title>Abfindung, Steuerlast &amp; Netto</title>
 <style>
   :root, [data-theme="light"] {
     --bg: #f4f6fa; --card: #fff; --ink: #17202a; --muted: #5d6b7a;
@@ -170,7 +170,7 @@
 <header>
   <div class="wrap">
     <div>
-      <h1>Abfindung, Steuerlast &amp; Brutto</h1>
+      <h1>Abfindung, Steuerlast &amp; Netto</h1>
       <p>Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und Sozialabgaben für zwei Elternteile – Einzel- vs. Zusammenveranlagung.</p>
     </div>
     <button id="themeToggle" type="button" class="theme-toggle"
@@ -1789,6 +1789,16 @@ function computeAbfWorkData(input) {
   return ABF_SWEEP_CACHE;
 }
 
+/* Bestes Netto bei den eingegebenen Gehältern für eine Abfindungsvariante. */
+function bestNetForAbfindungen(input, abfindungen) {
+  const people = input.people.map((p, i) => ({ ...p, abfindung: abfindungen[i] || 0 }));
+  const args = [people, input.children, input.childUnder25, input.year, input.state, input.kvZusatz];
+  const variants = abfindungVariants(
+    taxScenario("individual", ...args), taxScenario("joint", ...args),
+    abfindungen, input.year, input.state);
+  return variants.bestOption.net;
+}
+
 /* Compact absolute-net curve directly beneath the heatmap: unlike the ratio,
    it makes the dip in the Abfindung year and the recovery visible. */
 function chartNetTrend(input, data = computeAbfWorkData(input)) {
@@ -1953,8 +1963,17 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
     : `Break-even (bestes Netto mit Gehalt P1 = ohne Gehalt P1): <strong>${money(breakEven)}</strong>`;
   const worstText = `Worst case (bestes Netto am niedrigsten): <strong>${money(worstG)}</strong> → ${money(worstNet)}`;
   const g1 = input.people[0].gross;
-  const currentBest = Math.max(curInd, curJoint);
-  const netDelta = currentBest - bestWithout;
+  const A = input.people.map(p => p.abfindung || 0);
+  const netWithA = bestNetForAbfindungen(input, A);
+  const netWithoutA = bestNetForAbfindungen(input, A.map(() => 0));
+  const rawAbfGain = netWithA - netWithoutA;
+  const abfGain = Math.abs(rawAbfGain) < 0.5 ? 0 : rawAbfGain;
+  const abfGainColor = abfGain < -0.5 ? COLORS.worst_case : COLORS.net;
+  const abfGainText = `<strong>Netto aus der Abfindung (bei den aktuellen Gehältern):</strong>
+      <span style="color:${abfGainColor};font-weight:800">${money(abfGain)}</span>
+      aus ${money(totalA)} brutto
+      (bestes Netto mit Abfindung ${money(netWithA)} − bestes Netto ohne Abfindung ${money(netWithoutA)}).<br>`;
+  const netDelta = netWithA - bestWithout;
   const belowBreakEven = netDelta < -0.5;
   const takeawayColor = belowBreakEven ? COLORS.worst_case : COLORS.net;
   const takeawayText = belowBreakEven
@@ -1965,12 +1984,12 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
     ? ""
     : `<strong>Differenz vom Worst case bis zum Break-even:</strong> ${money(recoveryGap)}.<br>`;
   if (totalA === 0) {
-    note.innerHTML = `Keine Abfindung eingegeben – ohne Abfindung gibt es keinen Fünftelregelungs-Effekt.<br>${takeaway}`;
+    note.innerHTML = `Keine Abfindung eingegeben – ohne Abfindung gibt es keinen Fünftelregelungs-Effekt.<br>${abfGainText}${takeaway}`;
   } else {
     note.innerHTML = `<strong>Netto sinkt durch Arbeiten bis zum Break-even:</strong> Einzel ${range(badInds)}, Zusammen ${range(badJs)}.<br>
       ${beText}.<br>
       ${worstText}.<br>
-      ${gapText}${takeaway}`;
+      ${gapText}${abfGainText}${takeaway}`;
   }
   const dashSwatch = c => `background:repeating-linear-gradient(90deg, ${c} 0 6px, transparent 6px 9px, ${c} 9px 11px, transparent 11px 14px)`;
   const legend = `<div class="legend">

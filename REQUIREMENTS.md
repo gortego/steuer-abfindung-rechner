@@ -162,8 +162,12 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   gross plus a horizontal red dashed line at the worst-case net level.
 - A bracket between the worst-case net and the break-even net shows the EUR gap
   that must be recovered; the same gap is written on its own line in the note.
-- The note places break-even, worst case and the gap on separate lines. The
-  highlighted key takeaway is `Bei aktuellem BruttoGehalt ... bringt Arbeiten ...
+- The note places break-even, worst case and the gap on separate lines. It also
+  shows `Netto aus der Abfindung (bei den aktuellen Gehältern)`: the best net
+  with the entered Abfindungen minus the best net at the same gross salaries
+  with both Abfindungen set to zero, plus the total gross Abfindung and both net
+  amounts. It is `0 €` when no Abfindung is entered.
+- The highlighted key takeaway is `Bei aktuellem BruttoGehalt ... bringt Arbeiten ...
   weniger/mehr Netto als ohne Gehalt.` It compares current household net with
   the best net at Partner #1 gross zero. It is red below the break-even and
   green above it. The `45000` EUR example and the separate "Ohne Gehalt" line

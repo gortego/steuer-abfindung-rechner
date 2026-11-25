@@ -85,10 +85,12 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
   solid, ohne is dash-dot) and two dashed baselines (best treatment per mode).
 - Break-even and worst-case markers remain visible; the worst case has a vertical
   dotted marker and a horizontal red dashed net-level line. A bracket shows the
-  EUR gap. Note lines are separate for break-even, worst case and gap; the only
-  highlighted takeaway compares the current net with "ohne Gehalt" (red below
-  break-even, green above). No `45000` example and no separate "Ohne Gehalt"
-  line.
+  EUR gap. Note lines are separate for break-even, worst case and gap; the
+  `Netto aus der Abfindung` line shows best net with the entered Abfindungen
+  minus best net at the same salaries without Abfindungen (`0 €` when none are
+  entered). The only prominent takeaway compares the current net with "ohne
+  Gehalt" (red below break-even, green above). No `45000` example and no separate
+  "Ohne Gehalt" line.
 - Red area is clipped at break-even.
 - Black dashed guides follow the current gross values.
 - Partner #2 gross slider changes the current point and recalculates curves.

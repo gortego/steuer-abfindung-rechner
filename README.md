@@ -8,7 +8,7 @@ social-insurance and private-insurance burden of two parents in Germany under:
 
 The user interface and all results are in German, apart from the small
 `by gortego` credit at the bottom of the page. The browser title and page
-heading are `Abfindung, Steuerlast & Brutto`. This document is in English.
+heading are `Abfindung, Steuerlast & Netto`. This document is in English.
 
 ## Files
 
@@ -344,8 +344,12 @@ markers still use the best of all four variants at each salary.
   lowest. With the built-in defaults this is `17,500 EUR` (`124,221 EUR` net).
 - A bracket between the worst-case and break-even levels shows the EUR gap the
   household net must recover.
-- The callout puts break-even, worst case and the gap on separate lines. The
-  highlighted key takeaway is `Bei aktuellem BruttoGehalt ... bringt Arbeiten ...
+- The callout puts break-even, worst case and the gap on separate lines. It also
+  reports `Netto aus der Abfindung (bei den aktuellen Gehältern)`: the best net
+  with the entered Abfindungen minus the best net at the same salaries with both
+  Abfindungen set to zero, together with the gross Abfindung and both net
+  amounts. With no Abfindung it shows `0 €`.
+- The highlighted key takeaway is `Bei aktuellem BruttoGehalt ... bringt Arbeiten ...
   weniger/mehr Netto als ohne Gehalt.` It is red below the break-even (working
   reduces household net) and green above it. The former EUR `45,000` example and
   the separate "Ohne Gehalt" line have been removed; the `+1,000 EUR` marginal
