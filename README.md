@@ -43,6 +43,12 @@ The user interface and all results are in German, apart from the small
    HTML file are not modified. The ☀️/🌙 button in the header switches between
    the funky dark and light designs immediately.
 
+The built-in defaults are tax year 2026, gross salaries of `50,000 EUR` for
+both partners, one child, federal state NW, GKV for both partners, no church
+tax, Partner #1 Abfindung `100,000 EUR` and Partner #2 Abfindung `0 EUR`.
+Saved browser values override these defaults; click **speichern** again or
+clear this site's data to apply the built-in values.
+
 Results are shown as:
 
 - a household summary,
@@ -323,10 +329,10 @@ assessment modes.
 - **Break-even** (purple dashed line): the last sampled crossing where the best
   "with salary" net again reaches the best "without salary" net. Below it,
   working reduces household net because of the Fünftelregelung interaction; the
-  red band is clipped there. With the default inputs this is `88,797 EUR`.
+  red band is clipped there. With the built-in defaults this is `31,775 EUR`.
 - **Worst case** (vertical red dotted line plus a horizontal red dashed line at
   its net level): the sampled gross salary where the best "with salary" net is
-  lowest. With the default inputs this is `42,500 EUR` (`290,217 EUR` net).
+  lowest. With the built-in defaults this is `17,500 EUR` (`124,221 EUR` net).
 - A bracket between the worst-case and break-even levels shows the EUR gap the
   household net must recover.
 - The callout puts break-even, worst case and the gap on separate lines. The

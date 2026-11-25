@@ -40,6 +40,9 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 
 ## 4. Inputs and live behaviour
 
+- Built-in defaults: tax year 2026, gross `50000` for both partners, `1` child,
+  state NW, no church tax, GKV for both, Partner #1 Abfindung `100000` and
+  Partner #2 Abfindung `0`.
 - All inputs recalculate automatically on any change; there is no separate
   **Berechnen** button.
 - Gross salary and Abfindung number fields use `1000` spinner steps, so the
@@ -205,9 +208,9 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   Freigrenze and Anstiegsklausel remain exact.
 - Church tax is `ESt × 8 %/9 %` depending on the federal state.
 - Break-even = last crossing where
-  `max(mit) >= max(ohne)`. Default: `88.797 €`.
-- Worst case = sampled Partner #1 gross where `max(mit)` is minimal. Default:
-  `42.500 € → 290.217 €`.
+  `max(mit) >= max(ohne)`. Built-in default: `31.775 €`.
+- Worst case = sampled Partner #1 gross where `max(mit)` is minimal. Built-in
+  default: `17.500 € → 124.221 €`.
 
 ## 11. Verification
 
