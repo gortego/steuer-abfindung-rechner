@@ -356,6 +356,11 @@ markers still use the best of all four variants at each salary.
   the separate "Ohne Gehalt" line have been removed; the `+1,000 EUR` marginal
   readout is no longer shown because a positive marginal gain can coexist with
   a net loss relative to not working.
+- A collapsed **Berechnung Schritt für Schritt** section below the callout
+  explains every displayed value: inputs, the base scenarios without Abfindung,
+  all four current severance cases with tax/Soli/church tax/social contributions,
+  the Abfindung net gain, the "ohne Gehalt P1" reference, the sweep formulas for
+  break-even/worst case/gap and the current comparison.
 - Black dashed guides run horizontally from the two current "mit Gehalt"
   points to the Y axis. They move with the Partner #1 salary slider; changing
   the Partner #2 slider moves the current point and recalculates all curves.

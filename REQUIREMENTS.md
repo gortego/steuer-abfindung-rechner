@@ -173,6 +173,12 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   green above it. The `45000` EUR example and the separate "Ohne Gehalt" line
   are removed; the `+1000` EUR marginal readout is no longer shown because a
   positive marginal gain can coexist with a loss relative to not working.
+- A `<details>` section titled `Berechnung Schritt für Schritt` is collapsed by
+  default beneath the note. It lists the inputs, the base net without Abfindung,
+  all four current severance cases (including zvE, social contributions, ESt,
+  SolZu, KiSt, Kindergeld, Abfindung and net), the Abfindung net gain, the
+  "ohne Gehalt P1" reference cases, the sweep interpolation for break-even, the
+  worst case and the gap, and the current comparison. It uses German UI text.
 - The marginal-rate chart marks the start after the Grundfreibetrag, the tariff
   zone changes at about `24 %` and `42 %`, and the top rate (`45 %` for 2026,
   `47 %` for the 2027 draft) with dashed lines. Its X axis reaches `600000` zvE

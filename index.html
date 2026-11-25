@@ -403,6 +403,10 @@
       <h4>Haushaltsnetto gegen Gehalt von Partner #1</h4>
       <div id="abfWorkSvg"></div>
       <div id="abfWorkNote" class="callout"></div>
+      <details id="abfWorkSteps">
+        <summary>Berechnung Schritt für Schritt</summary>
+        <div id="abfWorkStepsBody"></div>
+      </details>
     </div>
     <div id="charts"></div>
   </section>
@@ -1865,6 +1869,110 @@ function chartNetTrend(input, data = computeAbfWorkData(input)) {
   return s;
 }
 
+/* Aufklappbare Herleitung aller Werte im Diagramm "Lohnt sich Arbeiten ...". */
+function renderAbfWorkSteps(input, data, netWithA, netWithoutA) {
+  const A = input.people.map(p => p.abfindung || 0);
+  const totalA = A.reduce((s, v) => s + v, 0);
+  const zeroA = A.map(() => 0);
+
+  const casesFor = (people, abfindungen) => {
+    const args = [people, input.children, input.childUnder25, input.year, input.state, input.kvZusatz];
+    const bases = {
+      individual: taxScenario("individual", ...args),
+      joint: taxScenario("joint", ...args)
+    };
+    return [
+      ["individual", true, "Einzelveranlagung · mit Fünftelregelung"],
+      ["individual", false, "Einzelveranlagung · ohne Fünftelregelung"],
+      ["joint", true, "Zusammenveranlagung · mit Fünftelregelung"],
+      ["joint", false, "Zusammenveranlagung · ohne Fünftelregelung"]
+    ].map(([mode, fuenftel, label]) => ({
+      mode, fuenftel, label, base: bases[mode],
+      s: severanceScenario(bases[mode], mode, abfindungen, fuenftel, input.year, input.state)
+    }));
+  };
+
+  const currentCases = casesFor(input.people, A);
+  const noACases = casesFor(input.people, zeroA);
+  const baselinePeople = input.people.map((p, i) => ({ ...p, gross: i === 0 ? 0 : p.gross }));
+  const baselineCases = casesFor(baselinePeople, A);
+  const bestOf = cases => cases.reduce((a, b) => b.s.totalNet > a.s.totalNet ? b : a, cases[0]);
+  const bestCurrent = bestOf(currentCases);
+  const bestNoA = bestOf(noACases);
+  const bestBaseline = bestOf(baselineCases);
+
+  const taxZve = c => c.fuenftel && (c.s.totalAbfindung || 0) > 0
+    ? c.s.results.reduce((sum, x) => sum + (x.fifthZve === undefined ? x.zve : x.fifthZve), 0)
+    : c.s.totalZve;
+  const val = v => money2(v || 0);
+  const table = rows => `<div class="tablewrap"><table>
+    <thead><tr><th>Fall</th><th class="num">zvE für ESt</th><th class="num">SV</th><th class="num">ESt</th><th class="num">SolZu</th><th class="num">KiSt</th><th class="num">Kindergeld</th><th class="num">Abfindung</th><th class="num">Netto</th></tr></thead>
+    <tbody>${rows.join("")}</tbody></table></div>`;
+  const row = (c, label, isBest = false) => `<tr${isBest ? ' class="total"' : ''}>
+    <td>${label}</td><td class="num">${val(taxZve(c))}</td><td class="num">${val(c.s.totalSV)}</td>
+    <td class="num">${val(c.s.totalEst)}</td><td class="num">${val(c.s.totalSolzu)}</td>
+    <td class="num">${val(c.s.totalKist)}</td><td class="num">${val(c.s.kindergeld)}</td>
+    <td class="num">${val(c.s.totalAbfindung)}</td><td class="num">${val(c.s.totalNet)}</td></tr>`;
+
+  const badInds = data.series.individual.filter(p => p.net < data.baseInd - CONFIG.charts.abfWork.bad_tolerance);
+  const badJs = data.series.joint.filter(p => p.net < data.baseJoint - CONFIG.charts.abfWork.bad_tolerance);
+  const range = arr => arr.length ? `${money(arr[0].g)} – ${money(arr[arr.length - 1].g)}` : "kein";
+  let cross = null;
+  const bestWith = i => Math.max(data.series.individual[i].net, data.series.joint[i].net);
+  for (let i = 1; i < data.series.individual.length; i++) {
+    const prev = bestWith(i - 1) - data.bestWithout;
+    const now = bestWith(i) - data.bestWithout;
+    if (prev <= 0 && now >= 0 && now !== prev) {
+      cross = {
+        prevG: data.series.individual[i - 1].g, prevNet: bestWith(i - 1),
+        nextG: data.series.individual[i].g, nextNet: bestWith(i), i
+      };
+    }
+  }
+  const abfGain = netWithA - netWithoutA;
+  const netDelta = netWithA - data.bestWithout;
+  const insuranceText = input.people.map(p =>
+    `${p.label}: ${p.insurance === "pkv" ? "PKV" : "GKV"}${p.church ? " · Kirchensteuer" : ""}`).join("; ");
+
+  const html = `
+    <p class="small">Alle Beträge sind Jahreswerte. <strong>Netto = Bruttogehälter − Sozialabgaben (RV/AV/KV/PV) − ESt − SolZu − KiSt + Kindergeld + Abfindung.</strong> Die ESt stammt aus den eingebetteten Tabellen; die Günstigerprüfung Kindergeld/Kinderfreibetrag ist in zvE und Kindergeld bereits enthalten.</p>
+    <h4>1. Eingaben</h4>
+    <p>Steuerjahr ${input.year} · ${input.state.name} · Kinder ${input.children}${input.childUnder25 ? " (alle unter 25)" : ""} · KV-Zusatz ${pct(input.kvZusatz)} · ${insuranceText}.<br>
+      Bruttogehälter ${money(input.people[0].gross)} + ${money(input.people[1].gross)} · Abfindungen ${money(A[0])} + ${money(A[1])} = <strong>${money(totalA)}</strong>.</p>
+    <h4>2. Ausgangslage ohne Abfindung bei den aktuellen Gehältern</h4>
+    <p>Diese Werte sind die Vergleichsbasis für „Netto aus der Abfindung“. Die Abfindungen werden hier auf 0 gesetzt.</p>
+    ${table([
+      row(noACases[0], "Einzelveranlagung", bestNoA.mode === "individual"),
+      row(noACases[2], "Zusammenveranlagung", bestNoA.mode === "joint")
+    ])}
+    <p>Bestes Netto ohne Abfindung: <strong>${val(netWithoutA)}</strong>.</p>
+    <h4>3. Die vier Fälle mit Abfindung beim aktuellen Gehalt</h4>
+    <p>Ohne Fünftelregelung: <strong>ESt = ESt(zvE + A)</strong>. Mit Fünftelregelung nach § 34 EStG: <strong>ESt = 5 × ESt(zvE + A/5) − 4 × ESt(zvE)</strong>. Bei Zusammenveranlagung werden das gemeinsame zvE und die Summe beider Abfindungen verwendet. Deshalb ist „zvE für ESt“ in der Fünftel-Variante nur um A/5 erhöht.</p>
+    ${table(currentCases.map(c => row(c, c.label, c === bestCurrent)))}
+    <p>Bestes Netto mit Abfindung: <strong>${val(netWithA)}</strong> aus ${bestCurrent.label}. Die ESt-Rechnung dafür lautet bei Fünftelregelung 5 × ESt(${val(taxZve(bestCurrent))}) − 4 × ESt(${val(bestCurrent.base.totalZve)}) = ${val(bestCurrent.s.totalEst)}; ohne Fünftel direkt ESt(${val(taxZve(bestCurrent))}) = ${val(bestCurrent.s.totalEst)}.</p>
+    <h4>4. Netto aus der Abfindung</h4>
+    <p>Bestes Netto mit Abfindung ${val(netWithA)} − bestes Netto ohne Abfindung ${val(netWithoutA)} = <strong class="${abfGain < -0.5 ? "negative" : "positive"}">${val(abfGain)}</strong>. Das ist der Netto-Zuwachs aus ${money(totalA)} brutto bei unveränderten Gehältern.</p>
+    <h4>5. Referenz ohne Gehalt von Partner #1</h4>
+    <p>Für die gestrichelten Referenzlinien und den Break-even wird nur das Gehalt von Partner #1 auf 0 gesetzt. Gehalt von Partner #2 und beide Abfindungen bleiben erhalten; wieder werden alle vier Fälle geprüft.</p>
+    ${table(baselineCases.map(c => row(c, c.label, c === bestBaseline)))}
+    <p>Bestes Netto ohne Gehalt P1: <strong>${val(data.bestWithout)}</strong> aus ${bestBaseline.label}.</p>
+    <h4>6. Break-even, Worst case und Differenz</h4>
+    <p>Für jedes Gehalt g von 0 bis ${money(data.xMax)} in ${money(data.step)}-Schritten wird <strong>bestWith(g) = max der vier Netto-Werte</strong> gebildet und mit dem besten Netto ohne Gehalt P1 verglichen.</p>
+    <ol>
+      <li>Roter Bereich (Arbeiten senkt Netto): Einzel ${range(badInds)}, Zusammen ${range(badJs)}.</li>
+      <li>Break-even: ${cross === null
+        ? "im gezeigten Bereich kein Vorzeichenwechsel."
+        : `Vorzeichenwechsel zwischen ${money(cross.prevG)} (Netto ${val(cross.prevNet)}) und ${money(cross.nextG)} (Netto ${val(cross.nextNet)}); lineare Zwischenung ergibt <strong>${val(data.breakEven)}</strong>.`}</li>
+      <li>Worst case: kleinstes bestWith(g) bei <strong>${money(data.worstG)}</strong> mit ${val(data.worstNet)}.</li>
+      <li>Differenz Worst case → Break-even: ${val(data.bestWithout)} − ${val(data.worstNet)} = <strong>${val(data.recoveryGap)}</strong>.</li>
+    </ol>
+    <h4>7. Aktueller Vergleich mit „ohne Gehalt“</h4>
+    <p>Bestes Netto mit aktuellem Gehalt ${val(netWithA)} − bestes Netto ohne Gehalt P1 ${val(data.bestWithout)} = <strong class="${netDelta < -0.5 ? "negative" : "positive"}">${val(netDelta)}</strong>. ${netDelta < -0.5
+      ? "Arbeiten bringt hier weniger Netto als Nicht-Arbeiten im Abfindungsjahr."
+      : "Arbeiten bringt hier mehr Netto als Nicht-Arbeiten im Abfindungsjahr."}</p>`;
+  document.getElementById("abfWorkStepsBody").innerHTML = html;
+}
+
 function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   const C = CONFIG.charts.abfWork;
   const W = C.width, H = C.height, x0 = C.x0, y0 = C.y0, plotW = C.plot_width, plotH = C.plot_height;
@@ -1995,6 +2103,7 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
       ${worstText}.<br>
       ${gapText}${abfGainText}${takeaway}`;
   }
+  renderAbfWorkSteps(input, data, netWithA, netWithoutA);
   const dashSwatch = c => `background:repeating-linear-gradient(90deg, ${c} 0 6px, transparent 6px 9px, ${c} 9px 11px, transparent 11px 14px)`;
   const legend = `<div class="legend">
     <span><i class="swatch" style="background:${COLORS.individual}"></i>Einzelveranlagung · mit Fünftel</span>

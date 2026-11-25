@@ -91,6 +91,11 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
   entered). The only prominent takeaway compares the current net with "ohne
   Gehalt" (red below break-even, green above). No `45000` example and no separate
   "Ohne Gehalt" line.
+- A collapsed `Berechnung Schritt für Schritt` details section explains the
+  inputs, base net without Abfindung, all four current severance cases, the
+  Abfindung net gain, the `ohne Gehalt P1` reference, break-even/worst-case/gap
+  interpolation and the current comparison. Populate it from `renderAbfWorkSteps()`;
+  do not recompute the sweep.
 - Red area is clipped at break-even.
 - Black dashed guides follow the current gross values.
 - Partner #2 gross slider changes the current point and recalculates curves.
