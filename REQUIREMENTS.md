@@ -50,6 +50,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - Main number inputs, all sliders (main inputs, flat-heatmap sliders, 3D-surface
   sliders and AbfWork sliders), selects and checkboxes are linked and kept
   visually in sync; moving any slider updates all linked outputs immediately.
+  The two top gross sliders under **Eingaben** therefore use `data-target` and
+  write directly into `#gross1` / `#gross2`, just like the chart sliders.
 - Recalculation from input changes is capped at one run per animation frame to
   keep slider dragging smooth.
 - **speichern** stores the current inputs **and the selected dark/light design**

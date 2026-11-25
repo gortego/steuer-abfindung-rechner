@@ -130,9 +130,10 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
   listener also calls it for immediate visual feedback while dragging.
 - `refreshFromInputs()` deduplicates rapid events with `requestAnimationFrame`,
   so at most one full recalculation runs per frame.
-- Chart sliders live outside `#inputCard`; one delegated listener on
-  `#chartsCard` handles every `input[type="range"][data-target]`, writes the
-  linked main number input, syncs all outputs and calls `refreshFromInputs()`.
+- All linked ranges use `data-target`. The two top gross sliders inside
+  `#inputCard` go through `handleLiveInput()`; chart sliders live outside it and
+  use the delegated `#chartsCard` listener. Both call `syncLinkedSlider()`, which
+  writes the linked main number input, syncs outputs and triggers recalculation.
 - Every range must be initialised with `setRange()`; an unset `max` reads as
   `Number("") === 0` in `syncChartSliders()` and would pin the slider at zero.
 - Kindergeld must stay in the detailed net tables and summary, but must be

@@ -7,7 +7,8 @@ social-insurance and private-insurance burden of two parents in Germany under:
 - **Zusammenveranlagung** — joint assessment using the *Splittingtabelle*
 
 The user interface and all results are in German, apart from the small
-`by gortego` credit at the bottom of the page. This document is in English.
+`by gortego` credit at the bottom of the page. The browser title and page
+heading are `Abfindung, Steuerlast & Brutto`. This document is in English.
 
 ## Files
 

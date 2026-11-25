@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steuerlast &amp; Brutto/Netto-Vergleich 2026 / 2027</title>
+<title>Abfindung, Steuerlast &amp; Brutto</title>
 <style>
   :root, [data-theme="light"] {
     --bg: #f4f6fa; --card: #fff; --ink: #17202a; --muted: #5d6b7a;
@@ -170,7 +170,7 @@
 <header>
   <div class="wrap">
     <div>
-      <h1>Steuerlast &amp; Brutto/Netto-Vergleich</h1>
+      <h1>Abfindung, Steuerlast &amp; Brutto</h1>
       <p>Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und Sozialabgaben für zwei Elternteile – Einzel- vs. Zusammenveranlagung.</p>
     </div>
     <button id="themeToggle" type="button" class="theme-toggle"
@@ -191,13 +191,13 @@
         <div>
           <label for="gross1">Bruttojahresgehalt – Partner #1</label>
           <input id="gross1" type="number" inputmode="decimal">
-          <input id="gross1Slider" type="range" aria-label="Bruttojahresgehalt Partner #1 als Schieberegler">
+          <input id="gross1Slider" type="range" data-target="gross1" aria-label="Bruttojahresgehalt Partner #1 als Schieberegler">
           <span class="hint">Bruttoarbeitslohn pro Jahr in € · Regler zum schnellen Variieren</span>
         </div>
         <div>
           <label for="gross2">Bruttojahresgehalt – Partner #2</label>
           <input id="gross2" type="number" inputmode="decimal">
-          <input id="gross2Slider" type="range" aria-label="Bruttojahresgehalt Partner #2 als Schieberegler">
+          <input id="gross2Slider" type="range" data-target="gross2" aria-label="Bruttojahresgehalt Partner #2 als Schieberegler">
           <span class="hint">Bruttoarbeitslohn pro Jahr in € · Regler zum schnellen Variieren</span>
         </div>
       </div>
@@ -2277,11 +2277,21 @@ function refreshFromInputs() {
   });
 }
 
+function syncLinkedSlider(slider) {
+  if (!slider || !slider.matches || !slider.matches('input[type="range"][data-target]')) return false;
+  const target = document.getElementById(slider.dataset.target);
+  if (!target) return false;
+  target.value = slider.value;
+  syncChartSliders();
+  return true;
+}
+
 function handleLiveInput(event) {
   const target = event.target;
   if (!target || !target.matches("input, select")) return;
   if (target.tagName === "SELECT" && event.type === "input") return;
   if (target.tagName === "INPUT" && target.type === "checkbox" && event.type === "input") return;
+  syncLinkedSlider(target);
   refreshFromInputs();
 }
 
@@ -2356,12 +2366,7 @@ function init() {
   // and all outputs update immediately; frame-capped recalculation keeps
   // dragging smooth.
   document.getElementById("chartsCard").addEventListener("input", event => {
-    const slider = event.target;
-    if (!slider || !slider.matches || !slider.matches('input[type="range"][data-target]')) return;
-    const target = document.getElementById(slider.dataset.target);
-    if (!target) return;
-    target.value = slider.value;
-    syncChartSliders();
+    if (!syncLinkedSlider(event.target)) return;
     refreshFromInputs();
   });
   togglePkvFields();
