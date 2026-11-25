@@ -335,10 +335,10 @@
     <h2>Diagramme</h2>
     <div class="chart" id="netBruttoChart">
       <h3>Bestes Netto/Jahr in Abhängigkeit von beiden Gehältern</h3>
-      <p>Für jedes Gehalts-Paar werden alle vier Fälle geprüft: Einzel- und Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung. Farbe und Skala zeigen das <em>beste</em> Netto/Jahr inklusive Kindergeld und Abfindung in EUR. Die Nettoquote ist dieses Netto geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; die gesonderte „Quote vs. ohne Gehalt“ sinkt im unteren Gehaltsbereich unter 100 % und steigt nach dem Break-even wieder darüber. Schraffierte Zellen gehören zur Einzelveranlagung, glatte Zellen zur Zusammenveranlagung; eine feine hellrote gestrichelte Linie markiert die Grenze zwischen den beiden Bereichen. Höher = mehr Netto. Beide Achsen zoomen automatisch mit den Gehältern: Sie erweitern sich in groben Schritten bis maximal 10 Mio. € und fallen beim Absenken wieder zurück. Am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0; der Tooltip nennt alle vier Netto-Werte und den Vorteil. Die violette gestrichelte Linie markiert den Break-even (bestes Netto mit = ohne Gehalt), die rote gepunktete Linie den Worst case (geringstes bestes Netto) für jedes Gehalt von Partner #2.</p>
+      <p>Für jedes Gehalts-Paar werden alle vier Fälle geprüft: Einzel- und Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung. Farbe und Skala zeigen das <em>beste</em> Netto/Jahr inklusive Kindergeld und Abfindung in EUR. Die Nettoquote ist dieses Netto geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; die gesonderte „Quote vs. ohne Gehalt“ sinkt im unteren Gehaltsbereich unter 100 % und steigt nach dem Break-even wieder darüber. Schraffierte Zellen gehören zur Einzelveranlagung, glatte Zellen zur Zusammenveranlagung; eine feine hellrote gestrichelte Linie markiert die Grenze zwischen den beiden Bereichen. Höher = mehr Netto. Die Gehaltsregler bleiben bei 0–150.000 €; größere Gehälter können im Zahlenfeld eingegeben werden. Beide Diagrammachsen zoomen dann automatisch in groben Schritten bis maximal 10 Mio. € und fallen beim Absenken wieder zurück. Am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0; der Tooltip nennt alle vier Netto-Werte und den Vorteil. Die violette gestrichelte Linie markiert den Break-even (bestes Netto mit = ohne Gehalt), die rote gepunktete Linie den Worst case (geringstes bestes Netto) für jedes Gehalt von Partner #2.</p>
       <div id="heatReadout" class="heat-readout"></div>
       <h4>Absolutes Netto</h4>
-      <p>Die Kurve variiert das Gehalt von Partner #1, während Gehalt von Partner #2 und beide Abfindungen über die vier Regler eingestellt werden. Die Y-Achse zeigt das beste Haushaltsnetto pro Jahr in EUR: Bei niedrigen Gehältern im Abfindungsjahr sinkt es erst und steigt ab dem Break-even wieder. Der Punkt folgt den Reglern; rot schattiert ist der Bereich, in dem Arbeiten das Netto senkt. Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün.</p>
+      <p>Die Kurve variiert auf der X-Achse das Gehalt von Partner #1. Über die vier Regler werden beide Gehälter und beide Abfindungen eingestellt: Der Regler für Partner #2 berechnet die Kurve neu, ohne dass Partner #2 selbst auf der X-Achse wandert; beide Abfindungen verändern das Netto-Niveau. Die Y-Achse zeigt das beste Haushaltsnetto pro Jahr in EUR: Bei niedrigen Gehältern im Abfindungsjahr sinkt es erst und steigt ab dem Break-even wieder. Der Punkt folgt den Reglern; rot schattiert ist der Bereich, in dem Arbeiten das Netto senkt. Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün.</p>
       <div id="netTrendSvg"></div>
       <div class="chart-controls surface-controls">
         <div>
@@ -380,12 +380,12 @@
           <input id="surfaceAbf2Slider" type="range" data-target="abfindung2" aria-label="Abfindung Partner #2 in der 3D-Fläche">
         </div>
       </div>
-      <p class="small">Die Gehaltsregler und Achsen passen sich automatisch an (150 Tsd., 250 Tsd., 500 Tsd., 1 Mio., … bis 10 Mio. €). Die Skala wechselt erst, wenn ein Gehalt über 90 % liegt, und geht zurück, wenn beide unter 50 % fallen; Abfindungsregler reichen bis 500.000 €.</p>
+      <p class="small">Die Gehaltsregler reichen bis 150.000 € und die Abfindungsregler bis 500.000 €; größere Beträge lassen sich in den Zahlenfeldern eingeben. Die Diagrammachsen zoomen dann automatisch mit (150 Tsd., 250 Tsd., 500 Tsd., 1 Mio., … bis 10 Mio. €), sobald ein Gehalt über 90 % der Skala liegt, und gehen zurück, wenn beide unter 50 % fallen.</p>
       <div id="netBrutto3dSvg"></div>
     </div>
     <div class="chart" id="abfWorkChart">
       <h3>Lohnt sich Arbeiten im Abfindungsjahr?</h3>
-      <p>Zwei Netto-Kurven: Einzel- und Zusammenveranlagung <em>mit</em> Gehalt von Partner #1 (durchgezogen). Dazu zwei horizontale gestrichelte Referenzlinien für dieselben Veranlagungen <em>ohne</em> Gehalt von Partner #1, nur mit Abfindung. Der rote Bereich markiert bis zum Break-even Gehälter, bei denen Arbeiten das Netto <em>senkt</em>. Violett = Break-even (bestes Netto mit = ohne Gehalt), rot gestrichelt = Worst case (bestes Netto am niedrigsten); die horizontale rote Linie markiert dessen Netto-Niveau. Schwarze gestrichelte Linien verbinden die aktuellen „mit Gehalt“-Punkte mit der Y-Achse und wandern mit dem Gehalt von Partner #1. Das Gehalt von Partner #2 wird über den eigenen Regler eingestellt und bleibt für die Kurven konstant. Break-even, Worst case und Differenz stehen im Text auf eigenen Zeilen; der Vergleich des aktuellen Netto mit „ohne Gehalt“ ist als wichtigste Aussage farbig hervorgehoben.</p>
+      <p>Vier Netto-Kurven: Einzel- und Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung, alle mit Gehalt von Partner #1 (mit Fünftel durchgezogen, ohne strichpunktiert). Dazu zwei horizontale gestrichelte Referenzlinien für dieselben Veranlagungen <em>ohne</em> Gehalt von Partner #1, nur mit Abfindung (jeweils die bessere Fünftel-Variante). Der rote Bereich markiert bis zum Break-even Gehälter, bei denen Arbeiten das Netto <em>senkt</em>. Violett = Break-even (bestes Netto mit = ohne Gehalt), rot gestrichelt = Worst case (bestes Netto am niedrigsten); die horizontale rote Linie markiert dessen Netto-Niveau. Schwarze gestrichelte Linien verbinden die aktuellen „mit Gehalt“-Punkte mit der Y-Achse und wandern mit dem Gehalt von Partner #1. Das Gehalt von Partner #2 wird über den eigenen Regler eingestellt und bleibt für die Kurven konstant. Break-even, Worst case und Differenz stehen im Text auf eigenen Zeilen; der Vergleich des aktuellen Netto mit „ohne Gehalt“ ist als wichtigste Aussage farbig hervorgehoben.</p>
       <div class="chart-controls">
         <div>
           <label for="abfWorkSlider">Brutto Partner #1 im Abfindungsjahr <output id="abfWorkValue"></output></label>
@@ -426,7 +426,7 @@
 
 <script>
 /* CONFIG_START */
-const CONFIG = {"general":{"months_per_year":12,"percent_divisor":100,"half_percent_divisor":200,"table_step":1000,"marginal_half_range":500,"theme":"hell"},"defaults":{"year":2026,"gross1":50000,"gross2":50000,"children":1,"state":"NW","insurance1":false,"insurance2":false,"church1":false,"church2":false,"child_under_25":true,"abfindung1":100000,"abfindung2":0,"kv_zusatz":2.9,"pkv_kv":0,"pkv_pv":0,"pkv_child":0,"pkv_children":0,"pkv_ag":0},"quote_example":{"gross1":50000,"gross2":60000,"abfindung1":200000},"limits":{"gross":{"number_min":0,"number_max":10000000,"number_step":1000,"slider_min":0,"slider_max":150000,"slider_step":1000,"chart_axis_max":150000,"chart_step":2500,"zoom_steps":[150000,250000,500000,1000000,2000000,5000000,10000000],"zoom_expand_at":0.9,"zoom_shrink_at":0.5},"abfindung":{"number_min":0,"number_max":100000000,"number_step":1000,"slider_min":0,"slider_max":500000,"slider_step":1000,"work_slider_step":10000},"children":{"min":0,"max":20,"step":1},"kv_zusatz":{"min":0,"max":10,"step":0.1},"pkv_amount":{"min":0,"max":100000,"step":0.01},"pkv_children":{"min":0,"max":20,"step":1}},"social":{"pv_employer":1.8,"pv_employer_saxony":1.3},"params":{"2026":{"label":2026,"draft":false,"bbgRV":101400,"bbgKVPV":69750,"jaeg":77400,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1230,"sonderPausch":36,"kfb":9756,"kindergeldMonth":259,"grundfreibetrag":12348,"top_rate":45,"table_files":"tabelle/grundtabelle-2026-ueberblick-klein.pdf / tabelle/splittingtabelle-2026-ueberblick-klein.pdf","source":"endgültige Werte (SV-Rechengrößenverordnung 2026; EStG 2026)"},"2027":{"label":2027,"draft":true,"bbgRV":106200,"bbgKVPV":76500,"jaeg":84150,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1430,"sonderPausch":36,"kfb":10056,"kindergeldMonth":267,"grundfreibetrag":12564,"top_rate":47,"table_files":"tabelle/grundtabelle-2027-ueberblick-klein.pdf / tabelle/splittingtabelle-2027-ueberblick-klein.pdf","source":"Regierungsentwurf EStReformG 2027 (BT-Drs. 21/8235) und voraussichtliche SV-Werte 2027 (AOK; Stand 23.11.2026)"}},"states":[["BW","Baden-Württemberg",8,false],["BY","Bayern",8,false],["BE","Berlin",9,false],["BB","Brandenburg",9,false],["HB","Bremen",9,false],["HH","Hamburg",9,false],["HE","Hessen",9,false],["MV","Mecklenburg-Vorpommern",9,false],["NI","Niedersachsen",9,false],["NW","Nordrhein-Westfalen",9,false],["RP","Rheinland-Pfalz",9,false],["SL","Saarland",9,false],["SN","Sachsen",9,true],["ST","Sachsen-Anhalt",9,false],["SH","Schleswig-Holstein",9,false],["TH","Thüringen",9,false]],"colors":{"sv":"#0284c7","est":"#ea580c","solzu":"#facc15","kist":"#a855f7","net":"#059669","kg":"#6ee7b7","individual":"#2563eb","joint":"#0f766e","winner_individual":"#ea580c","winner_joint":"#0f766e","winner_border":"#fca5a5","grid":"#e2e8f0","axis":"#64748b","crosshair":"#0f172a","guide":"#94a3b8","guide_text":"#475569","break_even":"#7c3aed","worst_case":"#b91c1c","shade":"rgba(185,28,28,0.10)","heat_stops":[[224,242,254],[125,211,252],[12,74,110]],"halo":"#fff","point":"#fff"},"colors_dark":{"sv":"#38bdf8","est":"#fb923c","solzu":"#facc15","kist":"#c084fc","net":"#34d399","kg":"#6ee7b7","individual":"#60a5fa","joint":"#2dd4bf","winner_individual":"#fb923c","winner_joint":"#2dd4bf","winner_border":"#fca5a5","grid":"#334155","axis":"#94a3b8","crosshair":"#f8fafc","guide":"#64748b","guide_text":"#cbd5e1","break_even":"#c084fc","worst_case":"#f87171","shade":"rgba(248,113,113,0.16)","heat_stops":[[8,47,73],[14,165,233],[190,242,100]],"halo":"#0b1020","point":"#0b1020"},"charts":{"common":{"tick_fractions":[0,0.25,0.5,0.75,1],"marginal_y_ticks":[0,10,20,30,40,50]},"composition":{"width":940,"height":360,"x0":78,"y0":36,"plot_width":757,"plot_height":254,"bar_width":64},"abf":{"width":940,"height":330,"x0":210,"y0":36,"plot_width":620,"plot_height":234,"bar_height":15},"netBrutto":{"width":940,"height":430,"x0":78,"y0":40,"plot_width":740,"plot_height":330,"nx":18,"ny":14,"axis_max":150000,"pad_ratio":0.08,"pad_min_eur":10000,"hatch_spacing":5,"hatch_opacity":0.3,"winner_border_width":1,"winner_border_dash":"3 3"},"netBrutto3d":{"width":940,"height":430,"x0":120,"y0":355,"x_span":590,"y_depth":105,"y_skew":0.55,"z_height":195},"netTrend":{"width":940,"height":190,"x0":82,"y0":26,"plot_width":720,"plot_height":110,"y_round":10000,"y_pad":5000},"abfWork":{"width":940,"height":390,"x0":82,"y0":42,"plot_width":720,"plot_height":285,"x_max":150000,"step":2500,"y_round":10000,"y_pad":10000,"bad_tolerance":0.5},"comparison":{"width":940,"height":330,"x0":175,"y0":35,"plot_width":675,"plot_height":235,"bar_height":18},"progression":{"width":940,"height":340,"x0":80,"y0":30,"plot_width":835,"plot_height":245,"points":41,"factor":1.5,"axis_round":50000,"axis_min":200000,"x_ticks":5,"y_min_factor":0.96,"y_max_factor":1.03},"marginal":{"width":940,"height":380,"x0":70,"y0":25,"plot_width":845,"plot_height":220,"x_min":12000,"x_max":250000,"y_max":50,"step":2000,"x_ticks":7}},"notes":{"year_hint":"2027 ist noch nicht verabschiedet – siehe Hinweise.","draft_warning":"2027 basiert auf dem noch nicht verabschiedeten Regierungsentwurf vom 02.09.2026 (Stand 06.11.2026). Alle Angaben ohne Gewähr; keine Steuerberatung. Für eine verbindliche Berechnung bitte Steuerberatung hinzuziehen.","charts_note":"Die Heatmap zeigt das beste Netto/Jahr in Abhängigkeit von beiden Gehältern: Für jedes Gehalts-Paar werden alle vier Fälle geprüft – Einzel- oder Zusammenveranlagung jeweils mit und ohne Fünftelregelung. Farbe und 3D-Höhe kodieren das beste Haushaltsnetto in EUR; die Skala heißt „Bestes Netto/Jahr“. Die Nettoquote ist das beste Netto inklusive Kindergeld geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; ohne Abzüge wäre sie 100 %. Zusätzlich zeigt die „Quote vs. ohne Gehalt“ das Netto im Verhältnis zum besten Netto bei Gehalt 0 von Partner #1 und folgt der U-Form des Haushaltsnettos. Eine 100-%-Grenze gibt es für den EUR-Wert nicht. Schraffiert = Einzelveranlagung, glatt = Zusammenveranlagung, die feine hellrote gestrichelte Linie markiert die Grenze; violett gestrichelt = Break-even, rot gepunktet = Worst case. Beide Achsen zoomen automatisch mit den Gehältern: Sie beginnen bei 0 bis 150.000 €, erweitern sich in groben Schritten bis maximal 10 Mio. €, sobald ein Gehalt über 90 % der aktuellen Skala liegt, und zoomen zurück, wenn beide Gehälter unter 50 % fallen; am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0. Die Zahlenfelder für Gehalt und Abfindung verwenden 1.000er-Schritte. Die 3D-Fläche zeigt dieselben Zellen als Höhe und Farbe; eine violette Linie mit „P2 …“ folgt dem eingestellten Gehalt von Partner #2 über alle Gehälter von Partner #1; violett mit „Break-even“ und rot gepunktet mit „Worst case“ sind die entsprechenden Linien über alle Gehälter von Partner #2; grün markiert die günstigste Gehaltskombination, weiß die aktuellen Eingaben. Die Kurve „Absolutes Netto“ variiert das Gehalt von Partner #1 bei eingestelltem Gehalt von Partner #2; ihre Y-Achse zeigt das beste Netto/Jahr in EUR. Im Diagramm „Lohnt sich Arbeiten im Abfindungsjahr?“ bleibt das Gehalt von Partner #2 für die Kurven konstant; eine horizontale rote Linie markiert das Netto-Niveau des Worst case. Break-even, Worst case und Differenz stehen auf eigenen Zeilen; als wichtigste Aussage ist der Vergleich des aktuellen Netto mit „ohne Gehalt“ farbig hervorgehoben (rot bei weniger Netto, grün bei mehr Netto). Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün. Im Grenzsteuersatz-Diagramm markieren gestrichelte Linien den Beginn nach dem Grundfreibetrag sowie die Zonenwechsel bei etwa 24 % und 42 %; der Grenzsteuersatz steht mit „G“ und „S“ auf der Y-Achse und der zvE kurz in drei versetzten Zeilen unter der X-Achse. Die dunklen gestrichelten Linien und Punkte mit „Aktuell ...“ bezeichnen die aktuellen Werte beider Tarife; ihre zvE-Werte sind unter der Achse fett. Die Abfindung wird als echte Entschädigung ohne Sozialabgaben behandelt; Lohn-, Urlaubs- oder Freistellungszahlungen wären anders zu bewerten."}};
+const CONFIG = {"general":{"months_per_year":12,"percent_divisor":100,"half_percent_divisor":200,"table_step":1000,"marginal_half_range":500,"theme":"hell"},"defaults":{"year":2026,"gross1":50000,"gross2":50000,"children":1,"state":"NW","insurance1":false,"insurance2":false,"church1":false,"church2":false,"child_under_25":true,"abfindung1":100000,"abfindung2":0,"kv_zusatz":2.9,"pkv_kv":0,"pkv_pv":0,"pkv_child":0,"pkv_children":0,"pkv_ag":0},"quote_example":{"gross1":50000,"gross2":60000,"abfindung1":200000},"limits":{"gross":{"number_min":0,"number_max":10000000,"number_step":1000,"slider_min":0,"slider_max":150000,"slider_step":1000,"chart_axis_max":150000,"chart_step":2500,"zoom_steps":[150000,250000,500000,1000000,2000000,5000000,10000000],"zoom_expand_at":0.9,"zoom_shrink_at":0.5},"abfindung":{"number_min":0,"number_max":100000000,"number_step":1000,"slider_min":0,"slider_max":500000,"slider_step":1000,"work_slider_step":10000},"children":{"min":0,"max":20,"step":1},"kv_zusatz":{"min":0,"max":10,"step":0.1},"pkv_amount":{"min":0,"max":100000,"step":0.01},"pkv_children":{"min":0,"max":20,"step":1}},"social":{"pv_employer":1.8,"pv_employer_saxony":1.3},"params":{"2026":{"label":2026,"draft":false,"bbgRV":101400,"bbgKVPV":69750,"jaeg":77400,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1230,"sonderPausch":36,"kfb":9756,"kindergeldMonth":259,"grundfreibetrag":12348,"top_rate":45,"table_files":"tabelle/grundtabelle-2026-ueberblick-klein.pdf / tabelle/splittingtabelle-2026-ueberblick-klein.pdf","source":"endgültige Werte (SV-Rechengrößenverordnung 2026; EStG 2026)"},"2027":{"label":2027,"draft":true,"bbgRV":106200,"bbgKVPV":76500,"jaeg":84150,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1430,"sonderPausch":36,"kfb":10056,"kindergeldMonth":267,"grundfreibetrag":12564,"top_rate":47,"table_files":"tabelle/grundtabelle-2027-ueberblick-klein.pdf / tabelle/splittingtabelle-2027-ueberblick-klein.pdf","source":"Regierungsentwurf EStReformG 2027 (BT-Drs. 21/8235) und voraussichtliche SV-Werte 2027 (AOK; Stand 23.11.2026)"}},"states":[["BW","Baden-Württemberg",8,false],["BY","Bayern",8,false],["BE","Berlin",9,false],["BB","Brandenburg",9,false],["HB","Bremen",9,false],["HH","Hamburg",9,false],["HE","Hessen",9,false],["MV","Mecklenburg-Vorpommern",9,false],["NI","Niedersachsen",9,false],["NW","Nordrhein-Westfalen",9,false],["RP","Rheinland-Pfalz",9,false],["SL","Saarland",9,false],["SN","Sachsen",9,true],["ST","Sachsen-Anhalt",9,false],["SH","Schleswig-Holstein",9,false],["TH","Thüringen",9,false]],"colors":{"sv":"#0284c7","est":"#ea580c","solzu":"#facc15","kist":"#a855f7","net":"#059669","kg":"#6ee7b7","individual":"#2563eb","joint":"#0f766e","winner_individual":"#ea580c","winner_joint":"#0f766e","winner_border":"#fca5a5","grid":"#e2e8f0","axis":"#64748b","crosshair":"#0f172a","guide":"#94a3b8","guide_text":"#475569","break_even":"#7c3aed","worst_case":"#b91c1c","shade":"rgba(185,28,28,0.10)","heat_stops":[[224,242,254],[125,211,252],[12,74,110]],"halo":"#fff","point":"#fff"},"colors_dark":{"sv":"#38bdf8","est":"#fb923c","solzu":"#facc15","kist":"#c084fc","net":"#34d399","kg":"#6ee7b7","individual":"#60a5fa","joint":"#2dd4bf","winner_individual":"#fb923c","winner_joint":"#2dd4bf","winner_border":"#fca5a5","grid":"#334155","axis":"#94a3b8","crosshair":"#f8fafc","guide":"#64748b","guide_text":"#cbd5e1","break_even":"#c084fc","worst_case":"#f87171","shade":"rgba(248,113,113,0.16)","heat_stops":[[8,47,73],[14,165,233],[190,242,100]],"halo":"#0b1020","point":"#0b1020"},"charts":{"common":{"tick_fractions":[0,0.25,0.5,0.75,1],"marginal_y_ticks":[0,10,20,30,40,50]},"composition":{"width":940,"height":360,"x0":78,"y0":36,"plot_width":757,"plot_height":254,"bar_width":64},"abf":{"width":940,"height":330,"x0":210,"y0":36,"plot_width":620,"plot_height":234,"bar_height":15},"netBrutto":{"width":940,"height":430,"x0":78,"y0":40,"plot_width":740,"plot_height":330,"nx":18,"ny":14,"axis_max":150000,"pad_ratio":0.08,"pad_min_eur":10000,"hatch_spacing":5,"hatch_opacity":0.3,"winner_border_width":1,"winner_border_dash":"3 3"},"netBrutto3d":{"width":940,"height":430,"x0":120,"y0":355,"x_span":590,"y_depth":105,"y_skew":0.55,"z_height":195},"netTrend":{"width":940,"height":190,"x0":82,"y0":26,"plot_width":720,"plot_height":110,"y_round":10000,"y_pad":5000},"abfWork":{"width":940,"height":390,"x0":82,"y0":42,"plot_width":720,"plot_height":285,"x_max":150000,"step":2500,"y_round":10000,"y_pad":10000,"bad_tolerance":0.5},"comparison":{"width":940,"height":330,"x0":175,"y0":35,"plot_width":675,"plot_height":235,"bar_height":18},"progression":{"width":940,"height":340,"x0":80,"y0":30,"plot_width":835,"plot_height":245,"points":41,"factor":1.5,"axis_round":50000,"axis_min":200000,"x_ticks":5,"y_min_factor":0.96,"y_max_factor":1.03},"marginal":{"width":940,"height":380,"x0":70,"y0":25,"plot_width":845,"plot_height":220,"x_min":12000,"x_max":250000,"y_max":50,"step":2000,"x_ticks":7}},"notes":{"year_hint":"2027 ist noch nicht verabschiedet – siehe Hinweise.","draft_warning":"2027 basiert auf dem noch nicht verabschiedeten Regierungsentwurf vom 02.09.2026 (Stand 06.11.2026). Alle Angaben ohne Gewähr; keine Steuerberatung. Für eine verbindliche Berechnung bitte Steuerberatung hinzuziehen.","charts_note":"Die Heatmap zeigt das beste Netto/Jahr in Abhängigkeit von beiden Gehältern: Für jedes Gehalts-Paar werden alle vier Fälle geprüft – Einzel- oder Zusammenveranlagung jeweils mit und ohne Fünftelregelung. Farbe und 3D-Höhe kodieren das beste Haushaltsnetto in EUR; die Skala heißt „Bestes Netto/Jahr“. Die Nettoquote ist das beste Netto inklusive Kindergeld geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; ohne Abzüge wäre sie 100 %. Zusätzlich zeigt die „Quote vs. ohne Gehalt“ das Netto im Verhältnis zum besten Netto bei Gehalt 0 von Partner #1 und folgt der U-Form des Haushaltsnettos. Eine 100-%-Grenze gibt es für den EUR-Wert nicht. Schraffiert = Einzelveranlagung, glatt = Zusammenveranlagung, die feine hellrote gestrichelte Linie markiert die Grenze; violett gestrichelt = Break-even, rot gepunktet = Worst case. Die Gehaltsregler bleiben bei 0–150.000 € und die Abfindungsregler bei 0–500.000 €; größere Beträge können in den Zahlenfeldern eingegeben werden. Beide Diagrammachsen zoomen automatisch mit: Sie beginnen bei 0 bis 150.000 €, erweitern sich in groben Schritten bis maximal 10 Mio. €, sobald ein Gehalt über 90 % der aktuellen Skala liegt, und zoomen zurück, wenn beide Gehälter unter 50 % fallen; am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0. Die Zahlenfelder für Gehalt und Abfindung verwenden 1.000er-Schritte. Die 3D-Fläche zeigt dieselben Zellen als Höhe und Farbe; eine violette Linie mit „P2 …“ folgt dem eingestellten Gehalt von Partner #2 über alle Gehälter von Partner #1; violett mit „Break-even“ und rot gepunktet mit „Worst case“ sind die entsprechenden Linien über alle Gehälter von Partner #2; grün markiert die günstigste Gehaltskombination, weiß die aktuellen Eingaben. Die Kurve „Absolutes Netto“ variiert das Gehalt von Partner #1 bei eingestelltem Gehalt von Partner #2; ihre Y-Achse zeigt das beste Netto/Jahr in EUR. Im Diagramm „Lohnt sich Arbeiten im Abfindungsjahr?“ bleibt das Gehalt von Partner #2 für die Kurven konstant; eine horizontale rote Linie markiert das Netto-Niveau des Worst case. Break-even, Worst case und Differenz stehen auf eigenen Zeilen; als wichtigste Aussage ist der Vergleich des aktuellen Netto mit „ohne Gehalt“ farbig hervorgehoben (rot bei weniger Netto, grün bei mehr Netto). Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün. Im Grenzsteuersatz-Diagramm markieren gestrichelte Linien den Beginn nach dem Grundfreibetrag sowie die Zonenwechsel bei etwa 24 % und 42 %; der Grenzsteuersatz steht mit „G“ und „S“ auf der Y-Achse und der zvE kurz in drei versetzten Zeilen unter der X-Achse. Die dunklen gestrichelten Linien und Punkte mit „Aktuell ...“ bezeichnen die aktuellen Werte beider Tarife; ihre zvE-Werte sind unter der Achse fett. Die Abfindung wird als echte Entschädigung ohne Sozialabgaben behandelt; Lohn-, Urlaubs- oder Freistellungszahlungen wären anders zu bewerten."}};
 /* CONFIG_END */
 
 /* TABLES_START */
@@ -1215,9 +1215,10 @@ function chartComposition(individual, joint) {
     <p>Jeweils von unten nach oben: Sozialabgaben bzw. Versicherungskosten, Steuern, Netto und Kindergeld. Balkenhöhe = Brutto (zzgl. Kindergeld bei Beide/Haushalt). Gestrichelte Linien markieren die Brutto-Niveaus zum Vergleich.</p>${s}${legend}</div>`;
 }
 
-/* Gross zoom domain. The 150000 config values are only the starting window;
-   the domain grows through the configured nice steps and shrinks again with
-   hysteresis, so dragging a slider does not rescale the charts on every pixel. */
+/* Chart-only gross domain. The range sliders stay at the configured
+   slider_max (150000); number fields may contain larger values. The chart axes
+   grow through the configured nice steps and shrink again with hysteresis, so
+   typing a large salary is visible without rescaling plots on every pixel. */
 const GROSS_ZOOM = CONFIG.limits.gross;
 const GROSS_ZOOM_STEPS = (GROSS_ZOOM.zoom_steps || [GROSS_ZOOM.slider_max]).slice().sort((a, b) => a - b);
 let grossDomainMax = GROSS_ZOOM.slider_max;
@@ -1230,7 +1231,6 @@ function niceGrossStep(target) {
 function grossDomain() {
   return {
     max: grossDomainMax,
-    step: Math.max(GROSS_ZOOM.slider_step, niceGrossStep(grossDomainMax / 200)),
     chartStep: Math.max(GROSS_ZOOM.chart_step, niceGrossStep(grossDomainMax / 120))
   };
 }
@@ -1730,19 +1730,35 @@ function computeAbfWorkData(input) {
   if (ABF_SWEEP_CACHE.key !== key) {
     const A = input.people.map(p => p.abfindung || 0);
     const totalA = A.reduce((s, v) => s + v, 0);
-    const netAt = (g1, mode) => {
+    const variantsAt = (g1, mode) => {
       const people = input.people.map((p, i) => ({ ...p, gross: i === 0 ? g1 : p.gross }));
       const args = [people, input.children, input.childUnder25, input.year, input.state, input.kvZusatz];
       const base = taxScenario(mode, ...args);
-      const variants = severanceVariants(base, mode, A, input.year, input.state);
+      return severanceVariants(base, mode, A, input.year, input.state);
+    };
+    // Best of both Fünftel treatments per assessment mode; used for markers,
+    // break-even, worst case and the compact trend chart.
+    const netAt = (g1, mode) => {
+      const variants = variantsAt(g1, mode);
       return Math.max(variants.mit, variants.ohne);
     };
-    const series = { individual: [], joint: [] };
+    const series = {
+      individual: [], joint: [],
+      individualMit: [], individualOhne: [], jointMit: [], jointOhne: []
+    };
     for (let g = 0; g <= xMax; g += step) {
-      series.individual.push({ g, net: netAt(g, "individual") });
-      series.joint.push({ g, net: netAt(g, "joint") });
+      const ind = variantsAt(g, "individual");
+      const joint = variantsAt(g, "joint");
+      series.individual.push({ g, net: Math.max(ind.mit, ind.ohne) });
+      series.joint.push({ g, net: Math.max(joint.mit, joint.ohne) });
+      series.individualMit.push({ g, net: ind.mit });
+      series.individualOhne.push({ g, net: ind.ohne });
+      series.jointMit.push({ g, net: joint.mit });
+      series.jointOhne.push({ g, net: joint.ohne });
     }
     const baseInd = series.individual[0].net, baseJoint = series.joint[0].net;
+    const baseIndMit = series.individualMit[0].net, baseIndOhne = series.individualOhne[0].net;
+    const baseJointMit = series.jointMit[0].net, baseJointOhne = series.jointOhne[0].net;
     const bestWithout = Math.max(baseInd, baseJoint);
     const bestWith = i => Math.max(series.individual[i].net, series.joint[i].net);
 
@@ -1761,7 +1777,8 @@ function computeAbfWorkData(input) {
       if (bestWith(i) < bestWith(worstIndex) - 1e-9) worstIndex = i;
     }
     ABF_SWEEP_CACHE = {
-      key, xMax, step, totalA, netAt, series, baseInd, baseJoint,
+      key, xMax, step, totalA, netAt, series,
+      baseInd, baseJoint, baseIndMit, baseIndOhne, baseJointMit, baseJointOhne,
       bestWithout, bestWith, breakEven,
       breakEvenNet: breakEven === null ? null : bestWithout,
       recoveryGap: breakEven === null ? null : Math.max(0, bestWithout - bestWith(worstIndex)),
@@ -1838,9 +1855,12 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   const C = CONFIG.charts.abfWork;
   const W = C.width, H = C.height, x0 = C.x0, y0 = C.y0, plotW = C.plot_width, plotH = C.plot_height;
   const { xMax, step, totalA, netAt, series, baseInd, baseJoint,
+          baseIndMit, baseIndOhne, baseJointMit, baseJointOhne,
           bestWithout, bestWith, breakEven, breakEvenNet, recoveryGap,
           worstIndex, worstG, worstNet } = data;
-  const all = series.individual.concat(series.joint).map(p => p.net).concat([baseInd, baseJoint]);
+  const all = [series.individualMit, series.individualOhne, series.jointMit, series.jointOhne]
+    .flatMap(items => items.map(p => p.net))
+    .concat([baseIndMit, baseIndOhne, baseJointMit, baseJointOhne]);
   const yMin = Math.max(0, Math.floor(Math.min(...all) / C.y_round) * C.y_round - C.y_pad);
   const yMax = Math.ceil(Math.max(...all) / C.y_round) * C.y_round + C.y_pad;
   const px = g => x0 + g / xMax * plotW;
@@ -1863,14 +1883,21 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
     CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: xMax * f })),
     CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: yMin + (yMax - yMin) * f })),
     v => money(v), v => money(v));
-  [[baseInd, COLORS.individual, "Einzel ohne Gehalt"], [baseJoint, COLORS.joint, "Zusammen ohne Gehalt"]].forEach(([v, c, label]) => {
+  [[baseInd, COLORS.individual, "Einzel ohne Gehalt P1"], [baseJoint, COLORS.joint, "Zusammen ohne Gehalt P1"]].forEach(([v, c, label]) => {
     s += `<line x1="${x0}" y1="${py(v)}" x2="${x0 + plotW}" y2="${py(v)}" stroke="${c}" stroke-width="1.5" stroke-dasharray="6 4"/>`;
     s += txt(x0 + plotW - 4, py(v) - 5, `${label}: ${money(v)}`,
       `text-anchor="end" font-size="10" font-weight="600" fill="${c}"`);
   });
   const line = key => series[key].map(p => `${px(p.g).toFixed(1)},${py(p.net).toFixed(1)}`).join(" ");
-  s += `<polyline points="${line("individual")}" fill="none" stroke="${COLORS.individual}" stroke-width="2.5"/>`;
-  s += `<polyline points="${line("joint")}" fill="none" stroke="${COLORS.joint}" stroke-width="2.5"/>`;
+  const curves = [
+    ["individualOhne", COLORS.individual, "9 3 2 3", 0.7],
+    ["jointOhne", COLORS.joint, "9 3 2 3", 0.7],
+    ["individualMit", COLORS.individual, null, 1],
+    ["jointMit", COLORS.joint, null, 1]
+  ];
+  curves.forEach(([key, color, dash, opacity]) => {
+    s += `<polyline points="${line(key)}" fill="none" stroke="${color}" stroke-width="${dash ? 2 : 2.5}"${dash ? ` stroke-dasharray="${dash}"` : ""} stroke-opacity="${opacity}"/>`;
+  });
   if (breakEven !== null) {
     const bx = px(breakEven), right = bx > x0 + plotW * 0.6;
     s += `<line x1="${bx}" y1="${y0}" x2="${bx}" y2="${y0 + plotH}" stroke="${COLORS.break_even}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
@@ -1906,8 +1933,8 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   const cur = clamp(input.people[0].gross, 0, xMax);
   const curInd = netAt(cur, "individual"), curJoint = netAt(cur, "joint");
   s += `<line x1="${px(cur)}" y1="${y0}" x2="${px(cur)}" y2="${y0 + plotH}" stroke="${COLORS.crosshair}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
-  [["Einzel mit Gehalt", curInd, COLORS.individual, -9],
-   ["Zusammen mit Gehalt", curJoint, COLORS.joint, 16]].forEach(([name, v, c, dy]) => {
+  [["Einzel", curInd, COLORS.individual, -9],
+   ["Zusammen", curJoint, COLORS.joint, 16]].forEach(([name, v, c, dy]) => {
     s += `<line x1="${x0}" y1="${py(v)}" x2="${px(cur)}" y2="${py(v)}" stroke="${COLORS.crosshair}" stroke-width="1.2" stroke-dasharray="4 4"/>`;
     s += `<circle cx="${px(cur)}" cy="${py(v)}" r="5" fill="${COLORS.point}" stroke="${c}" stroke-width="2"><title>Gehalt ${money(cur)}: Netto ${money(v)}</title></circle>`;
     s += txt(px(cur) + 9, py(v) + dy, `${name}: ${money(v)}`,
@@ -1923,7 +1950,7 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   const note = document.getElementById("abfWorkNote");
   const beText = breakEven === null
     ? "kein Break-even im gezeigten Bereich"
-    : `Break-even (bestes Netto mit = ohne Gehalt): <strong>${money(breakEven)}</strong>`;
+    : `Break-even (bestes Netto mit Gehalt P1 = ohne Gehalt P1): <strong>${money(breakEven)}</strong>`;
   const worstText = `Worst case (bestes Netto am niedrigsten): <strong>${money(worstG)}</strong> → ${money(worstNet)}`;
   const g1 = input.people[0].gross;
   const currentBest = Math.max(curInd, curJoint);
@@ -1945,12 +1972,13 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
       ${worstText}.<br>
       ${gapText}${takeaway}`;
   }
+  const dashSwatch = c => `background:repeating-linear-gradient(90deg, ${c} 0 6px, transparent 6px 9px, ${c} 9px 11px, transparent 11px 14px)`;
   const legend = `<div class="legend">
-    <span><i class="swatch" style="background:${COLORS.individual}"></i>Netto Einzel · mit Gehalt</span>
-    <span><i class="swatch" style="background:${COLORS.individual};opacity:.55"></i>Netto Einzel · ohne Gehalt</span>
-    <span><i class="swatch" style="background:${COLORS.joint}"></i>Netto Zusammen · mit Gehalt</span>
-    <span><i class="swatch" style="background:${COLORS.joint};opacity:.55"></i>Netto Zusammen · ohne Gehalt</span>
-    <span><i class="swatch" style="background:${COLORS.break_even}"></i>Break-even (best mit = best ohne)</span>
+    <span><i class="swatch" style="background:${COLORS.individual}"></i>Einzelveranlagung · mit Fünftel</span>
+    <span><i class="swatch" style="${dashSwatch(COLORS.individual)}"></i>Einzelveranlagung · ohne Fünftel</span>
+    <span><i class="swatch" style="background:${COLORS.joint}"></i>Zusammenveranlagung · mit Fünftel</span>
+    <span><i class="swatch" style="${dashSwatch(COLORS.joint)}"></i>Zusammenveranlagung · ohne Fünftel</span>
+    <span><i class="swatch" style="background:${COLORS.break_even}"></i>Break-even (bestes Netto mit Gehalt P1 = ohne Gehalt P1)</span>
     <span><i class="swatch" style="background:${COLORS.worst_case}"></i>Worst case (bestes Netto minimal)</span>
   </div>`;
   return s + legend;
@@ -2193,8 +2221,8 @@ function togglePkvFields() {
 }
 
 function syncChartSliders() {
+  // Sliders keep their fixed caps; only the chart axes follow typed values.
   updateGrossDomain();
-  const domain = grossDomain();
   for (const suffix of ["1", "2"]) {
     const num = document.getElementById("gross" + suffix);
     const v = Number(num.value);
@@ -2206,9 +2234,9 @@ function syncChartSliders() {
       const range = document.getElementById(id);
       if (!range) continue;
       range.min = String(GROSS_ZOOM.slider_min);
-      range.max = String(domain.max);
-      range.step = String(domain.step);
-      range.value = String(clamp(value, GROSS_ZOOM.slider_min, domain.max));
+      range.max = String(GROSS_ZOOM.slider_max);
+      range.step = String(GROSS_ZOOM.slider_step);
+      range.value = String(clamp(value, GROSS_ZOOM.slider_min, GROSS_ZOOM.slider_max));
     }
     const grossOutputs = ["chartGross" + suffix + "Value", "surfaceGross" + suffix + "Value",
                           suffix === "1" ? "abfWorkValue" : "abfWork2Value"];
@@ -2409,9 +2437,8 @@ function applyConfigToInputs() {
   stateSel.value = D.state;
 
   updateGrossDomain(Math.max(Number(D.gross1) || 0, Number(D.gross2) || 0));
-  const domain = grossDomain();
   const grossNumber = { min: L.gross.number_min, max: L.gross.number_max, step: L.gross.number_step };
-  const grossRange = { min: L.gross.slider_min, max: domain.max, step: domain.step };
+  const grossRange = { min: L.gross.slider_min, max: L.gross.slider_max, step: L.gross.slider_step };
   const abfNumber = { min: L.abfindung.number_min, max: L.abfindung.number_max, step: L.abfindung.number_step };
   const abfRange = { min: L.abfindung.slider_min, max: L.abfindung.slider_max, step: L.abfindung.slider_step };
   for (const suffix of ["1", "2"]) {

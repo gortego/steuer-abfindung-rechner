@@ -75,14 +75,15 @@ Results are shown as:
      drawn across both salaries, and its own four linked sliders for both gross
      salaries and both Abfindungen,
   4. a 2D view of household net versus the salary of Partner #1 in the
-     Abfindung year, with independent gross sliders for both partners, two net
-     curves (Einzel/Zusammen with the salary of Partner #1), two dashed
-     "Abfindung only" baselines and a red band (up to the break-even) where
-     working *reduces* net income. A purple dashed line marks the break-even, a
-     red dotted line (plus a horizontal red dashed net-level line) the worst
-     case, and black dashed guides follow the two current "mit Gehalt" points
-     to the Y axis; all four values are labelled at the current salary. A
-     bracket shows the net difference from the worst case to the break-even.
+     Abfindung year, with independent gross sliders for both partners, four
+     net curves (Einzel/Zusammen × mit/ohne Fünftelregelung, all with the
+     Partner #1 salary), two dashed "Abfindung only" baselines and a red band
+     (up to the break-even) where working *reduces* net income. Solid curves
+     use the Fünftelregelung, dash-dot curves do not. A purple dashed line
+     marks the break-even, a red dotted line (plus a horizontal red dashed
+     net-level line) the worst case, and black dashed guides follow the two
+     best current points to the Y axis. A bracket shows the net difference from
+     the worst case to the break-even.
      Break-even, worst case and gap are on separate lines in the callout; the
      highlighted key takeaway compares current net with "ohne Gehalt" (red below
      break-even, green above),
@@ -113,13 +114,13 @@ styles from the internet.
 | Number of children | Used for child allowance, child benefit and pension/care contributions. |
 | Federal state | Determines the church-tax rate (8% in BY/BW, 9% elsewhere) and the Saxony-specific GKV care-insurance split. |
 | Church tax | Per-parent checkbox. |
-| Abfindung | One-off gross severance per parent with `1,000` spinner steps; default `360,000` EUR for Partner #1 and `0` for Partner #2. Drives the **Abfindung** report. |
+| Abfindung | One-off gross severance per parent with `1,000` spinner steps; default `100,000` EUR for Partner #1 and `0` for Partner #2. Drives the **Abfindung** report. |
 | KV-Zusatzbeitrag | GKV supplementary rate; default 2.9%. |
 | Children under 25 | Only then do additional children reduce the GKV care-insurance contribution. |
 
-The initial scenario is: tax year **2026**, Partner #1 **120,000 EUR**, Partner #2
-**65,000 EUR**, federal state **Nordrhein-Westfalen**, **3** children, church
-tax only for **Partner #2**, and an Abfindung of **360,000 EUR** for Partner #1.
+The initial scenario is: tax year **2026**, Partner #1 **50,000 EUR**, Partner #2
+**50,000 EUR**, federal state **Nordrhein-Westfalen**, **1** child, no church
+tax, and an Abfindung of **100,000 EUR** for Partner #1.
 These values apply until **speichern** stores a different set locally.
 
 ## Calculation rules
@@ -264,8 +265,9 @@ Fünftelregelung, individual assessment can win. The corresponding **difference 
 
 The four linked sliders sit in one row between the compact **Absolutes Netto**
 curve and the flat map: Brutto Partner #1, Brutto Partner #2, Abfindung Partner
-#1 and Abfindung Partner #2. Gross ranges are `0`–`150,000` EUR and Abfindung
-ranges `0`–`500,000` EUR (step `1,000`); all write the number fields in
+#1 and Abfindung Partner #2. Gross sliders are fixed at `0`–`150,000` EUR and
+Abfindung sliders at `0`–`500,000` EUR (step `1,000`); all write the number
+fields in
 **Eingaben**. Because the Abfindung changes the absolute net, moving either
 Abfindung slider changes the cell colours and the EUR scale labels immediately.
 There is no Fünftelregelung switch: all four cases
@@ -276,11 +278,11 @@ and lists all four net amounts.
 
 Every cell tooltip lists Partner #1 and Partner #2 gross, all four net figures,
 which mode and Fünftel treatment win, the advantage, the Nettoquote, the separate
-quote versus "ohne Gehalt" and the Abfindung. Both axes start at 0–150,000 EUR
-and zoom together with the gross sliders through 250k, 500k, 1M, 2M, 5M and
-10M EUR. The scale expands only when a salary passes 90 % of the current
-maximum and contracts when both salaries drop below 50 %; tick steps are
-rounded so the resolution stays readable. A dashed crosshair marks the current
+quote versus "ohne Gehalt" and the Abfindung. The sliders stay at 0–150,000 EUR
+for gross and 0–500,000 EUR for Abfindung, but both chart axes zoom with typed
+values through 250k, 500k, 1M, 2M, 5M and 10M EUR. The scale expands only when
+a salary passes 90 % of the current maximum and contracts when both salaries
+drop below 50 %; tick steps are rounded so the resolution stays readable. A dashed crosshair marks the current
 inputs, and the household net (including Kindergeld) together with the current
 Nettoquote and baseline comparison is labelled beside the moving point. All
 sliders are linked to the input fields and to each other through one delegated
@@ -318,7 +320,8 @@ separate "Quote vs. ohne Gehalt".
 
 The compact curve is titled **Absolutes Netto**. Both salaries and both
 Abfindungen are controlled by the four linked sliders; the curve sweeps Partner
-#1 while Partner #2 stays at its selected value, and its Y axis is labelled
+#1 on the X axis while Partner #2 stays at its selected value, and moving the
+Partner #2 slider recalculates the whole curve. Its Y axis is labelled
 `Bestes Netto/Jahr` in EUR.
 
 ### "Lohnt sich Arbeiten im Abfindungsjahr?"
@@ -327,9 +330,10 @@ This chart sweeps the gross salary of Partner #1 across the X axis. It has a
 second gross slider for **Partner #2 im Abfindungsjahr**, linked to the main
 Partner #2 gross input; that salary stays constant while the curves are sampled.
 An additional slider sets the Abfindung of Partner #1 for this view. At each
-sampled Partner #1 salary it computes individual and joint net **with** and
-**without** the salary of Partner #1, always choosing the better of the two
-assessment modes.
+sampled Partner #1 salary it draws four nets: individual and joint assessment,
+each **with and without the Fünftelregelung**. Solid curves use the
+Fünftelregelung, dash-dot curves do not. Break-even, worst case and the current
+markers still use the best of all four variants at each salary.
 
 - **Break-even** (purple dashed line): the last sampled crossing where the best
   "with salary" net again reaches the best "without salary" net. Below it,
@@ -433,11 +437,10 @@ for these values: after changing the `.ini`, run `tools/generate_config.py` to
 embed it between the `CONFIG_START` / `CONFIG_END` markers. The browser never
 reads `config.ini`, so `index.html` remains dependency-free at runtime.
 
-The generator checks that the initial gross-salary slider maximum matches both
-the Abfindungsjahr chart maximum and the heatmap axis maximum (currently
-`150,000 EUR`). `zoom_steps` then defines the shared zoom domain up to
-`number_max`; the chart and slider maxima are only the starting window, not a
-hard cap.
+The generator checks that the fixed gross slider maximum matches both the
+initial Abfindungsjahr chart maximum and the heatmap axis maximum (currently
+`150,000 EUR`). Sliders stay at that cap; number fields accept larger values
+and `zoom_steps` defines the chart-only zoom domain up to `number_max`.
 
 ## Regenerating and verifying the tables
 

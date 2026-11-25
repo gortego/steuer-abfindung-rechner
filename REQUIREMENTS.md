@@ -53,9 +53,11 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   The two top gross sliders under **Eingaben** therefore use `data-target` and
   write directly into `#gross1` / `#gross2`, just like the chart sliders.
 - Recalculation from input changes is capped at one run per animation frame to
-  keep slider dragging smooth. Gross zoom uses configured nice steps with
-  hysteresis (expand above `90 %`, shrink below `50 %`) and cached sweeps, so
-  moving only the current gross marker does not rebuild every chart cell.
+  keep slider dragging smooth. Sliders are capped at `150000` gross and
+  `500000` Abfindung; number fields accept larger values. Chart axes zoom with
+  typed values through configured nice steps with hysteresis (expand above
+  `90 %`, shrink below `50 %`) and cached sweeps, so moving only the current
+  gross marker does not rebuild every chart cell.
 - **speichern** stores the current inputs **and the selected dark/light design**
   locally in the browser. They are loaded on the next start.
 - There is no **Zurücksetzen** button.
@@ -103,11 +105,11 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   `100 %` at Partner #1 gross zero, falls below `100 %` in the loss zone and
   rises above `100 %` after break-even. It follows the household-net U-shape
   but is **not** the Nettoquote. Both ratios appear in tooltips and markers.
-- Both axes start at `0`–`150000` and zoom together with all gross sliders.
-  The domain grows through `150000 / 250000 / 500000 / 1000000 / 2000000 /
-  5000000 / 10000000` when either gross exceeds `90 %` of the current maximum,
-  and shrinks back once both gross values fall below `50 %`. Tick steps are
-  rounded so the slider and sweep resolution stay roughly constant.
+- All gross sliders stay at `0`–`150000`. Both chart axes start at that range
+  and zoom with typed gross values through `150000 / 250000 / 500000 /
+  1000000 / 2000000 / 5000000 / 10000000` when either gross exceeds `90 %` of
+  the current maximum, shrinking back once both gross values fall below `50 %`.
+  Tick steps are rounded so the sweep resolution stays readable.
 - Orange hatching marks cells where individual assessment wins; smooth cells
   mean joint assessment wins. A fine light-red dashed border marks the winner
   boundary.
@@ -147,10 +149,12 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 
 - The detailed 2D chart heading is `Haushaltsnetto gegen Gehalt von Partner #1`
   (the former `2D: ` prefix is removed).
-- Two solid net curves: individual and joint assessment **with** Partner #1
-  salary.
+- Four net curves: individual and joint assessment, each with and without the
+  Fünftelregelung, all **with** Partner #1 salary. Curves with Fünftelregelung
+  are solid; curves without are dash-dot.
 - Two horizontal dashed reference lines: the same assessments **without**
-  Partner #1 salary, only Abfindung.
+  Partner #1 salary, only Abfindung, using the better Fünftel treatment per
+  assessment mode.
 - Partner #2 gross has its own slider and stays constant while curves are
   sampled.
 - Red area is clipped at the break-even.
@@ -175,7 +179,7 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - Black dashed guides connect the current “mit Gehalt” points to the Y axis.
 - On the compact absolute-net curve, the moving current-point label is red when
   its text says `weniger als ohne Gehalt` and green otherwise.
-- Text must say two curves plus two reference lines, not four curves.
+- Text must say four curves plus two reference lines.
 
 ## 8. Themes
 

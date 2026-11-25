@@ -22,7 +22,8 @@ Read `REQUIREMENTS.md` first; it contains the full product requirement list.
    the documentation fully English.
 2. Keep `index.html` dependency-free at runtime.
 3. Change configuration in `config.ini`, then run `tools/generate_config.py`.
-4. Gross zoom starts at `150000` and grows through
+4. Gross sliders stay at `150000` and Abfindung sliders at `500000`; number
+   fields accept larger values. Chart axes zoom through
    `CONFIG.limits.gross.zoom_steps` up to `number_max`; keep the guard requiring
    `gross.slider_max == charts.abfWork.x_max == charts.netBrutto.axis_max`.
 5. Do not reintroduce `Bedienung`, `Zurücksetzen`, `Berechnen` or
@@ -80,7 +81,8 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
 
 ### Charts
 
-- AbfWork has two solid curves and two dashed baselines.
+- AbfWork has four curves (Einzel/Zusammen × mit/ohne Fünftelregelung; mit is
+  solid, ohne is dash-dot) and two dashed baselines (best treatment per mode).
 - Break-even and worst-case markers remain visible; the worst case has a vertical
   dotted marker and a horizontal red dashed net-level line. A bracket shows the
   EUR gap. Note lines are separate for break-even, worst case and gap; the only
@@ -137,9 +139,10 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
   writes the linked main number input, syncs outputs and triggers recalculation.
 - Every range must be initialised with `setRange()`; an unset `max` reads as
   `Number("") === 0` in `syncChartSliders()` and would pin the slider at zero.
-- `updateGrossDomain()` runs inside `syncChartSliders()`; it changes the shared
-  slider/axis max only at configured nice steps with hysteresis. `computeHeatmapData()`
-  and `computeAbfWorkData()` cache their sweeps, so moving only the current gross
+- `updateGrossDomain()` runs inside `syncChartSliders()`; it changes only the
+  chart axis max at configured nice steps with hysteresis. Sliders always use
+  `gross.slider_max` / `slider_step`. `computeHeatmapData()` and
+  `computeAbfWorkData()` cache their sweeps, so moving only the current gross
   marker does not recompute all cells; include any new input in the cache keys.
 - Kindergeld must stay in the detailed net tables and summary, but must be
   excluded from the heatmap ratio.
