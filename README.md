@@ -90,10 +90,11 @@ Results are shown as:
   5. individual vs. joint assessment,
   6. household net income as the gross salary of Partner #1 varies,
   7. approximate marginal tax rates for the Grund- and Splittingtabelle, with
-     dashed lines at the start after the Grundfreibetrag and the zone changes
-     (~24 %, 42 %), non-overlapping `G`/`S` rate labels on the Y axis, short zvE
-     labels in three staggered rows below the X axis, and `Aktuell ...` markers
-     with dark dashed guides for both tariffs,
+     dashed lines at the start after the Grundfreibetrag, the zone changes
+     (~24 %, 42 %) and the top rate (45 % for 2026), non-overlapping `G`/`S`
+     rate labels on the Y axis, short zvE labels in three staggered rows below
+     the X axis, and `Aktuell ...` markers with dark dashed guides for both
+     tariffs,
   8. severance impact on household net income and total tax burden.
 
 Everything is rendered from local data. The page loads no scripts, fonts or
@@ -363,7 +364,9 @@ markers still use the best of all four variants at each salary.
 
 The marginal-rate chart uses dashed lines to mark where each tariff changes
 zone: the start after the Grundfreibetrag, the change into the second
-progression zone (~`24 %`) and the entry into the flat top zone (`42 %`). The
+progression zone (~`24 %`), the entry into the `42 %` zone and the start of the
+top rate (`45 %` for 2026). The X axis reaches `600,000 EUR` zvE so the 45 %
+threshold is visible for both the Grundtarif and the Splittingtarif. The
 matching rate is written on the Y axis as `G ...` (Grundtarif) or `S ...`
 (Splittingtarif), with overlapping labels shifted apart. The corresponding zvE
 values are written as short amounts in three staggered, rotated rows below the

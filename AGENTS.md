@@ -94,8 +94,9 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
 - Red area is clipped at break-even.
 - Black dashed guides follow the current gross values.
 - Partner #2 gross slider changes the current point and recalculates curves.
-- Marginal-rate chart marks the start after the Grundfreibetrag and zone changes
-  (~`24 %`, `42 %`) with dashed lines. Y-axis rates use `G`/`S` prefixes and are
+- Marginal-rate chart marks the start after the Grundfreibetrag, zone changes
+  (~`24 %`, `42 %`) and `PARAMS[year].top_rate` (`45 %` in 2026) with dashed
+  lines; X axis reaches `600000` zvE. Y-axis rates use `G`/`S` prefixes and are
   collision-shifted; short X-axis zvE amounts use three staggered rotated rows.
   Dark dashed guides are labelled `Aktuell` for both tariffs.
 - Compact curve is titled `Absolutes Netto`; its Y axis is labelled

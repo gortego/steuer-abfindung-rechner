@@ -173,11 +173,13 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   green above it. The `45000` EUR example and the separate "Ohne Gehalt" line
   are removed; the `+1000` EUR marginal readout is no longer shown because a
   positive marginal gain can coexist with a loss relative to not working.
-- The marginal-rate chart marks the start after the Grundfreibetrag and the
-  tariff zone changes at about `24 %` and `42 %` with dashed lines. Y-axis rate
-  labels use `G`/`S` prefixes and are shifted so Grund- and Splittingtarif do not
-  overlap. Short zvE amounts are placed below the X axis in three staggered,
-  rotated rows so nearby markers stay readable; current zvE amounts are bold.
+- The marginal-rate chart marks the start after the Grundfreibetrag, the tariff
+  zone changes at about `24 %` and `42 %`, and the top rate (`45 %` for 2026,
+  `47 %` for the 2027 draft) with dashed lines. Its X axis reaches `600000` zvE
+  so both tariffs' top-rate thresholds are visible. Y-axis rate labels use
+  `G`/`S` prefixes and are shifted so Grund- and Splittingtarif do not overlap.
+  Short zvE amounts are placed below the X axis in three staggered, rotated rows
+  so nearby markers stay readable; current zvE amounts are bold.
   It also marks the current zvE of both tariffs with dark dashed guides, a
   circle, an `Aktuell` label and a labelled percentage.
 - Black dashed guides connect the current “mit Gehalt” points to the Y axis.
