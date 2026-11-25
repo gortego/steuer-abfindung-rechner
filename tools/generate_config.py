@@ -69,12 +69,20 @@ def load_config() -> dict:
         for key, raw in parser.items(section):
             target[key] = value(raw)
 
-    # Guard against a silent mismatch between the slider and its chart.
+    # Guard against a silent mismatch between the initial zoom domain and its
+    # charts. The domain can grow later, but all three must start in sync.
     gross = payload["limits"]["gross"]
     if gross["slider_max"] != payload["charts"]["abfWork"]["x_max"]:
         raise RuntimeError("gross.slider_max must equal charts.abfWork.x_max")
     if gross["slider_max"] != payload["charts"]["netBrutto"]["axis_max"]:
         raise RuntimeError("gross.slider_max must equal charts.netBrutto.axis_max")
+    steps = gross.get("zoom_steps")
+    if not isinstance(steps, list) or not steps:
+        raise RuntimeError("gross.zoom_steps must be a non-empty JSON list")
+    if steps != sorted(steps) or gross["slider_max"] not in steps:
+        raise RuntimeError("gross.zoom_steps must be sorted and include slider_max")
+    if steps[-1] != gross["number_max"]:
+        raise RuntimeError("gross.zoom_steps must end at gross.number_max")
     return payload
 
 

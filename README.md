@@ -276,13 +276,17 @@ and lists all four net amounts.
 
 Every cell tooltip lists Partner #1 and Partner #2 gross, all four net figures,
 which mode and Fünftel treatment win, the advantage, the Nettoquote, the separate
-quote versus "ohne Gehalt" and the Abfindung. Both axes are fixed from 0 to
-150,000 EUR; a dashed crosshair marks the current inputs, and the household net
-(including Kindergeld) together with the current Nettoquote and baseline
-comparison is labelled beside the moving point. All sliders are linked to the
-input fields and to each other through one delegated listener;
-outputs update immediately and recalculation is capped at one animation frame,
-so dragging remains smooth while the heatmap updates.
+quote versus "ohne Gehalt" and the Abfindung. Both axes start at 0–150,000 EUR
+and zoom together with the gross sliders through 250k, 500k, 1M, 2M, 5M and
+10M EUR. The scale expands only when a salary passes 90 % of the current
+maximum and contracts when both salaries drop below 50 %; tick steps are
+rounded so the resolution stays readable. A dashed crosshair marks the current
+inputs, and the household net (including Kindergeld) together with the current
+Nettoquote and baseline comparison is labelled beside the moving point. All
+sliders are linked to the input fields and to each other through one delegated
+listener; outputs update immediately, recalculation is capped at one animation
+frame, and the expensive heatmap/AbfWork sweeps are cached, so dragging remains
+smooth while the heatmap updates.
 
 The compact curve also follows the Partner #1 slider. Its moving point label is
 coloured red when it says `weniger als ohne Gehalt` and green otherwise, so the
@@ -429,9 +433,11 @@ for these values: after changing the `.ini`, run `tools/generate_config.py` to
 embed it between the `CONFIG_START` / `CONFIG_END` markers. The browser never
 reads `config.ini`, so `index.html` remains dependency-free at runtime.
 
-The generator checks that the gross-salary slider maximum matches both the
-Abfindungsjahr chart maximum and the heatmap axis maximum (currently
-`150,000 EUR`).
+The generator checks that the initial gross-salary slider maximum matches both
+the Abfindungsjahr chart maximum and the heatmap axis maximum (currently
+`150,000 EUR`). `zoom_steps` then defines the shared zoom domain up to
+`number_max`; the chart and slider maxima are only the starting window, not a
+hard cap.
 
 ## Regenerating and verifying the tables
 

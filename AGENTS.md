@@ -22,7 +22,8 @@ Read `REQUIREMENTS.md` first; it contains the full product requirement list.
    the documentation fully English.
 2. Keep `index.html` dependency-free at runtime.
 3. Change configuration in `config.ini`, then run `tools/generate_config.py`.
-4. All gross sliders must have max `150000`; keep the guard requiring
+4. Gross zoom starts at `150000` and grows through
+   `CONFIG.limits.gross.zoom_steps` up to `number_max`; keep the guard requiring
    `gross.slider_max == charts.abfWork.x_max == charts.netBrutto.axis_max`.
 5. Do not reintroduce `Bedienung`, `Zurücksetzen`, `Berechnen` or
    `heatMetric`/`heat_metric`.
@@ -136,6 +137,10 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
   writes the linked main number input, syncs outputs and triggers recalculation.
 - Every range must be initialised with `setRange()`; an unset `max` reads as
   `Number("") === 0` in `syncChartSliders()` and would pin the slider at zero.
+- `updateGrossDomain()` runs inside `syncChartSliders()`; it changes the shared
+  slider/axis max only at configured nice steps with hysteresis. `computeHeatmapData()`
+  and `computeAbfWorkData()` cache their sweeps, so moving only the current gross
+  marker does not recompute all cells; include any new input in the cache keys.
 - Kindergeld must stay in the detailed net tables and summary, but must be
   excluded from the heatmap ratio.
 
