@@ -27,7 +27,9 @@ heading are `Abfindung, Steuerlast & Netto`. This document is in English.
 
 1. Open `index.html` in any modern browser.
 2. Select the tax year, enter both gross annual salaries (or drag the sliders
-   underneath them), the number of children and the federal state.
+   underneath them), the number of children and the federal state. Number
+   fields accept negative annual income down to `-1,000,000 EUR`; the sliders
+   remain at `0`–`150,000 EUR`.
 3. Tick **Privat versichert (PKV)** for a parent who is privately insured;
    leave it unticked for **gesetzlich (GKV)**. For PKV, expand
    **Erweiterte Annahmen** and enter the monthly private premiums, employer
@@ -36,17 +38,23 @@ heading are `Abfindung, Steuerlast & Netto`. This document is in English.
 5. Enter an optional one-off **Abfindung** for either parent (0 = none).
 6. Optional: in **Erweiterte Annahmen** change the GKV supplementary rate or
    state whether all children are under 25.
-7. All results update automatically as soon as any input changes; there is no
+7. Optional: use **Steueroptimierung im Abfindungsjahr** to enter real,
+   documented expenses and tax-free wage replacement payments. The callout at
+   the end of that section shows which requested amounts exceed the modelled
+   caps.
+8. All results update automatically as soon as any input changes; there is no
    separate calculate button.
-8. Optional: click **speichern** to store the current inputs and the selected
-   dark/light design as new defaults in this browser. They are loaded on the
-   next run. This uses local browser storage only; `config.ini` and the single
-   HTML file are not modified. The ☀️/🌙 button in the header switches between
-   the funky dark and light designs immediately.
+9. Optional: click **speichern** to store the current inputs, optimization
+   amounts and the selected dark/light design as new defaults in this browser.
+   They are loaded on the next run. This uses local browser storage only;
+   `config.ini` and the single HTML file are not modified. The ☀️/🌙 button in
+   the header switches between the funky dark and light designs immediately;
+   dark is the built-in default.
 
 The built-in defaults are tax year 2026, gross salaries of `50,000 EUR` for
 both partners, one child, federal state NW, GKV for both partners, no church
 tax, Partner #1 Abfindung `100,000 EUR` and Partner #2 Abfindung `0 EUR`.
+All optimization amounts default to `0 EUR`, and the built-in theme is dark.
 Saved browser values override these defaults; click **speichern** again or
 clear this site's data to apply the built-in values.
 
@@ -60,7 +68,7 @@ Results are shown as:
 - a dedicated **Abfindung** tab with a six-column household matrix
   (individual/joint × without severance / with severance / with severance plus
   Fünftelregelung), expandable per-parent detail tables and its own chart,
-- eight SVG charts:
+- nine SVG charts:
   1. where the gross income goes (social contributions, taxes, net pay, child benefit),
      with dashed reference lines at the gross-income levels for comparison,
   2. a heatmap of the best absolute household net across both salaries, with a
@@ -87,15 +95,33 @@ Results are shown as:
      Break-even, worst case and gap are on separate lines in the callout; the
      highlighted key takeaway compares current net with "ohne Gehalt" (red below
      break-even, green above),
-  5. individual vs. joint assessment,
-  6. household net income as the gross salary of Partner #1 varies,
-  7. approximate marginal tax rates for the Grund- and Splittingtabelle, with
+  5. a compact **Absolutes Netto** curve with a `Bestes Netto/Jahr` Y axis, a
+     red/green label for the current comparison with "ohne Gehalt", and four
+     linked sliders for both gross salaries and both Abfindungen,
+  6. individual vs. joint assessment,
+  7. household net income as the gross salary of Partner #1 varies,
+  8. approximate marginal tax rates for the Grund- and Splittingtabelle, with
      dashed lines at the start after the Grundfreibetrag, the zone changes
-     (~24 %, 42 %) and the top rate (45 % for 2026), non-overlapping `G`/`S`
-     rate labels on the Y axis, short zvE labels in three staggered rows below
-     the X axis, and `Aktuell ...` markers with dark dashed guides for both
-     tariffs,
-  8. severance impact on household net income and total tax burden.
+     (~24 %, 42 %) and the top rate (45 % for 2026, 47 % for the 2027 draft),
+     non-overlapping `G`/`S` rate labels on the Y axis, short zvE labels in
+     three staggered rows below the X axis, and `Aktuell ...` markers with dark
+     dashed guides for both tariffs,
+  9. severance impact on household net income and total tax burden.
+
+The current optimum Partner #1 salary for the selected Partner #2 salary, and
+the optimum Partner #2 salary for the selected Partner #1 salary, are shown as
+compact German readouts under every gross slider (input card, both chart slider
+rows and the Abfindungsjahr row). The corresponding optimum curves remain
+implemented behind `CONFIG.general.show_optimum_curves`, which is currently
+false, so they are hidden from both charts and both legends.
+
+Only the compact **Absolutes Netto** curve and **Haushaltsnetto gegen Gehalt von
+Partner #1** support axis-limit zoom. Drag a rectangle inside one of those plots
+to set new X/Y limits and redraw the chart at the same pixel size; `↺ Zoom
+aufheben` restores the configured limits. The SVG viewBox is never scaled, line
+widths stay unchanged, and the heatmap, 3D surface, bar charts, progression and
+marginal-rate chart have no drag zoom. State is per chart in memory, survives
+recalculation and theme changes, and is not saved to local storage.
 
 Everything is rendered from local data. The page loads no scripts, fonts or
 styles from the internet.
@@ -105,7 +131,7 @@ styles from the internet.
 | Input | Notes |
 | --- | --- |
 | Tax year | `2026` (final values) or `2027` (draft government proposal). |
-| Gross annual salary | One number field with `1,000` spinner steps plus a linked slider (`0`–`150,000` EUR, step `1,000`) per parent. Moving a slider updates the field and recalculates immediately; larger typed values are clamped in the slider only. |
+| Gross annual salary | One number field with `1,000` spinner steps plus a linked slider (`0`–`150,000` EUR, step `1,000`) per parent. Number fields accept negative annual income down to `-1,000,000 EUR` and large positive values; only the slider clamps to its fixed range. Moving a slider updates the field and recalculates immediately. |
 | Insurance type | Checkbox per parent: unticked = GKV, ticked = PKV. |
 | PKV monthly KV premium | Private health premium for the employee. |
 | PKV monthly PV premium | Private care-insurance premium for the employee. |
@@ -118,6 +144,19 @@ styles from the internet.
 | Abfindung | One-off gross severance per parent with `1,000` spinner steps; default `100,000` EUR for Partner #1 and `0` for Partner #2. Drives the **Abfindung** report. |
 | KV-Zusatzbeitrag | GKV supplementary rate; default 2.9%. |
 | Children under 25 | Only then do additional children reduce the GKV care-insurance contribution. |
+| Weiterbildung / other Werbungskosten | Annual deductible expenses per parent; uncapped in this model. |
+| KV prepayments | Annual health/care-insurance prepayments per parent, capped at three times the current-year statutory contributions (or the modelled PKV deductible). |
+| Extra RV contributions | Annual pension contributions per parent beyond the employee contribution, capped at roughly `24.7 %` of the RV contribution ceiling minus modelled employee and employer contributions. |
+| Arbeitslosengeld | Annual tax-free wage replacement payment per parent; added to net and applied through the Progressionsvorbehalt. |
+| Donations | Household annual donations, capped at `20 %` of the approximated total income. |
+| Rental losses | Household annual rental losses, split equally and not capped here. |
+| Business losses | Household annual business losses, split equally and capped at `10,000 EUR` for individual assessment or `20,000 EUR` for joint assessment. |
+
+All optimization fields are annual EUR amounts with `100` spinner steps and a
+common `0`–`10,000,000 EUR` range. Values above a field's current Höchstbetrag
+are clamped automatically before calculation or **speichern**. The German
+section explains the statutory anchors in its collapsed details and shows the
+applied amounts and limits live; it does not display a separate advisory callout.
 
 The initial scenario is: tax year **2026**, Partner #1 **50,000 EUR**, Partner #2
 **50,000 EUR**, federal state **Nordrhein-Westfalen**, **1** child, no church
@@ -138,28 +177,31 @@ ceilings (`BBG`) for the selected year:
   childless employees pay a 0.6% surcharge, and from the second child onwards
   the employee share is reduced by 0.25% per child, capped at 1.0%.
 
-Contributions above the respective ceilings are not charged. The
-*Jahresarbeitsentgeltgrenze* is shown in the notes, but the tool continues to
-calculate statutory health-insurance contributions above it; private
-insurance is not modelled.
+Contributions above the respective ceilings are not charged. Negative gross
+income produces no social contributions because the contribution bases are
+clamped to zero. The *Jahresarbeitsentgeltgrenze* is shown in the notes, but the
+tool continues to calculate statutory health-insurance contributions above it;
+private insurance is not modelled.
 
 ### Taxable income (`zvE`)
 
 A simplified taxable income is computed as:
 
 ```text
-zvE = gross salary
+zvE = max(0, gross salary
       − employee pension contribution
       − employee health contribution
       − employee care contribution
       − employee allowance (Arbeitnehmer-Pauschbetrag)
       − special-expenses allowance (Sonderausgaben-Pauschbetrag)
-      − child allowance, if favourable
+      − optimisation expenses and split losses
+      − child allowance, if favourable)
 ```
 
 The unemployment-insurance contribution is **not** part of the simplified
-Vorsorgepauschale used here. Further deductions such as actual work expenses,
-private insurance, company pensions and special tax rules are not included.
+Vorsorgepauschale used here. The optimization section adds the modelled real
+expenses and losses; other deductions and special tax rules remain outside this
+simplified estimate.
 
 ### Income tax, solidarity surcharge and church tax
 
@@ -200,19 +242,53 @@ For each child the tool compares:
 The child allowance is applied only while it is more favourable than child
 benefit. Children also affect the care-insurance rate as described above.
 
+### Optimization inputs in the severance year
+
+The German **Steueroptimierung im Abfindungsjahr** section models genuine cash
+outflows that reduce taxable income in the selected year:
+
+- Weiterbildung and other Werbungskosten are added per parent without an
+  additional cap in this tool.
+- Health-insurance prepayments are limited to three times the modelled
+  KV/PV contributions (§ 10 EStG).
+- Extra pension contributions are limited to about `24.7 %` of the annual RV
+  contribution ceiling minus the modelled employee and employer contributions.
+- Donations are limited to `20 %` of the approximated total income
+  (§ 10b EStG).
+- Rental losses are uncapped here; business losses are capped at `10,000 EUR`
+  for individual assessment and `20,000 EUR` for joint assessment. Household
+  losses are split equally between the partners.
+- Arbeitslosengeld is added tax-free to net income. It raises the tax rate on
+  the remaining income through the Progressionsvorbehalt (§ 32b EStG); unused
+  employee allowance reduces the progression amount. Its two fields carry a
+  green `+ Einnahme` badge and green left border, while every expense/loss
+  field carries a red `− Ausgabe` badge and red left border; the written badge
+  means the distinction does not rely on colour alone.
+
+Every cap is evaluated from the current year, salaries, insurance settings and
+assessment mode. Over-cap inputs are replaced by the allowed amount; the live
+callout shows the applied amounts and limits. These values affect all four
+severance cases, both assessment modes, the tables, the summary, the heatmap,
+the 3D surface and both AbfWork charts. The separate advisory callout has been
+removed.
+
 ### Net income
 
 ```text
 net = gross salary
       − employee social contributions
+      − optimisation expenses and split losses
       − income tax
       − solidarity surcharge
       − church tax
+      + tax-free wage replacement payments
 ```
 
 Household net income adds the remaining child benefit. In the severance
 scenarios, `abfindung` is added to net income as a one-off payment; the
 per-month figures shown there are only an even annualisation for orientation.
+Negative gross salaries and large expenses can produce negative net values;
+none of the charts clamps those values at zero.
 
 ### Best-absolute-net heatmap
 
@@ -230,9 +306,11 @@ baselineRatio = score / best net at Partner #1 gross = 0
 
 The score and the primary quote both include Kindergeld in the numerator. The
 quote is therefore `100 %` only when nothing is deducted and no child benefit is
-added; with Kindergeld it can exceed `100 %`. There is no metric selector any
-more. The colour scale is labelled `Bestes Netto/Jahr` and shows EUR, so it can
-dip and rise again instead of being capped at `100 %`. This makes the U-shape of
+added; with Kindergeld it can exceed `100 %`. It is undefined when the
+denominator (salaries plus Abfindungen) is zero or negative and is shown as `–`.
+There is no metric selector any more. The colour scale is labelled
+`Bestes Netto/Jahr` and shows EUR, so it can dip below zero and rise again
+instead of being capped at `100 %`. This makes the U-shape of
 the Abfindung year visible: at low salaries the net falls below the "ohne
 Gehalt" baseline, then recovers after the break-even.
 
@@ -251,8 +329,10 @@ The winner is encoded by the fill style:
   between the two winners.
 - A purple dashed line traces the break-even (best net with Partner #1 salary
   equals the best net without it) for every Partner #2 salary. A red dotted
-  line traces the worst case (lowest best net). Both are computed from the same
-  sampled row cells and appear in the legend.
+  line traces the worst case only where both salaries are positive; negative
+  cells still feed break-even and the colour scale. Both come from the same
+  sampled row cells and appear in the legend. Neutral dashed guides mark gross
+  `0` on both axes.
 
 A readout above the chart always shows the best annual net at the current
 salaries, both individual and joint net, and the advantage of the better mode.
@@ -280,8 +360,10 @@ and lists all four net amounts.
 Every cell tooltip lists Partner #1 and Partner #2 gross, all four net figures,
 which mode and Fünftel treatment win, the advantage, the Nettoquote, the separate
 quote versus "ohne Gehalt" and the Abfindung. The sliders stay at 0–150,000 EUR
-for gross and 0–500,000 EUR for Abfindung, but both chart axes zoom with typed
-values through 250k, 500k, 1M, 2M, 5M and 10M EUR. The scale expands only when
+for gross and 0–500,000 EUR for Abfindung, but both chart axes start at
+`-100,000 EUR` so negative salaries and net values are visible. They extend
+further down for strongly negative typed values and zoom on the positive side
+through 250k, 500k, 1M, 2M, 5M and 10M EUR. The positive scale expands only when
 a salary passes 90 % of the current maximum and contracts when both salaries
 drop below 50 %; tick steps are rounded so the resolution stays readable. A dashed crosshair marks the current
 inputs, and the household net (including Kindergeld) together with the current
@@ -303,12 +385,15 @@ so the best combinations form visible peaks. The green marker labels the highest
 net in the current grid with both salaries, the amount, the Nettoquote and the
 baseline comparison; the white marker shows the current inputs. A violet dashed
 cross-section line traces the best net for every Partner #1 salary at the
-currently selected Partner #2 salary. Two further labelled ridges trace the
+currently selected Partner #2 salary. The depth edge is drawn as an explicit
+axis and labelled `Tiefe: Bruttojahresgehalt Partner #2 →`; neutral dashed
+guides mark gross `0` on both gross axes. Two further labelled ridges trace the
 break-even (purple dashed, `Break-even`) and the worst case (red dotted,
-`Worst case`) across all Partner #2 salaries. Four dedicated sliders directly above the
-surface — Brutto Partner #1, Brutto Partner #2, Abfindung Partner #1 and
-Abfindung Partner #2 — write the same main inputs, so both diagrams and all
-tables stay in sync. The cell data is computed only once per recalculation.
+`Worst case`) only where both salaries are positive. Four dedicated sliders
+directly above the surface — Brutto Partner #1, Brutto Partner #2, Abfindung
+Partner #1 and Abfindung Partner #2 — write the same main inputs, so both
+diagrams and all tables stay in sync. The cell data is computed only once per
+recalculation.
 
 ### On-page quote explanation
 
@@ -327,22 +412,28 @@ Partner #2 slider recalculates the whole curve. Its Y axis is labelled
 
 ### "Lohnt sich Arbeiten im Abfindungsjahr?"
 
-This chart sweeps the gross salary of Partner #1 across the X axis. It has a
-second gross slider for **Partner #2 im Abfindungsjahr**, linked to the main
+This chart sweeps the gross salary of Partner #1 across the X axis, starting at
+`-100,000 EUR` and extending for more negative typed values. It has a second
+gross slider for **Partner #2 im Abfindungsjahr**, linked to the main
 Partner #2 gross input; that salary stays constant while the curves are sampled.
-An additional slider sets the Abfindung of Partner #1 for this view. At each
+The dashed "ohne Gehalt" references are still evaluated at gross `0`, and a
+neutral dashed guide marks that zero position. An additional slider sets the
+Abfindung of Partner #1 for this view. At each
 sampled Partner #1 salary it draws four nets: individual and joint assessment,
 each **with and without the Fünftelregelung**. Solid curves use the
 Fünftelregelung, dash-dot curves do not. Break-even, worst case and the current
 markers still use the best of all four variants at each salary.
 
 - **Break-even** (purple dashed line): the last sampled crossing where the best
-  "with salary" net again reaches the best "without salary" net. Below it,
-  working reduces household net because of the Fünftelregelung interaction; the
-  red band is clipped there. With the built-in defaults this is `31,775 EUR`.
+  "with salary" net again reaches the best net at Partner #1 gross `0`. Below
+  it, working reduces household net; the red band is clipped there. The value
+  is recalculated from the current inputs, including negative salaries.
 - **Worst case** (vertical red dotted line plus a horizontal red dashed line at
-  its net level): the sampled gross salary where the best "with salary" net is
-  lowest. With the built-in defaults this is `17,500 EUR` (`124,221 EUR` net).
+  its net level): the sampled gross salary with the lowest best "with salary"
+  net, considering only samples where both partners' gross salaries are above
+  zero. Negative gross stays in the curves and feeds break-even, but cannot
+  become the worst case. No fixed example is assumed; if Partner #2 is not
+  positive, the marker and gap are omitted.
 - A bracket between the worst-case and break-even levels shows the EUR gap the
   household net must recover.
 - The callout puts break-even, worst case and the gap on separate lines. It also
@@ -359,7 +450,8 @@ markers still use the best of all four variants at each salary.
 - A collapsed **Berechnung Schritt für Schritt** section below the callout
   explains every displayed value: inputs, the base scenarios without Abfindung,
   all four current severance cases with tax/Soli/church tax/social contributions,
-  the Abfindung net gain, the "ohne Gehalt P1" reference, the sweep formulas for
+  additional expenses/losses and tax-free payments, the Abfindung net gain, the
+  "ohne Gehalt P1" reference, the negative-inclusive sweep formulas for
   break-even/worst case/gap and the current comparison.
 - Black dashed guides run horizontally from the two current "mit Gehalt"
   points to the Y axis. They move with the Partner #1 salary slider; changing
@@ -451,8 +543,11 @@ reads `config.ini`, so `index.html` remains dependency-free at runtime.
 
 The generator checks that the fixed gross slider maximum matches both the
 initial Abfindungsjahr chart maximum and the heatmap axis maximum (currently
-`150,000 EUR`). Sliders stay at that cap; number fields accept larger values
-and `zoom_steps` defines the chart-only zoom domain up to `number_max`.
+`150,000 EUR`). Sliders stay at that cap; number fields accept larger and
+negative values. `plot_min` sets the negative chart domain (`-100,000 EUR` by
+default, extended for strongly negative typed values), while `zoom_steps`
+defines the positive chart-only zoom domain up to `number_max`. The configured
+default theme is `dark`.
 
 ## Regenerating and verifying the tables
 
@@ -487,6 +582,21 @@ salary/children/severance combinations and both assessment modes: the regular
 and fifth-based ESt formulas, the SolZu inverse lookup, the income-expense
 decomposition and the zero-severance identity with the base scenarios all
 passed (maximum floating-point error `2.9e-11`).
+
+The current cache-busted browser check (`?v=107`) rendered nine SVGs with no
+console errors and no `NaN`/`Infinity`. It verified the dark default and
+persisted theme toggle, **speichern** persistence for inputs, optimization
+amounts and theme, automatic cap clamping and the cap callout, zero guides in
+all gross plots, the labelled 3D depth axis, positive-only worst-case markers
+in both AbfWork and the heatmap/3D ridges, negative Partner #1 and Partner #2
+salaries with negative net values and axis/scale labels, the red/green
+compact-curve comparison label, the income/expense badges and field borders,
+the absence of the separate advisory callout, the optimum-value readouts under
+all eight gross sliders while the two optimum curves stay hidden, and
+axis-limit drag zoom on only the two named line charts: the SVG viewBox and
+stroke widths stay unchanged, the axis labels change, heatmap data is
+untouched, the German `↺ Zoom aufheben` button restores the limits, and zoom
+state survives recalculation and theme changes without being saved.
 
 ## Disclaimer
 

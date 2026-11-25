@@ -78,6 +78,8 @@
   }
   label { display: block; font-weight: 600; font-size: .92rem; margin-bottom: 5px; }
   .hint { font-weight: 400; color: var(--muted); font-size: .82rem; display: block; margin-top: 3px; }
+  .optimum-hint { display: block; margin-top: 4px; font-size: .82rem; line-height: 1.25;
+                  font-weight: 400; font-variant-numeric: tabular-nums; color: var(--muted); }
   input[type=number], select { width: 100%; padding: 9px 10px; border: 1px solid var(--input-border);
           border-radius: 7px; background: var(--input-bg); color: var(--ink); font: inherit; }
   input[type=number]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -98,6 +100,13 @@
   .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: .76rem;
            font-weight: 700; background: var(--badge-bg); color: var(--badge-fg); }
   .badge.draft { background: var(--warn-bg); color: var(--warn); }
+  .flow-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+                font-size: .68rem; font-weight: 800; line-height: 1.4; vertical-align: 1px;
+                white-space: nowrap; border: 1px solid currentColor; }
+  .flow-badge.income { color: var(--good); }
+  .flow-badge.outgoing { color: var(--bad); }
+  input.flow-income { border-left: 4px solid var(--good); }
+  input.flow-outgoing { border-left: 4px solid var(--bad); }
   .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
   .tabs button { background: var(--secondary-bg); color: var(--secondary-fg); padding: 8px 14px; }
   .tabs button.active { background: var(--accent); color: #fff; }
@@ -131,6 +140,14 @@
   .chart h3 { margin: 0 0 4px; }
   .chart p { margin: 0 0 8px; color: var(--muted); font-size: .84rem; }
   .chart svg { width: 100%; height: auto; display: block; }
+  .zoom-host { position: relative; }
+  .zoom-host svg { cursor: crosshair; touch-action: none; }
+  .zoom-selection { position: absolute; display: none; pointer-events: none; z-index: 1;
+                    border: 1px solid var(--accent); background: rgba(14, 165, 233, .18); }
+  .zoom-reset { position: absolute; top: 8px; right: 8px; z-index: 2; padding: 4px 9px;
+                font-size: .75rem; border-radius: 6px; border: 1px solid var(--line);
+                background: var(--secondary-bg); color: var(--secondary-fg); cursor: pointer; }
+  .zoom-reset:disabled { opacity: .45; cursor: default; }
   .chart-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin: 10px 0 6px; }
   #abfWorkChart .chart-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .surface-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -156,6 +173,7 @@
   @media print {
     html, html[data-theme] { --bg: #fff; --card: #fff; --ink: #17202a; --muted: #5d6b7a;
       --line: #dce3eb; --input-bg: #fff; --secondary-bg: #e6edf3; --secondary-fg: #17202a;
+      --good: #166534; --bad: #b91c1c;
       --callout-bg: #f0fdfa; --heat-bg: #f8fafc; --code-bg: #eef2f6; --thead-bg: #eef3f7; }
     body { background: #fff !important; color: #17202a !important; }
     header, [data-theme="dark"] header { background: #155e75 !important; box-shadow: none;
@@ -193,12 +211,14 @@
           <input id="gross1" type="number" inputmode="decimal">
           <input id="gross1Slider" type="range" data-target="gross1" aria-label="Bruttojahresgehalt Partner #1 als Schieberegler">
           <span class="hint">Bruttoarbeitslohn pro Jahr in € · Regler zum schnellen Variieren</span>
+          <span class="optimum-hint" id="gross1OptimumHint" data-optimum="p1"></span>
         </div>
         <div>
           <label for="gross2">Bruttojahresgehalt – Partner #2</label>
           <input id="gross2" type="number" inputmode="decimal">
           <input id="gross2Slider" type="range" data-target="gross2" aria-label="Bruttojahresgehalt Partner #2 als Schieberegler">
           <span class="hint">Bruttoarbeitslohn pro Jahr in € · Regler zum schnellen Variieren</span>
+          <span class="optimum-hint" id="gross2OptimumHint" data-optimum="p2"></span>
         </div>
       </div>
       <div class="input-row one">
@@ -316,6 +336,118 @@
     </div>
   </section>
 
+  <section class="card" id="optimizationCard" aria-labelledby="optimization-title">
+    <h2 id="optimization-title">Steueroptimierung im Abfindungsjahr</h2>
+    <p class="small">Die Ausgaben und Verluste senken das zu versteuernde Einkommen und werden gleichzeitig als Ausgabe vom Netto abgezogen. Arbeitslosengeld ist eine steuerfreie Einnahme, erhöht aber über den Progressionsvorbehalt den Steuersatz auf die übrigen Einkünfte. Alle Werte sind Jahresbeträge; Eingaben über dem jeweiligen Höchstbetrag werden automatisch begrenzt.</p>
+    <div class="input-row two">
+      <div>
+        <label for="weiterbildung1">Weiterbildung – Partner #1 (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="weiterbildung1" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Fortbildung, Seminare, Fachliteratur: Werbungskosten ohne festen Höchstbetrag</span>
+      </div>
+      <div>
+        <label for="weiterbildung2">Weiterbildung – Partner #2 (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="weiterbildung2" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Die erste Berufsausbildung ist hingegen Sonderausgabe bis 6.000 €</span>
+      </div>
+    </div>
+    <div class="input-row two">
+      <div>
+        <label for="werbungskosten1">Andere Werbungskosten – Partner #1 (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="werbungskosten1" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Zusätzlich zum Arbeitnehmer-Pauschbetrag, z. B. Arbeitsmittel, Fahrtkosten, Bewerbung</span>
+      </div>
+      <div>
+        <label for="werbungskosten2">Andere Werbungskosten – Partner #2 (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="werbungskosten2" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Steuerberatung, Gewerkschaftsbeitrag und Kontoführung können ebenfalls dazu zählen</span>
+      </div>
+    </div>
+    <div class="input-row two">
+      <div>
+        <label for="kvPrepayment1">KV-Vorauszahlung – Partner #1 (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="kvPrepayment1" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Höchstens das Dreifache der KV/PV-Beiträge des laufenden Jahres (§ 10 Abs. 1 Nr. 3 EStG)</span>
+      </div>
+      <div>
+        <label for="kvPrepayment2">KV-Vorauszahlung – Partner #2 (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="kvPrepayment2" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Bei PKV meist bis zu fünf Jahre möglich; steuerlich wirken hier maximal drei Jahresbeiträge</span>
+      </div>
+    </div>
+    <div class="input-row two">
+      <div>
+        <label for="rvExtra1">Zusätzliche Rentenversicherung – Partner #1 (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="rvExtra1" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Freiwillige Beiträge oder Rürup bis zum Höchstbeitrag abzüglich schon gezahlter Beiträge</span>
+      </div>
+      <div>
+        <label for="rvExtra2">Zusätzliche Rentenversicherung – Partner #2 (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="rvExtra2" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Nachzahlungen für frühere Jahre werden im Jahr der Zahlung berücksichtigt</span>
+      </div>
+    </div>
+    <div class="input-row two">
+      <div>
+        <label for="alg1">Arbeitslosengeld – Partner #1 (€)<span class="flow-badge income">+ Einnahme</span></label>
+        <input id="alg1" class="flow-income" type="number" inputmode="decimal">
+        <span class="hint">Lohnersatzleistung: steuerfrei, aber Progressionsvorbehalt nach § 32b EStG</span>
+      </div>
+      <div>
+        <label for="alg2">Arbeitslosengeld – Partner #2 (€)<span class="flow-badge income">+ Einnahme</span></label>
+        <input id="alg2" class="flow-income" type="number" inputmode="decimal">
+        <span class="hint">Der Arbeitnehmer-Pauschbetrag wird vom Betrag abgezogen, soweit er nicht schon genutzt wurde</span>
+      </div>
+    </div>
+    <div class="input-row">
+      <div>
+        <label for="donations">Spenden und Mitgliedsbeiträge (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="donations" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Höchstens 20 % des Gesamtbetrags der Einkünfte; Übertragung in Folgejahre möglich</span>
+      </div>
+      <div>
+        <label for="rentalLoss">Verluste aus Vermietung und Verpachtung (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="rentalLoss" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Bei Gewinnerzielungsabsicht grundsätzlich unbegrenzt mit anderen Einkünften verrechenbar</span>
+      </div>
+      <div>
+        <label for="businessLoss">Gewerbliche Verluste / Investitionen (€)<span class="flow-badge outgoing">− Ausgabe</span></label>
+        <input id="businessLoss" class="flow-outgoing" type="number" inputmode="decimal">
+        <span class="hint">Begrenzt auf 10.000 € bzw. 20.000 €; Solar-Erlöse bis 30 kWp sind oft steuerfrei</span>
+      </div>
+    </div>
+    <div id="optimizationLimits" class="callout"></div>
+    <details>
+      <summary>Hinweise, Höchstbeträge und Beispiele im Einzelnen</summary>
+      <div class="grid" style="margin-top:12px">
+        <div>
+          <h3>Weiterbildung und andere Werbungskosten</h3>
+          <p class="small">Fortbildungskosten, die mit der aktuellen oder künftigen Tätigkeit zusammenhängen, sind Werbungskosten und damit unbegrenzt abziehbar. Beispiele: Seminar 2.500 €, Fachbücher 300 €, Laptop 1.500 €, Fahrtkosten und Bewerbungsmappe. Der Arbeitnehmer-Pauschbetrag ist bereits im Modell enthalten; nur darüber hinausgehende Kosten hier eintragen. Für eine erste Berufsausbildung ohne bestehendes Arbeitsverhältnis gelten 6.000 € als Sonderausgaben.</p>
+        </div>
+        <div>
+          <h3>Krankenkasse vorauszahlen</h3>
+          <p class="small">Nach § 10 Abs. 1 Nr. 3 EStG werden Beiträge für künftige Beitragsjahre im Zahlungsjahr nur bis zum Dreifachen der Beiträge des laufenden Jahres angesetzt. Beispiel: 4.000 € KV/PV im Jahr → höchstens 12.000 € Vorauszahlung wirken in diesem Jahr. PKV-Verträge erlauben häufig fünf Jahre Vorauszahlung; steuerlich zählt hier trotzdem nur der Dreifachbetrag. Bei GKV mit sehr geringem Einkommen ist der Mindestbeitrag gesondert zu prüfen.</p>
+        </div>
+        <div>
+          <h3>Rentenversicherung und Rürup</h3>
+          <p class="small">Pflichtbeiträge sind bereits in der Vorsorgepauschale enthalten. Zusätzliche freiwillige Beiträge oder Rürup-Verträge sind Sonderausgaben, seit 2023 zu 100 %. Der Höchstbetrag ist der knappschaftliche Höchstbeitrag (hier näherungsweise 24,7 % der BBG RV), bei Zusammenveranlagung verdoppelt. Beiträge eines Ehegatten können den gemeinsamen Höchstbetrag nutzen. Beispiel: 20.000 € Einzahlung senken bei 42 % Grenzsteuer rund 8.400 € Steuer, kosten aber 20.000 € Liquidität.</p>
+        </div>
+        <div>
+          <h3>Spenden</h3>
+          <p class="small">Abziehbar bis 20 % des Gesamtbetrags der Einkünfte (§ 10b EStG). Beispiel: 150.000 € Einkünfte → maximal 30.000 € Spende im Jahr. Übersteigende Beträge können in die Folgejahre übertragen werden. Parteispenden haben gesonderte Regeln (Steuerermäßigung bis 1.650 € bzw. 3.300 € plus Sonderausgaben). Zuwendungen an eine Stiftung können zusätzlich bis 1 Mio. € bzw. 2 Mio. € über zehn Jahre begünstigt sein.</p>
+        </div>
+        <div>
+          <h3>Vermietung, Investitionen, Solar</h3>
+          <p class="small">Verluste aus Vermietung und Verpachtung (§ 21 EStG) mindern das zvE grundsätzlich unbegrenzt, wenn eine Gewinnerzielungsabsicht vorliegt. Gewerbliche Verluste aus Personengesellschaften oder Investitionen sind oft nur bis 10.000 € (Einzel) bzw. 20.000 € (Zusammen) mit anderen Einkünften verrechenbar; modellhafte Steuerstundungen sind nach § 15b EStG ganz ausgeschlossen. Photovoltaikanlagen bis 30 kWp (bzw. 100 kWp bei Einfamilienhäusern) sind seit 2023 oft steuerfrei – dann gibt es auch keinen Verlustabzug.</p>
+        </div>
+        <div>
+          <h3>Arbeitslosengeld</h3>
+          <p class="small">Arbeitslosengeld, Krankengeld, Elterngeld und ähnliche Lohnersatzleistungen sind steuerfrei, unterliegen aber dem Progressionsvorbehalt (§ 32b EStG). Sie erhöhen nicht das zvE, wohl aber den Steuersatz auf die übrigen Einkünfte. Beispiel: 20.000 € Alg bei 80.000 € Gehalt führen rechnerisch zu einem Tarif auf 100.000 €; die Steuer wird anschließend auf die 80.000 € umgerechnet. Ohne Gehalt wird der ungenutzte Arbeitnehmer-Pauschbetrag vom Alg abgezogen.</p>
+        </div>
+      </div>
+    </details>
+  </section>
+
   <section class="card" id="results" hidden aria-live="polite">
     <h2>Ergebnisse <span id="yearBadge" class="badge"></span></h2>
     <div id="summary"></div>
@@ -335,19 +467,22 @@
     <h2>Diagramme</h2>
     <div class="chart" id="netBruttoChart">
       <h3>Bestes Netto/Jahr in Abhängigkeit von beiden Gehältern</h3>
-      <p>Für jedes Gehalts-Paar werden alle vier Fälle geprüft: Einzel- und Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung. Farbe und Skala zeigen das <em>beste</em> Netto/Jahr inklusive Kindergeld und Abfindung in EUR. Die Nettoquote ist dieses Netto geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; die gesonderte „Quote vs. ohne Gehalt“ sinkt im unteren Gehaltsbereich unter 100 % und steigt nach dem Break-even wieder darüber. Schraffierte Zellen gehören zur Einzelveranlagung, glatte Zellen zur Zusammenveranlagung; eine feine hellrote gestrichelte Linie markiert die Grenze zwischen den beiden Bereichen. Höher = mehr Netto. Die Gehaltsregler bleiben bei 0–150.000 €; größere Gehälter können im Zahlenfeld eingegeben werden. Beide Diagrammachsen zoomen dann automatisch in groben Schritten bis maximal 10 Mio. € und fallen beim Absenken wieder zurück. Am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0; der Tooltip nennt alle vier Netto-Werte und den Vorteil. Die violette gestrichelte Linie markiert den Break-even (bestes Netto mit = ohne Gehalt), die rote gepunktete Linie den Worst case (geringstes bestes Netto) für jedes Gehalt von Partner #2.</p>
+      <p>Für jedes Gehalts-Paar werden alle vier Fälle geprüft: Einzel- und Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung. Farbe und Skala zeigen das <em>beste</em> Netto/Jahr inklusive Kindergeld und Abfindung in EUR. Die Nettoquote ist dieses Netto geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; die gesonderte „Quote vs. ohne Gehalt“ sinkt im unteren Gehaltsbereich unter 100 % und steigt nach dem Break-even wieder darüber. Schraffierte Zellen gehören zur Einzelveranlagung, glatte Zellen zur Zusammenveranlagung; eine feine hellrote gestrichelte Linie markiert die Grenze zwischen den beiden Bereichen. Höher = mehr Netto. Das höchste Netto je Brutto-plus-Abfindung und die zugehörige Nettoquote stehen unter jedem Gehaltsregler. Die Gehaltsregler bleiben bei 0–150.000 €; größere Gehälter können im Zahlenfeld eingegeben werden. Beide Diagrammachsen zoomen dann automatisch in groben Schritten bis maximal 10 Mio. € und fallen beim Absenken wieder zurück. Am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0; der Tooltip nennt alle vier Netto-Werte und den Vorteil. Die violette gestrichelte Linie markiert den Break-even (bestes Netto mit = ohne Gehalt), die rote gepunktete Linie den Worst case (geringstes bestes Netto) für jedes Gehalt von Partner #2.</p>
       <div id="heatReadout" class="heat-readout"></div>
       <h4>Absolutes Netto</h4>
       <p>Die Kurve variiert auf der X-Achse das Gehalt von Partner #1. Über die vier Regler werden beide Gehälter und beide Abfindungen eingestellt: Der Regler für Partner #2 berechnet die Kurve neu, ohne dass Partner #2 selbst auf der X-Achse wandert; beide Abfindungen verändern das Netto-Niveau. Die Y-Achse zeigt das beste Haushaltsnetto pro Jahr in EUR: Bei niedrigen Gehältern im Abfindungsjahr sinkt es erst und steigt ab dem Break-even wieder. Der Punkt folgt den Reglern; rot schattiert ist der Bereich, in dem Arbeiten das Netto senkt. Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün.</p>
+      <p class="small">Ziehe im Diagramm ein Rechteck, um X- und Y-Grenzen festzulegen; die Kurve wird dann mit diesen Achsengrenzen neu gezeichnet. „↺ Zoom aufheben“ stellt die ursprünglichen Grenzen wieder her.</p>
       <div id="netTrendSvg"></div>
       <div class="chart-controls surface-controls">
         <div>
           <label for="chartGross1Slider">Brutto Partner #1 <output id="chartGross1Value"></output></label>
           <input id="chartGross1Slider" type="range" data-target="gross1" aria-label="Brutto Partner #1 im Diagramm Absolutes Netto">
+          <span class="optimum-hint" data-optimum="p1"></span>
         </div>
         <div>
           <label for="chartGross2Slider">Brutto Partner #2 <output id="chartGross2Value"></output></label>
           <input id="chartGross2Slider" type="range" data-target="gross2" aria-label="Brutto Partner #2 im Diagramm Absolutes Netto">
+          <span class="optimum-hint" data-optimum="p2"></span>
         </div>
         <div>
           <label for="chartAbf1Slider">Abfindung Partner #1 <output id="chartAbf1Value"></output></label>
@@ -361,15 +496,17 @@
       <p class="small">Die vier Regler stehen zwischen 2D-Kurve und Heatmap und wirken auf beide Diagramme sowie auf alle Tabellen; Abfindungen sind einmalige Zahlungen.</p>
       <div id="netBruttoSvg"></div>
       <h4>3D-Fläche: bestes Netto/Jahr über beiden Gehältern</h4>
-      <p>Dieselbe Information wie in der Heatmap, diesmal als Fläche: Höhe und Farbe zeigen das beste Netto/Jahr; die Nettoquote und der Vergleich „vs. ohne Gehalt“ stehen im Tooltip. Die violette Linie mit der Aufschrift „P2 …“ zeigt das beste Netto über alle Gehälter von Partner #1 beim eingestellten Gehalt von Partner #2. Ebenfalls violett, aber mit „Break-even“ beschriftet, ist die Linie, an der das beste Netto mit Gehalt wieder dem ohne Gehalt entspricht; die rot gepunktete Linie „Worst case“ folgt dem geringsten besten Netto. Beide Linien laufen über alle Gehälter von Partner #2. Das grüne Symbol markiert die günstigste Gehaltskombination im aktuellen Raster; das weiße Symbol zeigt die aktuellen Eingaben. Mit den vier Reglern direkt unter dieser Überschrift lassen sich beide Gehälter und beide Abfindungen für die Fläche einstellen; sie sind mit den Eingabefeldern und den übrigen Diagramm-Reglern gekoppelt.</p>
+      <p>Dieselbe Information wie in der Heatmap, diesmal als Fläche: Höhe und Farbe zeigen das beste Netto/Jahr; die Nettoquote und der Vergleich „vs. ohne Gehalt“ stehen im Tooltip. Die violette Linie mit der Aufschrift „P2 …“ zeigt das beste Netto über alle Gehälter von Partner #1 beim eingestellten Gehalt von Partner #2. Ebenfalls violett, aber mit „Break-even“ beschriftet, ist die Linie, an der das beste Netto mit Gehalt wieder dem ohne Gehalt entspricht; die rot gepunktete Linie „Worst case“ folgt dem geringsten besten Netto. Beide Linien laufen über alle Gehälter von Partner #2. Die Optimalwerte je Brutto-plus-Abfindung stehen unter jedem Gehaltsregler. Das grüne Symbol markiert die günstigste Gehaltskombination im aktuellen Raster; das weiße Symbol zeigt die aktuellen Eingaben. Mit den vier Reglern direkt unter dieser Überschrift lassen sich beide Gehälter und beide Abfindungen für die Fläche einstellen; sie sind mit den Eingabefeldern und den übrigen Diagramm-Reglern gekoppelt.</p>
       <div class="chart-controls surface-controls">
         <div>
           <label for="surfaceGross1Slider">Brutto Partner #1 <output id="surfaceGross1Value"></output></label>
           <input id="surfaceGross1Slider" type="range" data-target="gross1" aria-label="Brutto Partner #1 in der 3D-Fläche">
+          <span class="optimum-hint" data-optimum="p1"></span>
         </div>
         <div>
           <label for="surfaceGross2Slider">Brutto Partner #2 <output id="surfaceGross2Value"></output></label>
           <input id="surfaceGross2Slider" type="range" data-target="gross2" aria-label="Brutto Partner #2 in der 3D-Fläche">
+          <span class="optimum-hint" data-optimum="p2"></span>
         </div>
         <div>
           <label for="surfaceAbf1Slider">Abfindung Partner #1 <output id="surfaceAbf1Value"></output></label>
@@ -386,14 +523,17 @@
     <div class="chart" id="abfWorkChart">
       <h3>Lohnt sich Arbeiten im Abfindungsjahr?</h3>
       <p>Vier Netto-Kurven: Einzel- und Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung, alle mit Gehalt von Partner #1 (mit Fünftel durchgezogen, ohne strichpunktiert). Dazu zwei horizontale gestrichelte Referenzlinien für dieselben Veranlagungen <em>ohne</em> Gehalt von Partner #1, nur mit Abfindung (jeweils die bessere Fünftel-Variante). Der rote Bereich markiert bis zum Break-even Gehälter, bei denen Arbeiten das Netto <em>senkt</em>. Violett = Break-even (bestes Netto mit = ohne Gehalt), rot gestrichelt = Worst case (bestes Netto am niedrigsten); die horizontale rote Linie markiert dessen Netto-Niveau. Schwarze gestrichelte Linien verbinden die aktuellen „mit Gehalt“-Punkte mit der Y-Achse und wandern mit dem Gehalt von Partner #1. Das Gehalt von Partner #2 wird über den eigenen Regler eingestellt und bleibt für die Kurven konstant. Break-even, Worst case und Differenz stehen im Text auf eigenen Zeilen; der Vergleich des aktuellen Netto mit „ohne Gehalt“ ist als wichtigste Aussage farbig hervorgehoben.</p>
+      <p class="small">Ziehe im Diagramm ein Rechteck, um X- und Y-Grenzen festzulegen; die Kurven werden dann mit diesen Achsengrenzen neu gezeichnet. „↺ Zoom aufheben“ stellt die ursprünglichen Grenzen wieder her.</p>
       <div class="chart-controls">
         <div>
           <label for="abfWorkSlider">Brutto Partner #1 im Abfindungsjahr <output id="abfWorkValue"></output></label>
           <input id="abfWorkSlider" type="range" data-target="gross1" aria-label="Brutto Partner #1 im Abfindungsjahr">
+          <span class="optimum-hint" data-optimum="p1"></span>
         </div>
         <div>
           <label for="abfWork2Slider">Brutto Partner #2 im Abfindungsjahr <output id="abfWork2Value"></output></label>
           <input id="abfWork2Slider" type="range" data-target="gross2" aria-label="Brutto Partner #2 im Abfindungsjahr">
+          <span class="optimum-hint" data-optimum="p2"></span>
         </div>
         <div>
           <label for="abfWorkAbfSlider">Abfindung Partner #1 <output id="abfWorkAbfValue"></output></label>
@@ -430,7 +570,7 @@
 
 <script>
 /* CONFIG_START */
-const CONFIG = {"general":{"months_per_year":12,"percent_divisor":100,"half_percent_divisor":200,"table_step":1000,"marginal_half_range":500,"theme":"hell"},"defaults":{"year":2026,"gross1":50000,"gross2":50000,"children":1,"state":"NW","insurance1":false,"insurance2":false,"church1":false,"church2":false,"child_under_25":true,"abfindung1":100000,"abfindung2":0,"kv_zusatz":2.9,"pkv_kv":0,"pkv_pv":0,"pkv_child":0,"pkv_children":0,"pkv_ag":0},"quote_example":{"gross1":50000,"gross2":60000,"abfindung1":200000},"limits":{"gross":{"number_min":0,"number_max":10000000,"number_step":1000,"slider_min":0,"slider_max":150000,"slider_step":1000,"chart_axis_max":150000,"chart_step":2500,"zoom_steps":[150000,250000,500000,1000000,2000000,5000000,10000000],"zoom_expand_at":0.9,"zoom_shrink_at":0.5},"abfindung":{"number_min":0,"number_max":100000000,"number_step":1000,"slider_min":0,"slider_max":500000,"slider_step":1000,"work_slider_step":10000},"children":{"min":0,"max":20,"step":1},"kv_zusatz":{"min":0,"max":10,"step":0.1},"pkv_amount":{"min":0,"max":100000,"step":0.01},"pkv_children":{"min":0,"max":20,"step":1}},"social":{"pv_employer":1.8,"pv_employer_saxony":1.3},"params":{"2026":{"label":2026,"draft":false,"bbgRV":101400,"bbgKVPV":69750,"jaeg":77400,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1230,"sonderPausch":36,"kfb":9756,"kindergeldMonth":259,"grundfreibetrag":12348,"top_rate":45,"table_files":"tabelle/grundtabelle-2026-ueberblick-klein.pdf / tabelle/splittingtabelle-2026-ueberblick-klein.pdf","source":"endgültige Werte (SV-Rechengrößenverordnung 2026; EStG 2026)"},"2027":{"label":2027,"draft":true,"bbgRV":106200,"bbgKVPV":76500,"jaeg":84150,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1430,"sonderPausch":36,"kfb":10056,"kindergeldMonth":267,"grundfreibetrag":12564,"top_rate":47,"table_files":"tabelle/grundtabelle-2027-ueberblick-klein.pdf / tabelle/splittingtabelle-2027-ueberblick-klein.pdf","source":"Regierungsentwurf EStReformG 2027 (BT-Drs. 21/8235) und voraussichtliche SV-Werte 2027 (AOK; Stand 23.11.2026)"}},"states":[["BW","Baden-Württemberg",8,false],["BY","Bayern",8,false],["BE","Berlin",9,false],["BB","Brandenburg",9,false],["HB","Bremen",9,false],["HH","Hamburg",9,false],["HE","Hessen",9,false],["MV","Mecklenburg-Vorpommern",9,false],["NI","Niedersachsen",9,false],["NW","Nordrhein-Westfalen",9,false],["RP","Rheinland-Pfalz",9,false],["SL","Saarland",9,false],["SN","Sachsen",9,true],["ST","Sachsen-Anhalt",9,false],["SH","Schleswig-Holstein",9,false],["TH","Thüringen",9,false]],"colors":{"sv":"#0284c7","est":"#ea580c","solzu":"#facc15","kist":"#a855f7","net":"#059669","kg":"#6ee7b7","individual":"#2563eb","joint":"#0f766e","winner_individual":"#ea580c","winner_joint":"#0f766e","winner_border":"#fca5a5","grid":"#e2e8f0","axis":"#64748b","crosshair":"#0f172a","guide":"#94a3b8","guide_text":"#475569","break_even":"#7c3aed","worst_case":"#b91c1c","shade":"rgba(185,28,28,0.10)","heat_stops":[[224,242,254],[125,211,252],[12,74,110]],"halo":"#fff","point":"#fff"},"colors_dark":{"sv":"#38bdf8","est":"#fb923c","solzu":"#facc15","kist":"#c084fc","net":"#34d399","kg":"#6ee7b7","individual":"#60a5fa","joint":"#2dd4bf","winner_individual":"#fb923c","winner_joint":"#2dd4bf","winner_border":"#fca5a5","grid":"#334155","axis":"#94a3b8","crosshair":"#f8fafc","guide":"#64748b","guide_text":"#cbd5e1","break_even":"#c084fc","worst_case":"#f87171","shade":"rgba(248,113,113,0.16)","heat_stops":[[8,47,73],[14,165,233],[190,242,100]],"halo":"#0b1020","point":"#0b1020"},"charts":{"common":{"tick_fractions":[0,0.25,0.5,0.75,1],"marginal_y_ticks":[0,10,20,30,40,50]},"composition":{"width":940,"height":360,"x0":78,"y0":36,"plot_width":757,"plot_height":254,"bar_width":64},"abf":{"width":940,"height":330,"x0":210,"y0":36,"plot_width":620,"plot_height":234,"bar_height":15},"netBrutto":{"width":940,"height":430,"x0":78,"y0":40,"plot_width":740,"plot_height":330,"nx":18,"ny":14,"axis_max":150000,"pad_ratio":0.08,"pad_min_eur":10000,"hatch_spacing":5,"hatch_opacity":0.3,"winner_border_width":1,"winner_border_dash":"3 3"},"netBrutto3d":{"width":940,"height":430,"x0":120,"y0":355,"x_span":590,"y_depth":105,"y_skew":0.55,"z_height":195},"netTrend":{"width":940,"height":190,"x0":82,"y0":26,"plot_width":720,"plot_height":110,"y_round":10000,"y_pad":5000},"abfWork":{"width":940,"height":390,"x0":82,"y0":42,"plot_width":720,"plot_height":285,"x_max":150000,"step":2500,"y_round":10000,"y_pad":10000,"bad_tolerance":0.5},"comparison":{"width":940,"height":330,"x0":175,"y0":35,"plot_width":675,"plot_height":235,"bar_height":18},"progression":{"width":940,"height":340,"x0":80,"y0":30,"plot_width":835,"plot_height":245,"points":41,"factor":1.5,"axis_round":50000,"axis_min":200000,"x_ticks":5,"y_min_factor":0.96,"y_max_factor":1.03},"marginal":{"width":940,"height":380,"x0":70,"y0":25,"plot_width":845,"plot_height":220,"x_min":12000,"x_max":600000,"y_max":50,"step":2000,"x_ticks":7}},"notes":{"year_hint":"2027 ist noch nicht verabschiedet – siehe Hinweise.","draft_warning":"2027 basiert auf dem noch nicht verabschiedeten Regierungsentwurf vom 02.09.2026 (Stand 06.11.2026). Alle Angaben ohne Gewähr; keine Steuerberatung. Für eine verbindliche Berechnung bitte Steuerberatung hinzuziehen.","charts_note":"Die Heatmap zeigt das beste Netto/Jahr in Abhängigkeit von beiden Gehältern: Für jedes Gehalts-Paar werden alle vier Fälle geprüft – Einzel- oder Zusammenveranlagung jeweils mit und ohne Fünftelregelung. Farbe und 3D-Höhe kodieren das beste Haushaltsnetto in EUR; die Skala heißt „Bestes Netto/Jahr“. Die Nettoquote ist das beste Netto inklusive Kindergeld geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; ohne Abzüge wäre sie 100 %. Zusätzlich zeigt die „Quote vs. ohne Gehalt“ das Netto im Verhältnis zum besten Netto bei Gehalt 0 von Partner #1 und folgt der U-Form des Haushaltsnettos. Eine 100-%-Grenze gibt es für den EUR-Wert nicht. Schraffiert = Einzelveranlagung, glatt = Zusammenveranlagung, die feine hellrote gestrichelte Linie markiert die Grenze; violett gestrichelt = Break-even, rot gepunktet = Worst case. Die Gehaltsregler bleiben bei 0–150.000 € und die Abfindungsregler bei 0–500.000 €; größere Beträge können in den Zahlenfeldern eingegeben werden. Beide Diagrammachsen zoomen automatisch mit: Sie beginnen bei 0 bis 150.000 €, erweitern sich in groben Schritten bis maximal 10 Mio. €, sobald ein Gehalt über 90 % der aktuellen Skala liegt, und zoomen zurück, wenn beide Gehälter unter 50 % fallen; am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0. Die Zahlenfelder für Gehalt und Abfindung verwenden 1.000er-Schritte. Die 3D-Fläche zeigt dieselben Zellen als Höhe und Farbe; eine violette Linie mit „P2 …“ folgt dem eingestellten Gehalt von Partner #2 über alle Gehälter von Partner #1; violett mit „Break-even“ und rot gepunktet mit „Worst case“ sind die entsprechenden Linien über alle Gehälter von Partner #2; grün markiert die günstigste Gehaltskombination, weiß die aktuellen Eingaben. Die Kurve „Absolutes Netto“ variiert das Gehalt von Partner #1 bei eingestelltem Gehalt von Partner #2; ihre Y-Achse zeigt das beste Netto/Jahr in EUR. Im Diagramm „Lohnt sich Arbeiten im Abfindungsjahr?“ bleibt das Gehalt von Partner #2 für die Kurven konstant; eine horizontale rote Linie markiert das Netto-Niveau des Worst case. Break-even, Worst case und Differenz stehen auf eigenen Zeilen; als wichtigste Aussage ist der Vergleich des aktuellen Netto mit „ohne Gehalt“ farbig hervorgehoben (rot bei weniger Netto, grün bei mehr Netto). Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün. Im Grenzsteuersatz-Diagramm markieren gestrichelte Linien den Beginn nach dem Grundfreibetrag, die Zonenwechsel bei etwa 24 % und 42 % sowie den Eintritt in den Spitzensteuersatz; die X-Achse reicht bis 600.000 € zvE; der Grenzsteuersatz steht mit „G“ und „S“ auf der Y-Achse und der zvE kurz in drei versetzten Zeilen unter der X-Achse. Die dunklen gestrichelten Linien und Punkte mit „Aktuell ...“ bezeichnen die aktuellen Werte beider Tarife; ihre zvE-Werte sind unter der Achse fett. Die Abfindung wird als echte Entschädigung ohne Sozialabgaben behandelt; Lohn-, Urlaubs- oder Freistellungszahlungen wären anders zu bewerten."}};
+const CONFIG = {"general":{"months_per_year":12,"percent_divisor":100,"half_percent_divisor":200,"table_step":1000,"marginal_half_range":500,"theme":"dark","show_optimum_curves":false},"defaults":{"year":2026,"gross1":50000,"gross2":50000,"children":1,"state":"NW","insurance1":false,"insurance2":false,"church1":false,"church2":false,"child_under_25":true,"abfindung1":100000,"abfindung2":0,"kv_zusatz":2.9,"pkv_kv":0,"pkv_pv":0,"pkv_child":0,"pkv_children":0,"pkv_ag":0,"weiterbildung1":0,"weiterbildung2":0,"werbungskosten1":0,"werbungskosten2":0,"kvPrepayment1":0,"kvPrepayment2":0,"rvExtra1":0,"rvExtra2":0,"alg1":0,"alg2":0,"donations":0,"rentalLoss":0,"businessLoss":0},"quote_example":{"gross1":50000,"gross2":60000,"abfindung1":200000},"limits":{"gross":{"number_min":-1000000,"number_max":10000000,"number_step":1000,"plot_min":-100000,"slider_min":0,"slider_max":150000,"slider_step":1000,"chart_axis_max":150000,"chart_step":2500,"zoom_steps":[150000,250000,500000,1000000,2000000,5000000,10000000],"zoom_expand_at":0.9,"zoom_shrink_at":0.5},"abfindung":{"number_min":0,"number_max":100000000,"number_step":1000,"slider_min":0,"slider_max":500000,"slider_step":1000,"work_slider_step":10000},"optimization":{"min":0,"max":10000000,"step":100},"children":{"min":0,"max":20,"step":1},"kv_zusatz":{"min":0,"max":10,"step":0.1},"pkv_amount":{"min":0,"max":100000,"step":0.01},"pkv_children":{"min":0,"max":20,"step":1}},"social":{"pv_employer":1.8,"pv_employer_saxony":1.3},"params":{"2026":{"label":2026,"draft":false,"bbgRV":101400,"bbgKVPV":69750,"jaeg":77400,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1230,"sonderPausch":36,"kfb":9756,"kindergeldMonth":259,"grundfreibetrag":12348,"top_rate":45,"rvHoechstFactor":24.7,"donationRate":20,"kvPrepaymentFactor":3,"businessLossCapSingle":10000,"businessLossCapJoint":20000,"educationCap":6000,"table_files":"tabelle/grundtabelle-2026-ueberblick-klein.pdf / tabelle/splittingtabelle-2026-ueberblick-klein.pdf","source":"endgültige Werte (SV-Rechengrößenverordnung 2026; EStG 2026)"},"2027":{"label":2027,"draft":true,"bbgRV":106200,"bbgKVPV":76500,"jaeg":84150,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1430,"sonderPausch":36,"kfb":10056,"kindergeldMonth":267,"grundfreibetrag":12564,"top_rate":47,"rvHoechstFactor":24.7,"donationRate":20,"kvPrepaymentFactor":3,"businessLossCapSingle":10000,"businessLossCapJoint":20000,"educationCap":6000,"table_files":"tabelle/grundtabelle-2027-ueberblick-klein.pdf / tabelle/splittingtabelle-2027-ueberblick-klein.pdf","source":"Regierungsentwurf EStReformG 2027 (BT-Drs. 21/8235) und voraussichtliche SV-Werte 2027 (AOK; Stand 23.11.2026)"}},"states":[["BW","Baden-Württemberg",8,false],["BY","Bayern",8,false],["BE","Berlin",9,false],["BB","Brandenburg",9,false],["HB","Bremen",9,false],["HH","Hamburg",9,false],["HE","Hessen",9,false],["MV","Mecklenburg-Vorpommern",9,false],["NI","Niedersachsen",9,false],["NW","Nordrhein-Westfalen",9,false],["RP","Rheinland-Pfalz",9,false],["SL","Saarland",9,false],["SN","Sachsen",9,true],["ST","Sachsen-Anhalt",9,false],["SH","Schleswig-Holstein",9,false],["TH","Thüringen",9,false]],"colors":{"sv":"#0284c7","est":"#ea580c","solzu":"#facc15","kist":"#a855f7","net":"#059669","kg":"#6ee7b7","individual":"#2563eb","joint":"#0f766e","winner_individual":"#ea580c","winner_joint":"#0f766e","winner_border":"#fca5a5","grid":"#e2e8f0","axis":"#64748b","crosshair":"#0f172a","guide":"#94a3b8","guide_text":"#475569","break_even":"#7c3aed","worst_case":"#b91c1c","opt_g1":"#f59e0b","opt_g2":"#db2777","shade":"rgba(185,28,28,0.10)","heat_stops":[[224,242,254],[125,211,252],[12,74,110]],"halo":"#fff","point":"#fff"},"colors_dark":{"sv":"#38bdf8","est":"#fb923c","solzu":"#facc15","kist":"#c084fc","net":"#34d399","kg":"#6ee7b7","individual":"#60a5fa","joint":"#2dd4bf","winner_individual":"#fb923c","winner_joint":"#2dd4bf","winner_border":"#fca5a5","grid":"#334155","axis":"#94a3b8","crosshair":"#f8fafc","guide":"#64748b","guide_text":"#cbd5e1","break_even":"#c084fc","worst_case":"#f87171","opt_g1":"#fbbf24","opt_g2":"#f472b6","shade":"rgba(248,113,113,0.16)","heat_stops":[[8,47,73],[14,165,233],[190,242,100]],"halo":"#0b1020","point":"#0b1020"},"charts":{"common":{"tick_fractions":[0,0.25,0.5,0.75,1],"marginal_y_ticks":[0,10,20,30,40,50]},"composition":{"width":940,"height":360,"x0":78,"y0":36,"plot_width":757,"plot_height":254,"bar_width":64},"abf":{"width":940,"height":330,"x0":210,"y0":36,"plot_width":620,"plot_height":234,"bar_height":15},"netBrutto":{"width":940,"height":430,"x0":78,"y0":40,"plot_width":740,"plot_height":330,"nx":18,"ny":14,"axis_max":150000,"pad_ratio":0.08,"pad_min_eur":10000,"hatch_spacing":5,"hatch_opacity":0.3,"winner_border_width":1,"winner_border_dash":"3 3"},"netBrutto3d":{"width":940,"height":430,"x0":120,"y0":355,"x_span":590,"y_depth":105,"y_skew":0.55,"z_height":195},"netTrend":{"width":940,"height":190,"x0":82,"y0":26,"plot_width":720,"plot_height":110,"y_round":10000,"y_pad":5000},"abfWork":{"width":940,"height":390,"x0":82,"y0":42,"plot_width":720,"plot_height":285,"x_max":150000,"step":2500,"y_round":10000,"y_pad":10000,"bad_tolerance":0.5},"comparison":{"width":940,"height":330,"x0":175,"y0":35,"plot_width":675,"plot_height":235,"bar_height":18},"progression":{"width":940,"height":340,"x0":80,"y0":30,"plot_width":835,"plot_height":245,"points":41,"factor":1.5,"axis_round":50000,"axis_min":200000,"x_ticks":5,"y_min_factor":0.96,"y_max_factor":1.03},"marginal":{"width":940,"height":380,"x0":70,"y0":25,"plot_width":845,"plot_height":220,"x_min":12000,"x_max":600000,"y_max":50,"step":2000,"x_ticks":7}},"notes":{"year_hint":"2027 ist noch nicht verabschiedet – siehe Hinweise.","draft_warning":"2027 basiert auf dem noch nicht verabschiedeten Regierungsentwurf vom 02.09.2026 (Stand 06.11.2026). Alle Angaben ohne Gewähr; keine Steuerberatung. Für eine verbindliche Berechnung bitte Steuerberatung hinzuziehen.","negative_charts_note":"Die Gehaltsachsen der Diagramme beginnen bei -100.000 € und erweitern sich bei stärker negativen Gehältern, damit negative Einkünfte und negative Netto-Werte im Abfindungsjahr sichtbar bleiben. Negative Gehälter können im Zahlenfeld eingegeben werden; die Regler bleiben bei 0–150.000 €. Auch die Netto-Skalen und die Y-Achsen zeigen negative Beträge ohne Kappung.","charts_note":"Die Heatmap zeigt das beste Netto/Jahr in Abhängigkeit von beiden Gehältern: Für jedes Gehalts-Paar werden alle vier Fälle geprüft – Einzel- oder Zusammenveranlagung jeweils mit und ohne Fünftelregelung. Farbe und 3D-Höhe kodieren das beste Haushaltsnetto in EUR; die Skala heißt „Bestes Netto/Jahr“. Die Nettoquote ist das beste Netto inklusive Kindergeld geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; ohne Abzüge wäre sie 100 %. Zusätzlich zeigt die „Quote vs. ohne Gehalt“ das Netto im Verhältnis zum besten Netto bei Gehalt 0 von Partner #1 und folgt der U-Form des Haushaltsnettos. Eine 100-%-Grenze gibt es für den EUR-Wert nicht. Schraffiert = Einzelveranlagung, glatt = Zusammenveranlagung, die feine hellrote gestrichelte Linie markiert die Grenze; violett gestrichelt = Break-even, rot gepunktet = Worst case (nur bei positiven Gehältern beider Partner). Eine grau gestrichelte Linie markiert in allen Gehaltsdiagrammen das Gehalt 0; bei der 3D-Fläche ist die Tiefe das Bruttojahresgehalt von Partner #2. Die Gehaltsregler bleiben bei 0–150.000 € und die Abfindungsregler bei 0–500.000 €; größere Beträge können in den Zahlenfeldern eingegeben werden. Beide Diagrammachsen zoomen automatisch mit: Sie beginnen bei -100.000 € bis 150.000 €, erweitern sich in groben Schritten bis maximal 10 Mio. €, sobald ein Gehalt über 90 % der aktuellen Skala liegt, und zoomen zurück, wenn beide Gehälter unter 50 % fallen; am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0. Die Zahlenfelder für Gehalt und Abfindung verwenden 1.000er-Schritte. Das höchste Netto je Brutto-plus-Abfindung und die zugehörige Nettoquote stehen unter allen Gehaltsreglern. Die 3D-Fläche zeigt dieselben Zellen als Höhe und Farbe; eine violette Linie mit „P2 …“ folgt dem eingestellten Gehalt von Partner #2 über alle Gehälter von Partner #1; violett mit „Break-even“ und rot gepunktet mit „Worst case“ sind die entsprechenden Linien über alle Gehälter von Partner #2; grün markiert die günstigste Gehaltskombination, weiß die aktuellen Eingaben. Die Kurve „Absolutes Netto“ variiert das Gehalt von Partner #1 bei eingestelltem Gehalt von Partner #2; ihre Y-Achse zeigt das beste Netto/Jahr in EUR. Im Diagramm „Lohnt sich Arbeiten im Abfindungsjahr?“ bleibt das Gehalt von Partner #2 für die Kurven konstant; eine horizontale rote Linie markiert das Netto-Niveau des Worst case. Break-even, Worst case und Differenz stehen auf eigenen Zeilen; als wichtigste Aussage ist der Vergleich des aktuellen Netto mit „ohne Gehalt“ farbig hervorgehoben (rot bei weniger Netto, grün bei mehr Netto). Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün. Im Grenzsteuersatz-Diagramm markieren gestrichelte Linien den Beginn nach dem Grundfreibetrag, die Zonenwechsel bei etwa 24 % und 42 % sowie den Eintritt in den Spitzensteuersatz; die X-Achse reicht bis 600.000 € zvE; der Grenzsteuersatz steht mit „G“ und „S“ auf der Y-Achse und der zvE kurz in drei versetzten Zeilen unter der X-Achse. Die dunklen gestrichelten Linien und Punkte mit „Aktuell ...“ bezeichnen die aktuellen Werte beider Tarife; ihre zvE-Werte sind unter der Achse fett. Die Abfindung wird als echte Entschädigung ohne Sozialabgaben behandelt; Lohn-, Urlaubs- oder Freistellungszahlungen wären anders zu bewerten."}};
 /* CONFIG_END */
 
 /* TABLES_START */
@@ -534,8 +674,9 @@ function solzuForEst(year, tariff, est) {
 /* Sozialabgaben des Arbeitnehmers (zzgl. Arbeitgeberanteile zur Info). */
 function social(gross, p, yearState, params, kvZusatz, children) {
   const H = CONFIG.general.half_percent_divisor, P = CONFIG.general.percent_divisor;
-  const rvBasis = Math.min(gross, params.bbgRV);
-  const kvBasis = Math.min(gross, params.bbgKVPV);
+  // Negative Gehälter (Verluste im Abfindungsjahr) erzeugen keine Sozialabgaben.
+  const rvBasis = Math.max(0, Math.min(gross, params.bbgRV));
+  const kvBasis = Math.max(0, Math.min(gross, params.bbgKVPV));
   const rv = rvBasis * params.rvRate / H;
   const av = rvBasis * params.avRate / H;
   const kv = kvBasis * (params.kvRate / H + kvZusatz / H);
@@ -581,17 +722,78 @@ function insuranceCost(x) {
     : x.sv.rv + x.sv.kv + x.sv.pv + x.sv.av;
 }
 
-/* Ermittelt zvE und führt die Günstigerprüfung Kindergeld / Kinderfreibetrag durch. */
+function nonNeg(v) { return Number.isFinite(v) ? Math.max(0, v) : 0; }
+function optOf(person) { return person && person.opt ? person.opt : {}; }
+
+/* Tarif mit Progressionsvorbehalt (§ 32b EStG): der Steuersatz wird aus dem
+   um die steuerfreien Lohnersatzleistungen erhöhten zvE genommen, aber nur auf
+   das eigentliche zvE angewendet. Ohne Progressionsleistungen bleibt das
+   Ergebnis identisch mit dem reinen Tabellenwert. */
+function taxAt(year, tariff, zve, progression) {
+  const base = lookup(year, tariff, zve);
+  const p = nonNeg(progression);
+  if (!(p > 0) || !(zve > 0)) return base;
+  const lifted = lookup(year, tariff, zve + p);
+  const factor = zve / (zve + p);
+  const est = lifted.est * factor;
+  return {
+    est,
+    solzu: solzuForEst(year, tariff, est),
+    kist8: lifted.kist8 * factor,
+    kist9: lifted.kist9 * factor
+  };
+}
+
+/* Ermittelt zvE und führt die Günstigerprüfung Kindergeld / Kinderfreibetrag durch.
+   Zusätzlich werden echte Ausgaben (Weiterbildung, Werbungskosten, KV-Vorauszahlung,
+   RV-Beiträge, Spenden, Verluste) mit ihren gesetzlichen Höchstbeträgen berücksichtigt. */
 function taxScenario(mode, people, children, childUnder25, year, state, kvZusatz) {
   const p = PARAMS[year];
   const relevantChildren = childUnder25 ? children : 0;
+  const household = optOf(people[0]);
+  const businessCap = mode === "joint" ? p.businessLossCapJoint : p.businessLossCapSingle;
+  const rentalShare = nonNeg(household.rentalLoss) / people.length;
+  const businessShare = Math.min(nonNeg(household.businessLoss), businessCap) / people.length;
+  const rvHoechst = p.bbgRV * p.rvHoechstFactor / CONFIG.general.percent_divisor;
+
   const base = people.map(person => {
     const sv = social(person.gross, p, state, p, kvZusatz, relevantChildren);
     const insurance = person.insurance === "pkv" ? privateInsurance(person, sv) : null;
     // Vereinfachte Vorsorgepauschale: GKV-Beiträge bzw. gedeckelte PKV-Kosten.
     const vsp = sv.rv + (insurance ? insurance.deductible : sv.kv + sv.pv);
-    const zve = Math.max(0, person.gross - p.pauschale - p.sonderPausch - vsp);
-    return { person, sv, insurance, vsp, zve };
+    const opt = optOf(person);
+    const werbung = nonNeg(opt.weiterbildung) + nonNeg(opt.werbungskosten);
+    const kvBase = insurance ? insurance.deductible : sv.kv + sv.pv;
+    const kvPrepay = Math.min(nonNeg(opt.kvPrepayment), p.kvPrepaymentFactor * kvBase);
+    const rvCap = Math.max(0, rvHoechst - 2 * sv.rv);
+    const rvExtra = Math.min(nonNeg(opt.rvExtra), rvCap);
+    const alg = nonNeg(opt.alg);
+    const usedPauschale = Math.min(Math.max(0, person.gross), p.pauschale);
+    const progression = Math.max(0, alg - Math.max(0, p.pauschale - usedPauschale));
+    const rawZve = person.gross - p.pauschale - p.sonderPausch - vsp - werbung -
+                   kvPrepay - rvExtra - rentalShare - businessShare;
+    const zveBeforeDonation = Math.max(0, rawZve);
+    return {
+      person, sv, insurance, vsp, werbung, kvPrepay, rvCap, rvExtra, alg, progression,
+      rentalShare, businessShare, rawZve, zveBeforeDonation,
+      costs: werbung + kvPrepay + rvExtra + rentalShare + businessShare,
+      zve: zveBeforeDonation, donation: 0
+    };
+  });
+
+  // § 10b EStG: Spenden höchstens 20 % des Gesamtbetrags der Einkünfte. Der
+  // Gesamtbetrag wird hier aus den zvE vor Spenden, den Abfindungen und den
+  // steuerfreien Lohnersatzleistungen genähert.
+  const incomeBase = base.reduce((s, x) => s + x.zveBeforeDonation, 0) +
+                     people.reduce((s, x) => s + nonNeg(x.abfindung), 0) +
+                     base.reduce((s, x) => s + x.alg, 0);
+  const donationCap = incomeBase * p.donationRate / CONFIG.general.percent_divisor;
+  const donation = Math.min(nonNeg(household.donations), Math.max(0, donationCap));
+  const donationShare = donation / people.length;
+  base.forEach(x => {
+    x.donation = donationShare;
+    x.costs += donationShare;
+    x.zve = Math.max(0, x.zveBeforeDonation - donationShare);
   });
 
   let kfbChildren = 0;
@@ -615,10 +817,11 @@ function taxScenario(mode, people, children, childUnder25, year, state, kvZusatz
 
   const kgChildren = children - kfbChildren;
   const totalZve = base.reduce((s, x) => s + x.zve, 0);
-  const joint = mode === "joint" ? lookup(year, "split", totalZve) : null;
+  const totalProgression = base.reduce((s, x) => s + x.progression, 0);
+  const joint = mode === "joint" ? taxAt(year, "split", totalZve, totalProgression) : null;
 
-  const results = base.map((x, i) => {
-    const tax = mode === "individual" ? lookup(year, "grund", x.zve) : joint;
+  const results = base.map(x => {
+    const tax = mode === "individual" ? taxAt(year, "grund", x.zve, x.progression) : joint;
     const share = mode === "joint" && totalZve > 0 ? x.zve / totalZve : 1;
     const est = mode === "joint" ? tax.est * share : tax.est;
     const solzu = mode === "joint" ? tax.solzu * share : tax.solzu;
@@ -626,21 +829,24 @@ function taxScenario(mode, people, children, childUnder25, year, state, kvZusatz
     const kist = mode === "joint"
       ? (x.person.church ? est * churchRate : 0)
       : (x.person.church ? (state.kirchensteuer === 8 ? tax.kist8 : tax.kist9) : 0);
-    const net = x.person.gross - insuranceCost(x) - est - solzu - kist;
+    const net = x.person.gross - insuranceCost(x) - x.costs - est - solzu - kist + x.alg;
     return {
       ...x, est, solzu, kist, net,
       marginal: marginalRate(year, mode === "joint" ? "split" : "grund",
-                             mode === "joint" ? totalZve : x.zve)
+                             mode === "joint" ? totalZve + totalProgression : x.zve + x.progression)
     };
   });
 
   const kindergeld = kgChildren * p.kindergeldMonth * CONFIG.general.months_per_year;
   return {
-    mode, results, kindergeld, kgChildren, kfbChildren, totalZve,
+    mode, results, kindergeld, kgChildren, kfbChildren, totalZve, totalProgression,
+    donationCap, donation,
     totalEst: results.reduce((s, x) => s + x.est, 0),
     totalSolzu: results.reduce((s, x) => s + x.solzu, 0),
     totalKist: results.reduce((s, x) => s + x.kist, 0),
     totalSV: results.reduce((s, x) => s + insuranceCost(x), 0),
+    totalCosts: results.reduce((s, x) => s + x.costs, 0),
+    totalAlg: results.reduce((s, x) => s + x.alg, 0),
     totalNet: results.reduce((s, x) => s + x.net, 0) + kindergeld
   };
 }
@@ -659,22 +865,24 @@ function severanceScenario(base, mode, abfindungen, fuenftel, year, state) {
   const n = base.results.length;
   const churchRate = state.kirchensteuer / 100;
 
+  const totalProgression = base.totalProgression || 0;
   let ests, totalEst;
   if (mode === "individual") {
     ests = base.results.map((x, i) => {
       if (A[i] <= 0) return x.est;
-      const full = lookup(year, tariff, baseZve[i] + A[i]).est;
+      const full = taxAt(year, tariff, Math.max(0, baseZve[i] + A[i]), x.progression).est;
       if (!fuenftel) return full;
-      return 5 * lookup(year, tariff, baseZve[i] + A[i] / 5).est - 4 * x.est;
+      return 5 * taxAt(year, tariff, Math.max(0, baseZve[i] + A[i] / 5), x.progression).est - 4 * x.est;
     });
     totalEst = ests.reduce((s, v) => s + v, 0);
   } else {
     if (totalA <= 0) {
       totalEst = base.totalEst;
     } else if (!fuenftel) {
-      totalEst = lookup(year, tariff, base.totalZve + totalA).est;
+      totalEst = taxAt(year, tariff, Math.max(0, base.totalZve + totalA), totalProgression).est;
     } else {
-      totalEst = 5 * lookup(year, tariff, base.totalZve + totalA / 5).est - 4 * base.totalEst;
+      totalEst = 5 * taxAt(year, tariff, Math.max(0, base.totalZve + totalA / 5), totalProgression).est -
+                 4 * base.totalEst;
     }
     ests = base.results.map(x => base.totalZve > 0
       ? totalEst * (x.zve / base.totalZve) : totalEst / n);
@@ -692,7 +900,8 @@ function severanceScenario(base, mode, abfindungen, fuenftel, year, state) {
   const kists = ests.map((est, i) => base.results[i].person.church ? est * churchRate : 0);
 
   const results = base.results.map((x, i) => {
-    const net = x.person.gross - insuranceCost(x) - ests[i] - solzus[i] - kists[i] + A[i];
+    const net = x.person.gross - insuranceCost(x) - x.costs -
+                ests[i] - solzus[i] - kists[i] + A[i] + x.alg;
     const zve = baseZve[i] + A[i];
     return {
       ...x,
@@ -707,6 +916,7 @@ function severanceScenario(base, mode, abfindungen, fuenftel, year, state) {
   const totalKistAll = results.reduce((s, x) => s + x.kist, 0);
   return {
     mode, results, hasAbfindung: true, fuenftel, totalAbfindung: totalA,
+    totalProgression, totalCosts: base.totalCosts, totalAlg: base.totalAlg,
     kindergeld: base.kindergeld, kgChildren: base.kgChildren, kfbChildren: base.kfbChildren,
     totalZve: base.totalZve + totalA,
     totalEst: totalEstAll, totalSolzu: totalSolzuAll, totalKist: totalKistAll,
@@ -728,18 +938,22 @@ function severanceNet(base, mode, abfindungen, fuenftel, year, state) {
   const n = base.results.length;
   const churchRate = state.kirchensteuer / 100;
 
+  const totalProgression = base.totalProgression || 0;
   let ests, totalEst;
   if (mode === "individual") {
     ests = base.results.map((x, i) => {
       if (A[i] <= 0) return x.est;
-      const full = lookup(year, tariff, baseZve[i] + A[i]).est;
-      return fuenftel ? 5 * lookup(year, tariff, baseZve[i] + A[i] / 5).est - 4 * x.est : full;
+      const full = taxAt(year, tariff, Math.max(0, baseZve[i] + A[i]), x.progression).est;
+      return fuenftel
+        ? 5 * taxAt(year, tariff, Math.max(0, baseZve[i] + A[i] / 5), x.progression).est - 4 * x.est
+        : full;
     });
     totalEst = ests.reduce((s, v) => s + v, 0);
   } else {
     totalEst = fuenftel
-      ? 5 * lookup(year, tariff, base.totalZve + totalA / 5).est - 4 * base.totalEst
-      : lookup(year, tariff, base.totalZve + totalA).est;
+      ? 5 * taxAt(year, tariff, Math.max(0, base.totalZve + totalA / 5), totalProgression).est -
+        4 * base.totalEst
+      : taxAt(year, tariff, Math.max(0, base.totalZve + totalA), totalProgression).est;
     ests = base.results.map(x => base.totalZve > 0
       ? totalEst * (x.zve / base.totalZve) : totalEst / n);
   }
@@ -752,7 +966,8 @@ function severanceNet(base, mode, abfindungen, fuenftel, year, state) {
       : totalSolzu * (base.totalZve + totalA > 0
           ? (baseZve[i] + A[i]) / (base.totalZve + totalA) : 1 / n);
     const kist = x.person.church ? ests[i] * churchRate : 0;
-    totalNet += x.person.gross - insuranceCost(x) - ests[i] - solzu - kist + A[i];
+    totalNet += x.person.gross - insuranceCost(x) - x.costs - ests[i] - solzu - kist +
+                A[i] + x.alg;
   });
   return totalNet;
 }
@@ -847,6 +1062,10 @@ function personTable(scenario, params, state, kvZusatz) {
                         sum(x => x.insurance ? x.insurance.deductible : 0));
   }
   html += row("Sonderausgaben-Pauschbetrag (abgezogen)", params.sonderPausch, params.sonderPausch, params.sonderPausch * 2);
+  html += row("Weitere Ausgaben und Verluste (abgezogen)", r1.costs || 0, r2.costs || 0,
+              sum(x => x.costs || 0));
+  html += row("Steuerfreie Lohnersatzleistungen (Progressionsvorbehalt)", r1.alg || 0, r2.alg || 0,
+              sum(x => x.alg || 0));
   html += row(scenario.hasAbfindung ? "Zu versteuerndes Einkommen (zvE) inkl. Abfindung" : "Zu versteuerndes Einkommen (zvE)",
               r1.zve, r2.zve, scenario.totalZve);
   if (scenario.hasAbfindung && scenario.fuenftel) {
@@ -1002,15 +1221,99 @@ function renderNotes(year, state, params, kvZusatz, individual, joint) {
       <li><strong>Beitragssätze (GKV):</strong> RV ${pct(params.rvRate)} (je ${pct(params.rvRate / 2)}), AV ${pct(params.avRate)} (je ${pct(params.avRate / 2)}), KV ${pct(params.kvRate)} + ${pct(kvZusatz)} Zusatzbeitrag (je ${pct(params.kvRate / 2 + kvZusatz / 2)}), PV ${pct(params.pvRate)} (Arbeitnehmer ${pct(params.pvRate - employerPV)}, Arbeitgeber ${pct(employerPV)}), Kinderlose ${pct(params.pvChildless)} Aufschlag, ab 2. Kind ${pct(params.pvDiscount)}Abschlag je Kind (max. ${pct(params.pvMaxDiscount)}).</li>
       <li><strong>Private Krankenversicherung:</strong> ${privatePeople.length ? "Privat versichert: " + privatePeople.join(" und ") + "." : "Beide Personen sind gesetzlich versichert."} Bei PKV werden die eingegebenen Monatsbeiträge für KV, PV und Kinder in Jahresbeiträge umgerechnet. Der Arbeitgeberzuschuss wird auf den GKV-Arbeitgeberanteil und höchstens auf die eigenen PKV-Beiträge begrenzt. Steuerlich werden PKV-Kosten nur bis zur Höhe der jeweiligen GKV-Arbeitnehmerbeiträge (inkl. Zusatzbeitrag) abgezogen; Kinderbeiträge sind in dieser Obergrenze enthalten.</li>
       <li><strong>Kinder:</strong> Freibetrag je Kind und Jahr ${money(params.kfb)} (für beide Eltern zusammen, ${money(params.kfb / 2)} je Elternteil), Kindergeld ${money(params.kindergeldMonth)}/Monat. Günstigerprüfung pro Kind: Der Freibetrag wird nur angesetzt, wenn die Steuerersparnis über dem Kindergeld liegt.</li>
-      <li><strong>zvE-Ermittlung (vereinfacht):</strong> Brutto − Arbeitnehmer-Pauschbetrag (${money(params.pauschale)}) − Sonderausgaben-Pauschbetrag (${money(params.sonderPausch)}) − Vorsorgepauschale (hier: Arbeitnehmeranteile RV plus GKV-Beiträge bzw. gedeckelte PKV-Kosten). Weitere Werbungskosten, Sonderausgaben, bAV, Steuerklassen, Minijobs und Besonderheiten des Einkommensteuertarifs (z. B. Abgeltungsteuer) sind nicht berücksichtigt.</li>
+      <li><strong>zvE-Ermittlung (vereinfacht):</strong> Brutto − Arbeitnehmer-Pauschbetrag (${money(params.pauschale)}) − Sonderausgaben-Pauschbetrag (${money(params.sonderPausch)}) − Vorsorgepauschale (hier: Arbeitnehmeranteile RV plus GKV-Beiträge bzw. gedeckelte PKV-Kosten) − die unten erfassten Ausgaben und Verluste. bAV, Steuerklassen, Minijobs und Besonderheiten des Einkommensteuertarifs (z. B. Abgeltungsteuer) sind nicht berücksichtigt.</li>
+      <li><strong>Steueroptimierung im Abfindungsjahr:</strong> Weiterbildung und weitere Werbungskosten werden unbegrenzt vom zvE abgezogen. KV-Vorauszahlungen werden auf das Dreifache der laufenden Jahresbeiträge begrenzt, zusätzliche RV-Beiträge auf den knappschaftlichen Höchstbeitrag (näherungsweise ${pct(params.rvHoechstFactor)} von ${money(params.bbgRV)}) abzüglich bereits gezahlter Beiträge, Spenden auf ${pct(params.donationRate)} der Einkünfte und gewerbliche Verluste auf ${money(params.businessLossCapSingle)} (Einzel) bzw. ${money(params.businessLossCapJoint)} (Zusammen). Vermietungsverluste werden unbegrenzt berücksichtigt. Eingaben über dem jeweiligen Höchstbetrag werden automatisch auf ihn begrenzt. Arbeitslosengeld ist steuerfrei, wird aber über den Progressionsvorbehalt (§ 32b EStG) in den Steuersatz einbezogen.</li>
+      <li><strong>Negative Einkünfte:</strong> Negative Gehälter erzeugen keine Sozialabgaben; Einkommensteuer wird dann nicht erhoben. Die Ausgaben und Verluste werden trotzdem vom Netto abgezogen, sodass das Haushaltsnetto negativ werden kann. Die Diagramme zeigen negative Gehälter und negative Netto-Werte ohne Kappung.</li>
       <li><strong>Abfindung:</strong> Als einmalige Bruttozahlung ohne Sozialabgaben behandelt. Regulär wird sie dem zvE hinzugerechnet; bei der Fünftelregelung gilt <code>ESt = 5 × ESt(zvE + A/5) − 4 × ESt(zvE)</code>. SolZu wird aus der so ermittelten ESt über die Tabelle zurückgerechnet (Freigrenze/Anstiegsklausel bleiben erhalten). Der Bericht „Abfindung“ zeigt alle sechs Kombinationen aus Veranlagungsart und Behandlungsart. Voraussetzungen des § 34 EStG und die gesetzliche Günstigerprüfung werden nicht geprüft.</li>
       <li><strong>Vergleich:</strong> Zusammenveranlagung bringt hier ${diff >= 0 ? "einen Vorteil von " + money(diff) : "einen Nachteil von " + money(-diff)} pro Jahr gegenüber Einzelveranlagung.</li>
     </ul>
     <div class="callout warn"><strong>Hinweis:</strong> ${CONFIG.notes.draft_warning}</div>
+    <div class="callout"><strong>Negative Gehälter und Netto-Werte:</strong> ${CONFIG.notes.negative_charts_note}</div>
     <div class="callout"><strong>Diagramme und Abfindung:</strong> ${CONFIG.notes.charts_note}</div>`;
 }
 
+/* Begrenzt jeden Optimierungswert auf seinen aktuell geltenden Höchstbetrag.
+   Die Grenzen hängen von Jahr, Gehalt, Versicherung und den anderen Eingaben
+   ab, deshalb werden sie vor jeder Berechnung neu gesetzt. */
+function enforceOptimizationCaps() {
+  const GL = CONFIG.limits, OL = GL.optimization;
+  const year = document.getElementById("year").value;
+  const p = PARAMS[year];
+  if (!p) return;
+
+  const num = id => Number(document.getElementById(id).value);
+  const safe = v => Number.isFinite(v) ? v : 0;
+  const globalIds = [
+    "weiterbildung1", "weiterbildung2", "werbungskosten1", "werbungskosten2",
+    "kvPrepayment1", "kvPrepayment2", "rvExtra1", "rvExtra2",
+    "alg1", "alg2", "donations", "rentalLoss", "businessLoss"
+  ];
+  globalIds.forEach(id => {
+    const el = document.getElementById(id);
+    const clamped = clamp(safe(num(id)), OL.min, OL.max);
+    if (String(clamped) !== el.value) el.value = String(clamped);
+  });
+
+  const state = STATES.find(s => s[0] === document.getElementById("state").value) || STATES[0];
+  const stateObj = { short: state[0], name: state[1], kirchensteuer: state[2], saxony: state[3] };
+  const people = ["1", "2"].map(suffix => {
+    const insurance = document.getElementById("insurance" + suffix).checked ? "pkv" : "gkv";
+    return {
+      gross: safe(num("gross" + suffix)),
+      abfindung: safe(num("abfindung" + suffix)),
+      church: document.getElementById("church" + suffix).checked,
+      insurance,
+      pkvKV: insurance === "pkv" ? safe(num("pkvKV" + suffix)) : 0,
+      pkvPV: insurance === "pkv" ? safe(num("pkvPV" + suffix)) : 0,
+      pkvChild: insurance === "pkv" ? safe(num("pkvChild" + suffix)) : 0,
+      pkvChildren: insurance === "pkv" ? safe(num("pkvChildren" + suffix)) : 0,
+      pkvAG: insurance === "pkv" ? safe(num("pkvAG" + suffix)) : 0,
+      opt: {
+        weiterbildung: safe(num("weiterbildung" + suffix)),
+        werbungskosten: safe(num("werbungskosten" + suffix)),
+        kvPrepayment: safe(num("kvPrepayment" + suffix)),
+        rvExtra: safe(num("rvExtra" + suffix)),
+        alg: safe(num("alg" + suffix)),
+        donations: safe(num("donations")),
+        rentalLoss: safe(num("rentalLoss")),
+        businessLoss: safe(num("businessLoss"))
+      }
+    };
+  });
+  const children = clamp(Math.round(safe(num("children"))), GL.children.min, GL.children.max);
+  const childUnder25 = document.getElementById("childrenUnder25").checked;
+  const kvZusatz = clamp(safe(num("kvZusatz")), GL.kv_zusatz.min, GL.kv_zusatz.max);
+  const args = [people, children, childUnder25, year, stateObj, kvZusatz];
+  const individual = taxScenario("individual", ...args);
+  const joint = taxScenario("joint", ...args);
+
+  const kvBase = i => people[i].insurance === "pkv"
+    ? (individual.results[i].insurance ? individual.results[i].insurance.deductible : 0)
+    : individual.results[i].sv.kv + individual.results[i].sv.pv;
+  const caps = {
+    weiterbildung1: OL.max, weiterbildung2: OL.max,
+    werbungskosten1: OL.max, werbungskosten2: OL.max,
+    alg1: OL.max, alg2: OL.max, rentalLoss: OL.max,
+    kvPrepayment1: p.kvPrepaymentFactor * kvBase(0),
+    kvPrepayment2: p.kvPrepaymentFactor * kvBase(1),
+    rvExtra1: individual.results[0].rvCap,
+    rvExtra2: individual.results[1].rvCap,
+    donations: Math.max(individual.donationCap, joint.donationCap),
+    businessLoss: p.businessLossCapJoint
+  };
+  Object.entries(caps).forEach(([id, cap]) => {
+    const el = document.getElementById(id);
+    const max = Math.min(OL.max, Math.round(Math.max(0, safe(cap)) * 100) / 100);
+    el.max = String(max);
+    const value = safe(num(id));
+    const clamped = Math.round(clamp(value, OL.min, max) * 100) / 100;
+    if (String(clamped) !== el.value) el.value = String(clamped);
+  });
+}
+
 function readInputs() {
+  // Kein Optimierungswert darf über seinem aktuellen Höchstbetrag bleiben.
+  enforceOptimizationCaps();
   const num = (id) => Number(document.getElementById(id).value);
   const gross1 = num("gross1"), gross2 = num("gross2"), children = num("children");
   const abf1 = num("abfindung1"), abf2 = num("abfindung2");
@@ -1024,6 +1327,18 @@ function readInputs() {
     throw new Error(`Bitte gültige Werte eingeben (Gehälter ${L.gross.number_min}–${L.gross.number_max}, Abfindungen ${L.abfindung.number_min}–${L.abfindung.number_max}, Kinder ${L.children.min}–${L.children.max}).`);
   }
 
+  const optNum = id => {
+    const v = num(id);
+    if (!Number.isFinite(v) || v < L.optimization.min || v > L.optimization.max) {
+      throw new Error(`Bitte gültige Optimierungswerte eingeben (${L.optimization.min}–${L.optimization.max} €).`);
+    }
+    return v;
+  };
+  const householdOpt = {
+    donations: optNum("donations"),
+    rentalLoss: optNum("rentalLoss"),
+    businessLoss: optNum("businessLoss")
+  };
   const makePerson = (suffix, label, gross, abfindung) => {
     const insurance = document.getElementById("insurance" + suffix).checked ? "pkv" : "gkv";
     let pkv = { pkvKV: 0, pkvPV: 0, pkvChild: 0, pkvChildren: 0, pkvAG: 0 };
@@ -1044,8 +1359,17 @@ function readInputs() {
         throw new Error(`Die Anzahl der PKV-Kinder für ${label} muss ${L.pkv_children.min}–${L.pkv_children.max} sein.`);
       }
     }
+    const opt = {
+      weiterbildung: optNum("weiterbildung" + suffix),
+      werbungskosten: optNum("werbungskosten" + suffix),
+      kvPrepayment: optNum("kvPrepayment" + suffix),
+      rvExtra: optNum("rvExtra" + suffix),
+      alg: optNum("alg" + suffix),
+      ...householdOpt
+    };
     return {
-      gross, abfindung, church: document.getElementById("church" + suffix).checked, label, insurance, ...pkv
+      gross, abfindung, church: document.getElementById("church" + suffix).checked,
+      label, insurance, opt, ...pkv
     };
   };
 
@@ -1065,6 +1389,26 @@ function readInputs() {
     state: { short, name, kirchensteuer, saxony },
     kvZusatz: clamp(num("kvZusatz") || 0, L.kv_zusatz.min, L.kv_zusatz.max)
   };
+}
+
+function renderOptimizationLimits(input, individual, joint) {
+  const el = document.getElementById("optimizationLimits");
+  const p = PARAMS[input.year];
+  const parts = input.people.map((person, i) => {
+    const r = individual.results[i];
+    const kvCap = p.kvPrepaymentFactor *
+      (person.insurance === "pkv" ? (r.insurance ? r.insurance.deductible : 0) : r.sv.kv + r.sv.pv);
+    const kvWanted = nonNeg(optOf(person).kvPrepayment);
+    const rvWanted = nonNeg(optOf(person).rvExtra);
+    return `<br>${person.label}: KV-Vorauszahlung ${money(Math.min(kvWanted, kvCap))} von ${money(kvWanted)} (Höchstbetrag ${money(kvCap)}) · zusätzliche RV ${money(Math.min(rvWanted, r.rvCap))} von ${money(rvWanted)} (Höchstbetrag ${money(r.rvCap)})`;
+  }).join("");
+  const household = optOf(input.people[0]);
+  const donationWanted = nonNeg(household.donations);
+  const businessWanted = nonNeg(household.businessLoss);
+  el.innerHTML = `<strong>Angesetzte Beträge und Höchstbeträge:</strong>${parts}
+    <br>Spenden ${money(Math.min(donationWanted, individual.donationCap))} von ${money(donationWanted)} (Einzel max. ${money(individual.donationCap)}, Zusammen max. ${money(joint.donationCap)}).
+    <br>Gewerbliche Verluste ${money(Math.min(businessWanted, p.businessLossCapSingle))} (Einzel) bzw. ${money(Math.min(businessWanted, p.businessLossCapJoint))} (Zusammen) von ${money(businessWanted)}; Vermietungsverluste ${money(nonNeg(household.rentalLoss))} werden unbegrenzt berücksichtigt.
+    <br>Progressionsvorbehalt: ${money(individual.totalProgression)} (Einzel) bzw. ${money(joint.totalProgression)} (Zusammen) aus Arbeitslosengeld. Werte über einer Grenze wurden beim Eingeben auf den Höchstbetrag begrenzt.`;
 }
 
 function calculate() {
@@ -1101,6 +1445,8 @@ function calculate() {
           ["Steuerlast gesamt", individual.totalEst + individual.totalSolzu + individual.totalKist,
            joint.totalEst + joint.totalSolzu + joint.totalKist],
           ["Sozialabgaben / Versicherung", individual.totalSV, joint.totalSV],
+          ["Weitere Ausgaben und Verluste", individual.totalCosts, joint.totalCosts],
+          ["Steuerfreie Lohnersatzleistungen", individual.totalAlg, joint.totalAlg],
           ["Kindergeld", individual.kindergeld, joint.kindergeld],
           ["Netto inkl. Kindergeld", individual.totalNet, joint.totalNet]
         ].map(([label, a, b]) => `<tr${label === "Netto inkl. Kindergeld" ? ' class="total"' : ""}>
@@ -1110,6 +1456,7 @@ function calculate() {
         <p class="small">Positive Differenz = Splitting ist günstiger. Die Sozialabgaben sind in beiden Szenarien identisch.</p>`;
     document.getElementById("panel-abfindung").innerHTML = renderAbfindung(input, individual, joint, params);
     document.getElementById("notes").innerHTML = renderNotes(input.year, input.state, params, input.kvZusatz, individual, joint);
+    renderOptimizationLimits(input, individual, joint);
     renderCharts(input, individual, joint);
   } catch (e) {
     error.textContent = e.message;
@@ -1139,6 +1486,22 @@ function txt(x, y, value, extra = "") {
   return `<text x="${x}" y="${y}" ${out}>${value}</text>`;
 }
 
+/* Neutral guide at a gross salary of zero. It stays visible next to the
+   coloured break-even/worst-case markers and is labelled in EUR. */
+function zeroXGuide(x, y0, plotH) {
+  return `<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + plotH}" stroke="${COLORS.guide}"
+            stroke-width="1.5" stroke-dasharray="5 4"><title>Brutto 0 €</title></line>` +
+    txt(x + 5, y0 + plotH - 6, "0 €",
+      `text-anchor="start" font-size="9" font-weight="700" fill="${COLORS.guide_text}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+}
+
+function zeroYGuide(y, x0, plotW) {
+  return `<line x1="${x0}" y1="${y}" x2="${x0 + plotW}" y2="${y}" stroke="${COLORS.guide}"
+            stroke-width="1.5" stroke-dasharray="5 4"><title>Brutto Partner #2: 0 €</title></line>` +
+    txt(x0 + 6, y - 5, "0 €",
+      `text-anchor="start" font-size="9" font-weight="700" fill="${COLORS.guide_text}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+}
+
 function axes(x0, y0, plotW, plotH, xTicks, yTicks, xFmt, yFmt) {
   let s = "";
   yTicks.forEach(t => {
@@ -1154,6 +1517,180 @@ function axes(x0, y0, plotW, plotH, xTicks, yTicks, xFmt, yFmt) {
   s += `<line x1="${x0}" y1="${y0 + plotH}" x2="${x0 + plotW}" y2="${y0 + plotH}" stroke="${COLORS.axis}"/>`;
   s += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y0 + plotH}" stroke="${COLORS.axis}"/>`;
   return s;
+}
+
+/* Axis-limit zoom for the two net curves only. The SVG viewBox never changes:
+   the drag rectangle defines new X/Y data limits and the chart is redrawn at
+   the same pixel size, so line widths and axes keep their normal scale. */
+const CURVE_ZOOM_IDS = ["netTrendSvg", "abfWorkSvg"];
+const CURVE_VIEWPORTS = new Map();
+const CURVE_RENDER_VIEWPORT = new Map();
+
+function curveBaseViewport(id, data) {
+  if (id === "netTrendSvg") {
+    const C = CONFIG.charts.netTrend;
+    const vals = data.series.individual
+      .map((p, i) => Math.max(p.net, data.series.joint[i].net))
+      .concat([data.bestWithout]);
+    const yMin = Math.floor(Math.min(...vals) / C.y_round) * C.y_round - C.y_pad;
+    const yMax = Math.max(Math.ceil(Math.max(...vals) / C.y_round) * C.y_round + C.y_pad,
+                          yMin + C.y_round);
+    return { xMin: data.xMin, xMax: data.xMax, yMin, yMax };
+  }
+  const C = CONFIG.charts.abfWork;
+  const all = [data.series.individualMit, data.series.individualOhne,
+               data.series.jointMit, data.series.jointOhne]
+    .flatMap(items => items.map(p => p.net))
+    .concat([data.baseIndMit, data.baseIndOhne, data.baseJointMit, data.baseJointOhne]);
+  const yMin = Math.floor(Math.min(...all) / C.y_round) * C.y_round - C.y_pad;
+  const yMax = Math.max(Math.ceil(Math.max(...all) / C.y_round) * C.y_round + C.y_pad,
+                        yMin + C.y_round);
+  return { xMin: data.xMin, xMax: data.xMax, yMin, yMax };
+}
+
+function curveViewport(id, data) {
+  const base = curveBaseViewport(id, data);
+  const saved = CURVE_VIEWPORTS.get(id);
+  if (!saved) {
+    CURVE_RENDER_VIEWPORT.set(id, { base, current: base });
+    return base;
+  }
+  const minX = Math.max((base.xMax - base.xMin) * 0.01, 1);
+  const minY = Math.max((base.yMax - base.yMin) * 0.01, 1);
+  let current = {
+    xMin: clamp(saved.xMin, base.xMin, base.xMax - minX),
+    xMax: clamp(saved.xMax, base.xMin + minX, base.xMax),
+    yMin: clamp(saved.yMin, base.yMin, base.yMax - minY),
+    yMax: clamp(saved.yMax, base.yMin + minY, base.yMax)
+  };
+  const valid = [current.xMin, current.xMax, current.yMin, current.yMax].every(Number.isFinite) &&
+                current.xMax - current.xMin >= minX && current.yMax - current.yMin >= minY;
+  if (!valid) {
+    CURVE_VIEWPORTS.delete(id);
+    current = base;
+  } else if (JSON.stringify(current) !== JSON.stringify(saved)) {
+    CURVE_VIEWPORTS.set(id, current);
+  }
+  CURVE_RENDER_VIEWPORT.set(id, { base, current });
+  return current;
+}
+
+function setupCurveZoom() {
+  CURVE_ZOOM_IDS.forEach(id => {
+    const host = document.getElementById(id);
+    if (!host || !host.parentNode) return;
+    let wrap = host.parentElement;
+    if (!wrap.classList.contains("zoom-host")) {
+      wrap = document.createElement("div");
+      wrap.className = "zoom-host";
+      host.parentNode.insertBefore(wrap, host);
+      wrap.appendChild(host);
+    }
+    let overlay = [...wrap.children].find(el => el.classList.contains("zoom-selection"));
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.className = "zoom-selection";
+      wrap.appendChild(overlay);
+    }
+    let button = [...wrap.children].find(el => el.classList.contains("zoom-reset"));
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "zoom-reset";
+      button.textContent = "↺ Zoom aufheben";
+      button.setAttribute("aria-label", "Zoom aufheben");
+      button.title = "Achsengrenzen dieses Diagramms aufheben";
+      button.addEventListener("click", () => {
+        if (!CURVE_VIEWPORTS.delete(id)) return;
+        renderAbfWorkCharts();
+        setupCurveZoom();
+      });
+      wrap.appendChild(button);
+    }
+    button.disabled = !CURVE_VIEWPORTS.has(id);
+
+    const svg = host.querySelector("svg");
+    if (!svg) return;
+    const C = id === "netTrendSvg" ? CONFIG.charts.netTrend : CONFIG.charts.abfWork;
+    let startSvg = null, startClient = null, pointerId = null;
+
+    const pointInSvg = event => {
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return null;
+      const pt = svg.createSVGPoint();
+      pt.x = event.clientX; pt.y = event.clientY;
+      const local = pt.matrixTransform(ctm.inverse());
+      return {
+        x: clamp(local.x, C.x0, C.x0 + C.plot_width),
+        y: clamp(local.y, C.y0, C.y0 + C.plot_height)
+      };
+    };
+    const clientPoint = event => {
+      const rect = wrap.getBoundingClientRect();
+      return {
+        x: clamp(event.clientX - rect.left, 0, rect.width),
+        y: clamp(event.clientY - rect.top, 0, rect.height)
+      };
+    };
+    const showOverlay = event => {
+      if (!startClient) return;
+      const current = clientPoint(event);
+      overlay.style.left = `${Math.min(startClient.x, current.x)}px`;
+      overlay.style.top = `${Math.min(startClient.y, current.y)}px`;
+      overlay.style.width = `${Math.abs(current.x - startClient.x)}px`;
+      overlay.style.height = `${Math.abs(current.y - startClient.y)}px`;
+    };
+    const cancelDrag = () => {
+      startSvg = null; startClient = null; pointerId = null;
+      overlay.style.display = "none";
+      overlay.style.width = "0px";
+      overlay.style.height = "0px";
+    };
+
+    svg.addEventListener("pointerdown", event => {
+      if (event.button !== 0 || !svg.getScreenCTM()) return;
+      const point = pointInSvg(event);
+      if (!point) return;
+      event.preventDefault();
+      pointerId = event.pointerId;
+      try { svg.setPointerCapture(pointerId); } catch (_) { /* capture is optional */ }
+      startSvg = point;
+      startClient = clientPoint(event);
+      overlay.style.display = "block";
+      showOverlay(event);
+    });
+    svg.addEventListener("pointermove", event => {
+      if (pointerId !== event.pointerId || !startClient) return;
+      showOverlay(event);
+    });
+    svg.addEventListener("pointerup", event => {
+      if (pointerId !== event.pointerId || !startClient || !startSvg) return;
+      const end = pointInSvg(event);
+      const start = startSvg;
+      const dx = end ? Math.abs(end.x - start.x) : 0;
+      const dy = end ? Math.abs(end.y - start.y) : 0;
+      cancelDrag();
+      if (!end || dx < 8 || dy < 8) return;
+      const info = CURVE_RENDER_VIEWPORT.get(id);
+      if (!info) return;
+      const vp = info.current;
+      const xSpan = vp.xMax - vp.xMin, ySpan = vp.yMax - vp.yMin;
+      const dataX = sx => vp.xMin + (sx - C.x0) / C.plot_width * xSpan;
+      const dataY = sy => vp.yMin + (C.y0 + C.plot_height - sy) / C.plot_height * ySpan;
+      const a = { x: dataX(start.x), y: dataY(start.y) };
+      const b = { x: dataX(end.x), y: dataY(end.y) };
+      const next = {
+        xMin: Math.min(a.x, b.x), xMax: Math.max(a.x, b.x),
+        yMin: Math.min(a.y, b.y), yMax: Math.max(a.y, b.y)
+      };
+      if (next.xMax - next.xMin < xSpan * 0.01 || next.yMax - next.yMin < ySpan * 0.01) return;
+      CURVE_VIEWPORTS.set(id, next);
+      renderAbfWorkCharts();
+      setupCurveZoom();
+    });
+    svg.addEventListener("pointercancel", cancelDrag);
+    svg.addEventListener("lostpointercapture", cancelDrag);
+  });
 }
 
 function chartComposition(individual, joint) {
@@ -1236,10 +1773,23 @@ function niceGrossStep(target) {
   return steps.find(s => s >= target) || steps[steps.length - 1];
 }
 
+function grossPlotMin() {
+  const values = ["gross1", "gross2"].map(id => {
+    const el = document.getElementById(id);
+    const n = el ? Number(el.value) : 0;
+    return Number.isFinite(n) ? n : 0;
+  });
+  const raw = Math.min(GROSS_ZOOM.plot_min || 0, ...values);
+  const quantum = Math.max(GROSS_ZOOM.slider_step, GROSS_ZOOM.chart_step);
+  return Math.floor(clamp(raw, GROSS_ZOOM.number_min, 0) / quantum) * quantum;
+}
+
 function grossDomain() {
+  const min = grossPlotMin();
   return {
+    min,
     max: grossDomainMax,
-    chartStep: Math.max(GROSS_ZOOM.chart_step, niceGrossStep(grossDomainMax / 120))
+    chartStep: Math.max(GROSS_ZOOM.chart_step, niceGrossStep((grossDomainMax - min) / 120))
   };
 }
 
@@ -1273,9 +1823,9 @@ function heatColor(t) {
 
 let HEAT_SWEEP_CACHE = { key: null };
 
-function heatSweepKey(input, axisMax) {
+function heatSweepKey(input, xMin, axisMax) {
   return JSON.stringify({
-    axisMax,
+    xMin, axisMax,
     year: input.year,
     state: input.state.short,
     children: input.children,
@@ -1283,19 +1833,54 @@ function heatSweepKey(input, axisMax) {
     kvZusatz: input.kvZusatz,
     people: input.people.map(p => ({
       insurance: p.insurance, church: p.church, abfindung: p.abfindung || 0,
+      opt: p.opt || {},
       pkvKV: p.pkvKV, pkvPV: p.pkvPV, pkvChild: p.pkvChild,
       pkvChildren: p.pkvChildren, pkvAG: p.pkvAG
     }))
   });
 }
 
+// "Bestes" in the optimum curves and gross-slider readouts means the salary
+// that maximises Nettoquote = best net / (both gross salaries + Abfindungen).
+// It is not the highest absolute net and not the break-even salary. The fixed
+// partner's salary is the value after "bei P1/P2"; the optimised salary is the
+// value after the colon.
+function optimumCurveData(cells, nx, ny, g1cur, g2cur) {
+  const bestIn = (items, grossKey) => items.reduce((best, c) =>
+    c[grossKey] > 0 && Number.isFinite(c.quote) &&
+    (!best || c.quote > best.quote + 1e-12) ? c : best, null);
+  const asPoint = c => c && Number.isFinite(c.quote)
+    ? { jx: c.jx, jy: c.jy, g1: c.g1, g2: c.g2, quote: c.quote, net: c.best }
+    : null;
+  const byRow = [], byCol = [];
+  for (let jy = 0; jy < ny; jy++) {
+    const point = asPoint(bestIn(cells.slice(jy * nx, (jy + 1) * nx), "g1"));
+    if (point) byRow.push(point);
+  }
+  for (let jx = 0; jx < nx; jx++) {
+    const col = [];
+    for (let jy = 0; jy < ny; jy++) col.push(cells[jy * nx + jx]);
+    const point = asPoint(bestIn(col, "g2"));
+    if (point) byCol.push(point);
+  }
+  const nearest = (points, target, key) => points.length
+    ? points.reduce((a, b) => Math.abs(b[key] - target) < Math.abs(a[key] - target) ? b : a)
+    : null;
+  return {
+    byRow, byCol,
+    currentByRow: nearest(byRow, g2cur, "g2"),
+    currentByCol: nearest(byCol, g1cur, "g1")
+  };
+}
+
 function computeHeatmapData(input) {
   const C = CONFIG.charts.netBrutto;
-  const nx = C.nx, ny = C.ny, axisMax = grossDomain().max;
+  const domain = grossDomain();
+  const nx = C.nx, ny = C.ny, xMin = domain.min, axisMax = domain.max, span = axisMax - xMin;
   const g1cur = input.people[0].gross, g2cur = input.people[1].gross;
   const A = input.people.map(p => p.abfindung || 0);
   const totalA = A.reduce((s, v) => s + v, 0);
-  const key = heatSweepKey(input, axisMax);
+  const key = heatSweepKey(input, xMin, axisMax);
   if (HEAT_SWEEP_CACHE.key !== key) {
     // Separate comparison: best net with Partner #1 salary = 0 at the same
     // Partner #2 salary. This ratio dips below 100 % and rises past break-even,
@@ -1311,11 +1896,11 @@ function computeHeatmapData(input) {
     const cells = [];
     const rows = [];
     for (let jy = 0; jy < ny; jy++) {
-      const g2 = axisMax * (jy + 0.5) / ny;
+      const g2 = xMin + span * (jy + 0.5) / ny;
       const referenceNet = baselineNet(g2);
       const rowCells = [];
       for (let jx = 0; jx < nx; jx++) {
-        const g1 = axisMax * (jx + 0.5) / nx;
+        const g1 = xMin + span * (jx + 0.5) / nx;
         const people = input.people.map((p, i) => ({ ...p, gross: i === 0 ? g1 : g2 }));
         const args = [people, input.children, input.childUnder25, input.year, input.state, input.kvZusatz];
         const indBase = taxScenario("individual", ...args);
@@ -1353,15 +1938,19 @@ function computeHeatmapData(input) {
             (rowCells[i].g1 - rowCells[i - 1].g1) * (-prev / (now - prev));
         }
       }
-      let worst = rowCells[0];
-      for (const c of rowCells) if (c.best < worst.best - 1e-9) worst = c;
-      rows.push({ g2, referenceNet, breakEven, worstG: worst.g1, worstNet: worst.best });
+      // Worst case only where both partners have a positive salary. Negative
+      // cells remain visible and are still used for break-even and the scales.
+      const positiveRows = g2 > 0 ? rowCells.filter(c => c.g1 > 0) : [];
+      let worst = positiveRows[0] || null;
+      for (const c of positiveRows) if (c.best < worst.best - 1e-9) worst = c;
+      rows.push({ g2, referenceNet, breakEven,
+                   worstG: worst ? worst.g1 : null, worstNet: worst ? worst.best : null });
     }
     const values = cells.map(c => c.score).filter(Number.isFinite);
     const vMin = Math.min(...values), vMax = Math.max(...values);
     const pad = Math.max((vMax - vMin) * C.pad_ratio, C.pad_min_eur);
-    const lo = Math.max(0, vMin - pad), hi = vMax + pad;
-    HEAT_SWEEP_CACHE = { key, nx, ny, axisMax, baselineNet, cells, rows, lo, hi };
+    const lo = vMin - pad, hi = vMax + pad;
+    HEAT_SWEEP_CACHE = { key, nx, ny, xMin, axisMax, baselineNet, cells, rows, lo, hi };
   }
   const { cells, rows, lo, hi, baselineNet } = HEAT_SWEEP_CACHE;
 
@@ -1379,7 +1968,8 @@ function computeHeatmapData(input) {
   const currentQuote = currentTotal > 0 ? currentNet / currentTotal : null;
   const currentBaselineRatio = currentBaseline > 0 ? currentNet / currentBaseline : null;
 
-  return { nx, ny, axisMax, g1cur, g2cur, cells, rows, lo, hi,
+  return { nx, ny, xMin, axisMax, g1cur, g2cur, cells, rows, lo, hi,
+           optimum: optimumCurveData(cells, nx, ny, g1cur, g2cur),
            currentInd, currentJoint, currentVariants,
            currentKindergeld, currentNet, currentNetNoKg,
            currentTotalA, currentTotal, currentQuote, currentBaselineRatio };
@@ -1388,10 +1978,11 @@ function computeHeatmapData(input) {
 function chartNetBruttoMap(input, data = computeHeatmapData(input)) {
   const C = CONFIG.charts.netBrutto;
   const W = C.width, H = C.height, x0 = C.x0, y0 = C.y0, plotW = C.plot_width, plotH = C.plot_height;
-  const { nx, ny, axisMax, g1cur, g2cur, cells, rows, lo, hi,
+  const { nx, ny, xMin, axisMax, g1cur, g2cur, cells, rows, lo, hi, optimum,
           currentNet, currentQuote, currentBaselineRatio } = data;
   const scaleLabel = "Bestes Netto/Jahr";
   const cw = plotW / nx, ch = plotH / ny;
+  const span = axisMax - xMin;
 
   let s = svgOpen(W, H);
   s += `<defs><linearGradient id="heatScale" x1="0" y1="1" x2="0" y2="0">
@@ -1443,8 +2034,11 @@ function chartNetBruttoMap(input, data = computeHeatmapData(input)) {
   }
   s += winnerBorders;
   s += `<rect x="${x0}" y="${y0}" width="${plotW}" height="${plotH}" fill="none" stroke="${COLORS.axis}"/>`;
-  const mapX = g => x0 + clamp(g / axisMax, 0, 1) * plotW;
-  const mapY = r => y0 + plotH - clamp(r.g2 / axisMax, 0, 1) * plotH;
+  const mapX = g => x0 + clamp((g - xMin) / span, 0, 1) * plotW;
+  const mapY = r => y0 + plotH - clamp((r.g2 - xMin) / span, 0, 1) * plotH;
+  const zeroX = mapX(0), zeroY = mapY({ g2: 0 });
+  s += zeroXGuide(zeroX, y0, plotH);
+  s += zeroYGuide(zeroY, x0, plotW);
   const markerLine = (key, color, dash, label, title) => {
     const valid = rows.filter(r => Number.isFinite(r[key]));
     if (valid.length < 2) return;
@@ -1462,9 +2056,37 @@ function chartNetBruttoMap(input, data = computeHeatmapData(input)) {
   markerLine("breakEven", COLORS.break_even, "7 4", "Break-even",
     "Break-even für jedes Gehalt von Partner #2: bestes Netto mit Gehalt von Partner #1 = ohne Gehalt");
   markerLine("worstG", COLORS.worst_case, "2 4", "Worst case",
-    "Worst case für jedes Gehalt von Partner #2: bestes Netto am niedrigsten");
+    "Worst case bei positiven Gehältern beider Partner: bestes Netto am niedrigsten");
+  if (CONFIG.general.show_optimum_curves) {
+    const optimumLine = (points, color, dash, label, title) => {
+      if (!points || points.length < 2) return;
+      const path = points.map(p => `${mapX(p.g1).toFixed(1)},${mapY(p).toFixed(1)}`).join(" ");
+      s += `<polyline points="${path}" fill="none" stroke="${COLORS.halo}"
+              stroke-width="4.5" stroke-opacity="0.85" pointer-events="none"/>`;
+      s += `<polyline points="${path}" fill="none" stroke="${color}" stroke-width="2"
+              stroke-dasharray="${dash}"><title>${title}</title></polyline>`;
+      const end = points[points.length - 1];
+      const ex = mapX(end.g1), ey = mapY(end);
+      const right = ex > x0 + plotW * 0.72;
+      s += txt(ex + (right ? -5 : 5), Math.max(y0 + 12, ey - 5), label,
+        `text-anchor="${right ? "end" : "start"}" font-size="9" font-weight="700" fill="${color}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+    };
+    optimumLine(optimum.byRow, COLORS.opt_g1, "6 3", "Opt. P1 je P2",
+      "Bestes Gehalt von Partner #1 für jedes Gehalt von Partner #2: höchste Nettoquote");
+    optimumLine(optimum.byCol, COLORS.opt_g2, "2 3", "Opt. P2 je P1",
+      "Bestes Gehalt von Partner #2 für jedes Gehalt von Partner #1: höchste Nettoquote");
+    const optimumPoint = (point, color, titleFor) => {
+      if (!point) return;
+      s += `<circle cx="${mapX(point.g1).toFixed(1)}" cy="${mapY(point).toFixed(1)}" r="4"
+              fill="${COLORS.halo}" stroke="${color}" stroke-width="2"><title>${titleFor(point)}</title></circle>`;
+    };
+    optimumPoint(optimum.currentByRow, COLORS.opt_g1, p =>
+      `Bestes P1 bei P2 ${money(g2cur)}: ${money(p.g1)}, Nettoquote ${pct(p.quote * 100)}`);
+    optimumPoint(optimum.currentByCol, COLORS.opt_g2, p =>
+      `Bestes P2 bei P1 ${money(g1cur)}: ${money(p.g2)}, Nettoquote ${pct(p.quote * 100)}`);
+  }
   CONFIG.charts.common.tick_fractions.forEach(f => {
-    const v = axisMax * f;
+    const v = xMin + span * f;
     s += txt(x0 + f * plotW, y0 + plotH + 18, money(v), `text-anchor="middle"`);
     s += txt(x0 - 8, y0 + plotH - f * plotH + 4, money(v), `text-anchor="end"`);
   });
@@ -1480,8 +2102,8 @@ function chartNetBruttoMap(input, data = computeHeatmapData(input)) {
     ? `vs. ohne Gehalt ${pct(currentBaselineRatio * 100)}`
     : "vs. ohne Gehalt –";
 
-  const cx = x0 + clamp(g1cur / axisMax, 0, 1) * plotW;
-  const cy = y0 + plotH - clamp(g2cur / axisMax, 0, 1) * plotH;
+  const cx = mapX(g1cur);
+  const cy = y0 + plotH - clamp((g2cur - xMin) / span, 0, 1) * plotH;
   s += `<line x1="${cx}" y1="${y0}" x2="${cx}" y2="${y0 + plotH}" stroke="${COLORS.crosshair}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
   s += `<line x1="${x0}" y1="${cy}" x2="${x0 + plotW}" y2="${cy}" stroke="${COLORS.crosshair}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
   s += `<circle cx="${cx}" cy="${cy}" r="5" fill="${COLORS.point}" stroke="${COLORS.crosshair}" stroke-width="2"><title>Aktuelle Eingabe: Partner #1 ${money(g1cur)}, Partner #2 ${money(g2cur)} · ${householdLabel} inkl. Kindergeld · ${quoteLabel} · ${ratioLabel}</title></circle>`;
@@ -1504,19 +2126,23 @@ function chartNetBruttoMap(input, data = computeHeatmapData(input)) {
   s += txt(lx + lw + 6, y0 + 10, money(hi), `font-size="10"`);
   s += txt(lx + lw + 6, y0 + plotH, money(lo), `font-size="10"`);
   s += `</svg>`;
+  const optimumLegend = CONFIG.general.show_optimum_curves ? `
+    <span><i class="swatch" style="width:24px;height:2px;background:repeating-linear-gradient(90deg, ${COLORS.opt_g1} 0 6px, transparent 6px 9px)"></i>Opt. P1 je P2 (Nettoquote)</span>
+    <span><i class="swatch" style="width:24px;height:2px;background:repeating-linear-gradient(90deg, ${COLORS.opt_g2} 0 2px, transparent 2px 5px)"></i>Opt. P2 je P1 (Nettoquote)</span>` : "";
   const legend = `<div class="legend">
     <span><i class="swatch" style="background:${COLORS.winner_joint}"></i>Zusammen günstiger (glatt)</span>
     <span><i class="swatch" style="background:repeating-linear-gradient(45deg, ${COLORS.winner_individual} 0 2px, transparent 2px 5px), ${COLORS.grid}"></i>Einzel günstiger (schraffiert)</span>
     <span><i class="swatch" style="width:24px;height:2px;background:repeating-linear-gradient(90deg, ${COLORS.break_even} 0 6px, transparent 6px 10px)"></i>Break-even</span>
-    <span><i class="swatch" style="width:24px;height:2px;background:repeating-linear-gradient(90deg, ${COLORS.worst_case} 0 2px, transparent 2px 6px)"></i>Worst case</span>
+    <span><i class="swatch" style="width:24px;height:2px;background:repeating-linear-gradient(90deg, ${COLORS.worst_case} 0 2px, transparent 2px 6px)"></i>Worst case (positive Gehälter)</span>${optimumLegend}
   </div>`;
   return s + legend;
 }
 
 function chartNetBruttoSurface(input, data = computeHeatmapData(input)) {
   const C = CONFIG.charts.netBrutto3d;
-  const { nx, ny, axisMax, cells, rows, lo, hi,
+  const { nx, ny, xMin, axisMax, cells, rows, lo, hi, optimum,
           g1cur, g2cur, currentNet, currentQuote, currentBaselineRatio } = data;
+  const span = axisMax - xMin;
   const W = C.width, H = C.height;
   const x0 = C.x0, y0 = C.y0, xSpan = C.x_span;
   const yDepth = C.y_depth, ySkew = C.y_skew, zHeight = C.z_height;
@@ -1578,14 +2204,29 @@ function chartNetBruttoSurface(input, data = computeHeatmapData(input)) {
             fill="${colorFor(c.score)}" fill-opacity="0.25" stroke="${COLORS.grid}" stroke-width="0.4"/>`;
   }
 
-  // Worst-case and break-even ridges across all Partner #2 salaries. They use
-  // the same per-row values as the flat map, projected onto the surface.
+  // Explicit zero guides on the base plane. The depth edge is the Partner #2
+  // gross axis; the skewed edge across it is the Partner #1 gross axis.
+  const uZero = clamp((0 - xMin) / span, 0, 1);
+  const vZero = uZero;
+  s += `<line x1="${px(0,0)}" y1="${py(0,0,0)}" x2="${px(0,1)}" y2="${py(0,1,0)}"
+          stroke="${COLORS.axis}" stroke-width="1.6"><title>Tiefe: Bruttojahresgehalt Partner #2</title></line>`;
+  s += `<line x1="${px(uZero,0)}" y1="${py(uZero,0,0)}" x2="${px(uZero,1)}" y2="${py(uZero,1,0)}"
+          stroke="${COLORS.guide}" stroke-width="1.5" stroke-dasharray="5 4"><title>Brutto Partner #1: 0 €</title></line>`;
+  s += `<line x1="${px(0,vZero)}" y1="${py(0,vZero,0)}" x2="${px(1,vZero)}" y2="${py(1,vZero,0)}"
+          stroke="${COLORS.guide}" stroke-width="1.5" stroke-dasharray="5 4"><title>Brutto Partner #2: 0 €</title></line>`;
+  s += txt(px(uZero,1) + 5, py(uZero,1,0) - 4, "0 €",
+    `text-anchor="start" font-size="9" font-weight="700" fill="${COLORS.guide_text}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+  s += txt(px(1,vZero) - 5, py(1,vZero,0) + 14, "0 € (P2)",
+    `text-anchor="end" font-size="9" font-weight="700" fill="${COLORS.guide_text}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+
+  // Worst-case and break-even ridges use the same per-row values as the flat
+  // map; the worst ridge exists only where both salaries are positive.
   const surfaceLine = (gKey, scoreKey, color, dash, label, title) => {
     const valid = rows.filter(r => Number.isFinite(r[gKey]) && Number.isFinite(r[scoreKey]));
     if (valid.length < 2) return;
     const points = valid.map(r => {
-      const u = clamp(r[gKey] / axisMax, 0, 1);
-      const v = clamp(r.g2 / axisMax, 0, 1);
+      const u = clamp((r[gKey] - xMin) / span, 0, 1);
+      const v = clamp((r.g2 - xMin) / span, 0, 1);
       return { x: px(u, v), y: py(u, v, norm(r[scoreKey])) };
     });
     const path = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
@@ -1601,11 +2242,11 @@ function chartNetBruttoSurface(input, data = computeHeatmapData(input)) {
   surfaceLine("breakEven", "referenceNet", COLORS.break_even, "7 4", "Break-even",
     "Break-even auf der Fläche: bestes Netto mit Gehalt von Partner #1 = ohne Gehalt");
   surfaceLine("worstG", "worstNet", COLORS.worst_case, "2 4", "Worst case",
-    "Worst case auf der Fläche: bestes Netto am niedrigsten");
+    "Worst case auf der Fläche bei positiven Gehältern beider Partner: bestes Netto am niedrigsten");
 
   // Cross-section at the current Partner #2 salary: interpolate between the
   // two grid rows around it and trace Partner #1 from 0 to axisMax.
-  const v = clamp(g2cur / axisMax, 0, 1);
+  const v = clamp((g2cur - xMin) / span, 0, 1);
   const rowPos = clamp(v * ny - 0.5, 0, ny - 1);
   const j0 = Math.floor(rowPos);
   const j1 = Math.min(ny - 1, j0 + 1);
@@ -1631,6 +2272,39 @@ function chartNetBruttoSurface(input, data = computeHeatmapData(input)) {
     `P2 ${money(g2cur)}`,
     `text-anchor="${labelAnchor}" font-size="10" font-weight="700" fill="${COLORS.break_even}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
 
+  // Optimum net-to-gross curves: row-wise best P1 and column-wise best P2.
+  // Kept in the code but hidden behind CONFIG.general.show_optimum_curves.
+  if (CONFIG.general.show_optimum_curves) {
+    const optimumSurfaceLine = (points, color, dash, label, title) => {
+      if (!points || points.length < 2) return;
+      const path = points.map(p => coords((p.g1 - xMin) / span, (p.g2 - xMin) / span, norm(p.net))).join(" ");
+      s += `<polyline points="${path}" fill="none" stroke="${COLORS.halo}"
+              stroke-width="4.5" stroke-opacity="0.85" pointer-events="none"/>`;
+      s += `<polyline points="${path}" fill="none" stroke="${color}" stroke-width="2"
+              stroke-dasharray="${dash}"><title>${title}</title></polyline>`;
+      const end = points[points.length - 1];
+      const ex = px((end.g1 - xMin) / span, (end.g2 - xMin) / span);
+      const ey = py((end.g1 - xMin) / span, (end.g2 - xMin) / span, norm(end.net));
+      const anchor = ex < W - 150 ? "start" : "end";
+      s += txt(ex + (anchor === "start" ? 7 : -7), ey - 6, label,
+        `text-anchor="${anchor}" font-size="9" font-weight="700" fill="${color}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+    };
+    optimumSurfaceLine(optimum.byRow, COLORS.opt_g1, "6 3", "Opt. P1 je P2",
+      "Bestes Gehalt von Partner #1 für jedes Gehalt von Partner #2: höchste Nettoquote");
+    optimumSurfaceLine(optimum.byCol, COLORS.opt_g2, "2 3", "Opt. P2 je P1",
+      "Bestes Gehalt von Partner #2 für jedes Gehalt von Partner #1: höchste Nettoquote");
+    const optimumSurfacePoint = (point, color, titleFor) => {
+      if (!point) return;
+      const u = (point.g1 - xMin) / span, v = (point.g2 - xMin) / span;
+      s += `<circle cx="${px(u, v).toFixed(1)}" cy="${py(u, v, norm(point.net)).toFixed(1)}" r="4"
+              fill="${COLORS.halo}" stroke="${color}" stroke-width="2"><title>${titleFor(point)}</title></circle>`;
+    };
+    optimumSurfacePoint(optimum.currentByRow, COLORS.opt_g1, p =>
+      `Bestes P1 bei P2 ${money(g2cur)}: ${money(p.g1)}, Nettoquote ${pct(p.quote * 100)}`);
+    optimumSurfacePoint(optimum.currentByCol, COLORS.opt_g2, p =>
+      `Bestes P2 bei P1 ${money(g1cur)}: ${money(p.g2)}, Nettoquote ${pct(p.quote * 100)}`);
+  }
+
   // Z axis.
   const zx = x0 - 34;
   s += `<line x1="${zx}" y1="${y0}" x2="${zx}" y2="${y0 - zHeight}"
@@ -1646,13 +2320,13 @@ function chartNetBruttoSurface(input, data = computeHeatmapData(input)) {
   CONFIG.charts.common.tick_fractions.forEach(f => {
     const x = px(f, 0), y = py(f, 0, 0);
     s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + 6}" stroke="${COLORS.axis}" stroke-width="1"/>`;
-    s += txt(x, y + 20, money(axisMax * f), `text-anchor="middle" font-size="10"`);
+    s += txt(x, y + 20, money(xMin + span * f), `text-anchor="middle" font-size="10"`);
     const yx = px(0, f), yy = py(0, f, 0);
     s += `<line x1="${yx}" y1="${yy}" x2="${yx - 7}" y2="${yy + 4}" stroke="${COLORS.axis}" stroke-width="1"/>`;
-    s += txt(yx - 11, yy + 7, money(axisMax * f), `text-anchor="end" font-size="10"`);
+    s += txt(yx - 11, yy + 7, money(xMin + span * f), `text-anchor="end" font-size="10"`);
   });
   s += txt(x0 + xSpan / 2, y0 + 42, "Bruttojahresgehalt Partner #1 →", `text-anchor="middle" font-weight="600"`);
-  s += txt(x0 + 6, y0 - yDepth - 16, "Bruttojahresgehalt Partner #2 →",
+  s += txt(x0 + 6, y0 - yDepth - 16, "Tiefe: Bruttojahresgehalt Partner #2 →",
     `font-size="10" font-weight="600"`);
 
   // Marker helper: dashed guide from the base plane up to the plotted point.
@@ -1688,7 +2362,7 @@ function chartNetBruttoSurface(input, data = computeHeatmapData(input)) {
   if (Number.isFinite(currentNet)) {
     const currentQuoteText = Number.isFinite(currentQuote) ? pct(currentQuote * 100) : "–";
     const currentRatioText = Number.isFinite(currentBaselineRatio) ? pct(currentBaselineRatio * 100) : "–";
-    marker(clamp(g1cur / axisMax, 0, 1), clamp(g2cur / axisMax, 0, 1), norm(currentNet),
+    marker(clamp((g1cur - xMin) / span, 0, 1), clamp((g2cur - xMin) / span, 0, 1), norm(currentNet),
       COLORS.crosshair,
       `Aktuelle Eingabe: ${householdLabelText(currentNet)}, Nettoquote ${currentQuoteText}, Quote vs. ohne Gehalt ${currentRatioText}`,
       [householdLabelText(currentNet), `Nettoquote ${currentQuoteText}`, `vs. ohne Gehalt ${currentRatioText}`], true);
@@ -1702,7 +2376,11 @@ function chartNetBruttoSurface(input, data = computeHeatmapData(input)) {
   s += txt(sx + sw + 6, sy + sh, money(lo), `font-size="10"`);
 
   s += `</svg>`;
-  return s;
+  const optimumLegend = CONFIG.general.show_optimum_curves ? `
+    <span><i class="swatch" style="width:24px;height:2px;background:repeating-linear-gradient(90deg, ${COLORS.opt_g1} 0 6px, transparent 6px 9px)"></i>Opt. P1 je P2 (Nettoquote)</span>
+    <span><i class="swatch" style="width:24px;height:2px;background:repeating-linear-gradient(90deg, ${COLORS.opt_g2} 0 2px, transparent 2px 5px)"></i>Opt. P2 je P1 (Nettoquote)</span>` : "";
+  const legend = `<div class="legend">${optimumLegend}</div>`;
+  return optimumLegend ? s + legend : s;
 }
 
 function householdLabelText(value) {
@@ -1714,9 +2392,9 @@ function householdLabelText(value) {
    #1's current gross only moves the marker, so it is not part of the cache key. */
 let ABF_SWEEP_CACHE = { key: null };
 
-function abfSweepKey(input, xMax, step) {
+function abfSweepKey(input, xMin, xMax, step) {
   return JSON.stringify({
-    xMax, step,
+    xMin, xMax, step,
     year: input.year,
     state: input.state.short,
     children: input.children,
@@ -1725,6 +2403,7 @@ function abfSweepKey(input, xMax, step) {
     people: input.people.map((p, i) => ({
       gross: i === 0 ? 0 : p.gross,
       insurance: p.insurance, church: p.church, abfindung: p.abfindung || 0,
+      opt: p.opt || {},
       pkvKV: p.pkvKV, pkvPV: p.pkvPV, pkvChild: p.pkvChild,
       pkvChildren: p.pkvChildren, pkvAG: p.pkvAG
     }))
@@ -1733,8 +2412,8 @@ function abfSweepKey(input, xMax, step) {
 
 function computeAbfWorkData(input) {
   const domain = grossDomain();
-  const xMax = domain.max, step = domain.chartStep;
-  const key = abfSweepKey(input, xMax, step);
+  const xMin = domain.min, xMax = domain.max, step = domain.chartStep;
+  const key = abfSweepKey(input, xMin, xMax, step);
   if (ABF_SWEEP_CACHE.key !== key) {
     const A = input.people.map(p => p.abfindung || 0);
     const totalA = A.reduce((s, v) => s + v, 0);
@@ -1754,7 +2433,16 @@ function computeAbfWorkData(input) {
       individual: [], joint: [],
       individualMit: [], individualOhne: [], jointMit: [], jointOhne: []
     };
-    for (let g = 0; g <= xMax; g += step) {
+    const sampleGs = [];
+    for (let g = xMin; g < xMax; g += step) sampleGs.push(g);
+    sampleGs.push(xMax);
+    // Zero is the "ohne Gehalt" reference and must be a real sample even when
+    // the negative-inclusive step grid does not land on it exactly.
+    if (!sampleGs.some(g => g === 0)) {
+      sampleGs.push(0);
+      sampleGs.sort((a, b) => a - b);
+    }
+    sampleGs.forEach(g => {
       const ind = variantsAt(g, "individual");
       const joint = variantsAt(g, "joint");
       series.individual.push({ g, net: Math.max(ind.mit, ind.ohne) });
@@ -1763,10 +2451,15 @@ function computeAbfWorkData(input) {
       series.individualOhne.push({ g, net: ind.ohne });
       series.jointMit.push({ g, net: joint.mit });
       series.jointOhne.push({ g, net: joint.ohne });
-    }
-    const baseInd = series.individual[0].net, baseJoint = series.joint[0].net;
-    const baseIndMit = series.individualMit[0].net, baseIndOhne = series.individualOhne[0].net;
-    const baseJointMit = series.jointMit[0].net, baseJointOhne = series.jointOhne[0].net;
+    });
+    // The dashed reference lines and the break-even comparison are explicitly
+    // evaluated at Partner #1 gross 0, even when the plotted sweep starts below
+    // zero to show negative income.
+    const baseIndV = variantsAt(0, "individual"), baseJointV = variantsAt(0, "joint");
+    const baseInd = Math.max(baseIndV.mit, baseIndV.ohne);
+    const baseJoint = Math.max(baseJointV.mit, baseJointV.ohne);
+    const baseIndMit = baseIndV.mit, baseIndOhne = baseIndV.ohne;
+    const baseJointMit = baseJointV.mit, baseJointOhne = baseJointV.ohne;
     const bestWithout = Math.max(baseInd, baseJoint);
     const bestWith = i => Math.max(series.individual[i].net, series.joint[i].net);
 
@@ -1777,21 +2470,31 @@ function computeAbfWorkData(input) {
       const prev = bestWith(i - 1) - bestWithout;
       const now = bestWith(i) - bestWithout;
       if (prev <= 0 && now >= 0 && now !== prev) {
-        breakEven = series.individual[i - 1].g + step * (-prev / (now - prev));
+        const prevG = series.individual[i - 1].g;
+        const nextG = series.individual[i].g;
+        breakEven = prevG + (nextG - prevG) * (-prev / (now - prev));
       }
     }
-    let worstIndex = 0;
-    for (let i = 1; i < series.individual.length; i++) {
+    // Worst case is only defined where both salaries are positive. Negative
+    // samples stay in the plotted curves, but may never become the minimum.
+    const positiveP2 = (input.people[1] && input.people[1].gross || 0) > 0;
+    let worstIndex = positiveP2
+      ? series.individual.findIndex(p => p.g > 0)
+      : -1;
+    for (let i = worstIndex + 1; i < series.individual.length; i++) {
+      if (!positiveP2 || series.individual[i].g <= 0) continue;
       if (bestWith(i) < bestWith(worstIndex) - 1e-9) worstIndex = i;
     }
+    const hasWorst = worstIndex >= 0;
     ABF_SWEEP_CACHE = {
-      key, xMax, step, totalA, netAt, series,
+      key, xMin, xMax, step, totalA, netAt, series,
       baseInd, baseJoint, baseIndMit, baseIndOhne, baseJointMit, baseJointOhne,
       bestWithout, bestWith, breakEven,
       breakEvenNet: breakEven === null ? null : bestWithout,
-      recoveryGap: breakEven === null ? null : Math.max(0, bestWithout - bestWith(worstIndex)),
-      worstIndex,
-      worstG: series.individual[worstIndex].g, worstNet: bestWith(worstIndex)
+      recoveryGap: breakEven === null || !hasWorst ? null : Math.max(0, bestWithout - bestWith(worstIndex)),
+      worstIndex, hasWorst,
+      worstG: hasWorst ? series.individual[worstIndex].g : null,
+      worstNet: hasWorst ? bestWith(worstIndex) : null
     };
   }
   return ABF_SWEEP_CACHE;
@@ -1811,59 +2514,74 @@ function bestNetForAbfindungen(input, abfindungen) {
    it makes the dip in the Abfindung year and the recovery visible. */
 function chartNetTrend(input, data = computeAbfWorkData(input)) {
   const C = CONFIG.charts.netTrend;
-  const { xMax, series, baseInd, baseJoint, bestWithout, bestWith, breakEven, worstG, worstNet } = data;
+  const { series, bestWithout, bestWith, breakEven, hasWorst, worstG } = data;
+  const { xMin, xMax, yMin, yMax } = curveViewport("netTrendSvg", data);
   const W = C.width, H = C.height, x0 = C.x0, y0 = C.y0, plotW = C.plot_width, plotH = C.plot_height;
   const best = series.individual.map((p, i) => ({ g: p.g, net: bestWith(i) }));
-  const vals = best.map(p => p.net).concat([bestWithout]);
-  const yMin = Math.max(0, Math.floor(Math.min(...vals) / C.y_round) * C.y_round - C.y_pad);
-  const yMax = Math.ceil(Math.max(...vals) / C.y_round) * C.y_round + C.y_pad;
-  const px = g => x0 + g / xMax * plotW;
+  const span = xMax - xMin;
+  const px = g => x0 + (g - xMin) / span * plotW;
   const py = v => y0 + plotH - (v - yMin) / (yMax - yMin) * plotH;
+  const inX = v => v >= xMin && v <= xMax;
+  const inY = v => v >= yMin && v <= yMax;
+
+  let shade = "";
+  const dipEnd = breakEven === null ? xMax : clamp(breakEven, xMin, xMax);
+  if (dipEnd > xMin) shade += box(x0, y0, px(dipEnd) - x0, plotH, CONFIG.colors.shade);
 
   let s = svgOpen(W, H);
-  const dipEnd = breakEven === null ? xMax : Math.min(xMax, breakEven);
-  if (dipEnd > 0) s += box(x0, y0, px(dipEnd) - x0, plotH, CONFIG.colors.shade);
+  s += `<defs><clipPath id="netTrendClip"><rect x="${x0}" y="${y0}" width="${plotW}" height="${plotH}"/></clipPath></defs>`;
+  s += `<g clip-path="url(#netTrendClip)">${shade}</g>`;
   s += axes(x0, y0, plotW, plotH,
-    CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: xMax * f })),
+    CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: xMin + span * f })),
     CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: yMin + (yMax - yMin) * f })),
     v => money(v), v => money(v));
+  if (inX(0)) s += zeroXGuide(px(0), y0, plotH);
   s += `<text transform="rotate(-90 18 ${y0 + plotH / 2})" x="18" y="${y0 + plotH / 2}"
           text-anchor="middle" font-size="10" font-weight="600" fill="${COLORS.axis}">Bestes Netto/Jahr</text>`;
-  s += `<line x1="${x0}" y1="${py(bestWithout)}" x2="${x0 + plotW}" y2="${py(bestWithout)}"
-          stroke="${COLORS.net}" stroke-width="1.5" stroke-dasharray="6 4"/>`;
-  s += txt(x0 + plotW - 4, py(bestWithout) - 5, `Ohne Gehalt: ${money(bestWithout)}`,
-    `text-anchor="end" font-size="10" font-weight="600" fill="${COLORS.net}"`);
-  s += `<polyline points="${best.map(p => `${px(p.g).toFixed(1)},${py(p.net).toFixed(1)}`).join(" ")}"
-          fill="none" stroke="${COLORS.net}" stroke-width="2.5"/>`;
-  if (breakEven !== null) {
+  if (inY(bestWithout)) {
+    s += `<line x1="${x0}" y1="${py(bestWithout)}" x2="${x0 + plotW}" y2="${py(bestWithout)}"
+            stroke="${COLORS.net}" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+    s += txt(x0 + plotW - 4, py(bestWithout) - 5, `Ohne Gehalt: ${money(bestWithout)}`,
+      `text-anchor="end" font-size="10" font-weight="600" fill="${COLORS.net}"`);
+  }
+  let curves = `<polyline points="${best.map(p => `${px(p.g).toFixed(1)},${py(p.net).toFixed(1)}`).join(" ")}"
+                  fill="none" stroke="${COLORS.net}" stroke-width="2.5"/>`;
+  s += `<g clip-path="url(#netTrendClip)">${curves}</g>`;
+  if (breakEven !== null && inX(breakEven)) {
     const bx = px(breakEven), right = bx > x0 + plotW * 0.6;
     s += `<line x1="${bx}" y1="${y0}" x2="${bx}" y2="${y0 + plotH}" stroke="${COLORS.break_even}"
             stroke-width="1.5" stroke-dasharray="7 4"/>`;
     s += txt(bx + (right ? -6 : 6), y0 + 12, `Break-even ${money(breakEven)}`,
       `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.break_even}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
   }
-  const wx = px(worstG), wRight = wx > x0 + plotW * 0.6;
-  s += `<line x1="${wx}" y1="${y0}" x2="${wx}" y2="${y0 + plotH}" stroke="${COLORS.worst_case}"
-          stroke-width="1.5" stroke-dasharray="2 4"/>`;
-  s += txt(wx + (wRight ? -6 : 6), y0 + 28, `Worst case ${money(worstG)}`,
-    `text-anchor="${wRight ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.worst_case}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+  if (hasWorst && inX(worstG)) {
+    const wx = px(worstG), wRight = wx > x0 + plotW * 0.6;
+    s += `<line x1="${wx}" y1="${y0}" x2="${wx}" y2="${y0 + plotH}" stroke="${COLORS.worst_case}"
+            stroke-width="1.5" stroke-dasharray="2 4"/>`;
+    s += txt(wx + (wRight ? -6 : 6), y0 + 28, `Worst case ${money(worstG)}`,
+      `text-anchor="${wRight ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.worst_case}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+  }
 
-  const cur = clamp(input.people[0].gross, 0, xMax);
-  const curNet = Math.max(data.netAt(cur, "individual"), data.netAt(cur, "joint"));
-  s += `<line x1="${px(cur)}" y1="${y0}" x2="${px(cur)}" y2="${y0 + plotH}" stroke="${COLORS.crosshair}"
-          stroke-width="1.5" stroke-dasharray="5 4"/>`;
-  s += `<circle cx="${px(cur)}" cy="${py(curNet)}" r="5" fill="${COLORS.point}" stroke="${COLORS.net}"
-          stroke-width="2"><title>Gehalt ${money(cur)}: Bestes Netto ${money(curNet)}</title></circle>`;
-  const delta = curNet - bestWithout;
-  const worse = delta < -0.5;
-  const deltaText = worse
-    ? `${money(-delta)} weniger als ohne Gehalt`
-    : `${money(Math.abs(delta))} mehr als ohne Gehalt`;
-  const deltaColor = worse ? COLORS.worst_case : COLORS.net;
-  const right = px(cur) > x0 + plotW * 0.66;
-  s += txt(px(cur) + (right ? -9 : 9), py(curNet) - 10,
-    `Aktuell ${money(curNet)} · ${deltaText}`,
-    `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="700" fill="${deltaColor}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+  const cur = input.people[0].gross;
+  if (inX(cur)) {
+    const curNet = Math.max(data.netAt(cur, "individual"), data.netAt(cur, "joint"));
+    s += `<line x1="${px(cur)}" y1="${y0}" x2="${px(cur)}" y2="${y0 + plotH}" stroke="${COLORS.crosshair}"
+            stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    if (inY(curNet)) {
+      s += `<circle cx="${px(cur)}" cy="${py(curNet)}" r="5" fill="${COLORS.point}" stroke="${COLORS.net}"
+              stroke-width="2"><title>Gehalt ${money(cur)}: Bestes Netto ${money(curNet)}</title></circle>`;
+      const delta = curNet - bestWithout;
+      const worse = delta < -0.5;
+      const deltaText = worse
+        ? `${money(-delta)} weniger als ohne Gehalt`
+        : `${money(Math.abs(delta))} mehr als ohne Gehalt`;
+      const deltaColor = worse ? COLORS.worst_case : COLORS.net;
+      const right = px(cur) > x0 + plotW * 0.66;
+      s += txt(px(cur) + (right ? -9 : 9), py(curNet) - 10,
+        `Aktuell ${money(curNet)} · ${deltaText}`,
+        `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="700" fill="${deltaColor}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+    }
+  }
   s += txt(x0 + plotW / 2, H - 6, "Bruttojahresgehalt Partner #1 →", `text-anchor="middle" font-weight="600"`);
   s += `</svg>`;
   return s;
@@ -1935,7 +2653,7 @@ function renderAbfWorkSteps(input, data, netWithA, netWithoutA) {
     `${p.label}: ${p.insurance === "pkv" ? "PKV" : "GKV"}${p.church ? " · Kirchensteuer" : ""}`).join("; ");
 
   const html = `
-    <p class="small">Alle Beträge sind Jahreswerte. <strong>Netto = Bruttogehälter − Sozialabgaben (RV/AV/KV/PV) − ESt − SolZu − KiSt + Kindergeld + Abfindung.</strong> Die ESt stammt aus den eingebetteten Tabellen; die Günstigerprüfung Kindergeld/Kinderfreibetrag ist in zvE und Kindergeld bereits enthalten.</p>
+    <p class="small">Alle Beträge sind Jahreswerte. <strong>Netto = Bruttogehälter − Sozialabgaben (RV/AV/KV/PV) − weitere Ausgaben und Verluste − ESt − SolZu − KiSt + Kindergeld + steuerfreie Lohnersatzleistungen + Abfindung.</strong> Die ESt stammt aus den eingebetteten Tabellen; die Günstigerprüfung Kindergeld/Kinderfreibetrag ist in zvE und Kindergeld bereits enthalten. Negative Gehälter erzeugen keine Sozialabgaben; Ausgaben und Verluste können das Netto negativ machen.</p>
     <h4>1. Eingaben</h4>
     <p>Steuerjahr ${input.year} · ${input.state.name} · Kinder ${input.children}${input.childUnder25 ? " (alle unter 25)" : ""} · KV-Zusatz ${pct(input.kvZusatz)} · ${insuranceText}.<br>
       Bruttogehälter ${money(input.people[0].gross)} + ${money(input.people[1].gross)} · Abfindungen ${money(A[0])} + ${money(A[1])} = <strong>${money(totalA)}</strong>.</p>
@@ -1957,14 +2675,18 @@ function renderAbfWorkSteps(input, data, netWithA, netWithoutA) {
     ${table(baselineCases.map(c => row(c, c.label, c === bestBaseline)))}
     <p>Bestes Netto ohne Gehalt P1: <strong>${val(data.bestWithout)}</strong> aus ${bestBaseline.label}.</p>
     <h4>6. Break-even, Worst case und Differenz</h4>
-    <p>Für jedes Gehalt g von 0 bis ${money(data.xMax)} in ${money(data.step)}-Schritten wird <strong>bestWith(g) = max der vier Netto-Werte</strong> gebildet und mit dem besten Netto ohne Gehalt P1 verglichen.</p>
+    <p>Für jedes Gehalt g von ${money(data.xMin)} bis ${money(data.xMax)} in ${money(data.step)}-Schritten wird <strong>bestWith(g) = max der vier Netto-Werte</strong> gebildet und mit dem besten Netto bei Gehalt 0 von Partner #1 verglichen. Negative Gehälter sind eingeschlossen, damit Verluste im Abfindungsjahr sichtbar bleiben. Der Worst case berücksichtigt jedoch nur positive Gehälter: g &gt; 0 und ein positives Gehalt von Partner #2.</p>
     <ol>
       <li>Roter Bereich (Arbeiten senkt Netto): Einzel ${range(badInds)}, Zusammen ${range(badJs)}.</li>
       <li>Break-even: ${cross === null
         ? "im gezeigten Bereich kein Vorzeichenwechsel."
         : `Vorzeichenwechsel zwischen ${money(cross.prevG)} (Netto ${val(cross.prevNet)}) und ${money(cross.nextG)} (Netto ${val(cross.nextNet)}); lineare Zwischenung ergibt <strong>${val(data.breakEven)}</strong>.`}</li>
-      <li>Worst case: kleinstes bestWith(g) bei <strong>${money(data.worstG)}</strong> mit ${val(data.worstNet)}.</li>
-      <li>Differenz Worst case → Break-even: ${val(data.bestWithout)} − ${val(data.worstNet)} = <strong>${val(data.recoveryGap)}</strong>.</li>
+      <li>Worst case: ${data.hasWorst
+        ? `kleinstes bestWith(g) bei positiven Gehältern mit <strong>${money(data.worstG)}</strong> und ${val(data.worstNet)}.`
+        : "nicht definiert, weil nicht beide Gehälter positiv sind."}</li>
+      <li>Differenz Worst case → Break-even: ${data.hasWorst
+        ? `${val(data.bestWithout)} − ${val(data.worstNet)} = <strong>${val(data.recoveryGap)}</strong>.`
+        : "entfällt, weil kein Worst case definiert ist."}</li>
     </ol>
     <h4>7. Aktueller Vergleich mit „ohne Gehalt“</h4>
     <p>Bestes Netto mit aktuellem Gehalt ${val(netWithA)} − bestes Netto ohne Gehalt P1 ${val(data.bestWithout)} = <strong class="${netDelta < -0.5 ? "negative" : "positive"}">${val(netDelta)}</strong>. ${netDelta < -0.5
@@ -1976,17 +2698,15 @@ function renderAbfWorkSteps(input, data, netWithA, netWithoutA) {
 function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   const C = CONFIG.charts.abfWork;
   const W = C.width, H = C.height, x0 = C.x0, y0 = C.y0, plotW = C.plot_width, plotH = C.plot_height;
-  const { xMax, step, totalA, netAt, series, baseInd, baseJoint,
-          baseIndMit, baseIndOhne, baseJointMit, baseJointOhne,
-          bestWithout, bestWith, breakEven, breakEvenNet, recoveryGap,
-          worstIndex, worstG, worstNet } = data;
-  const all = [series.individualMit, series.individualOhne, series.jointMit, series.jointOhne]
-    .flatMap(items => items.map(p => p.net))
-    .concat([baseIndMit, baseIndOhne, baseJointMit, baseJointOhne]);
-  const yMin = Math.max(0, Math.floor(Math.min(...all) / C.y_round) * C.y_round - C.y_pad);
-  const yMax = Math.ceil(Math.max(...all) / C.y_round) * C.y_round + C.y_pad;
-  const px = g => x0 + g / xMax * plotW;
+  const { totalA, netAt, series, baseInd, baseJoint, baseIndMit, baseIndOhne,
+          baseJointMit, baseJointOhne, breakEven, breakEvenNet, recoveryGap,
+          hasWorst, worstG, worstNet } = data;
+  const { xMin, xMax, yMin, yMax } = curveViewport("abfWorkSvg", data);
+  const span = xMax - xMin;
+  const px = g => x0 + (g - xMin) / span * plotW;
   const py = v => y0 + plotH - (v - yMin) / (yMax - yMin) * plotH;
+  const inX = v => v >= xMin && v <= xMax;
+  const inY = v => v >= yMin && v <= yMax;
   const bad = (p, b) => p.net < b - C.bad_tolerance;
 
   let shade = "";
@@ -2000,12 +2720,16 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   }
 
   let s = svgOpen(W, H);
-  s += shade;
+  s += `<defs><clipPath id="abfWorkClip"><rect x="${x0}" y="${y0}" width="${plotW}" height="${plotH}"/></clipPath></defs>`;
+  s += `<g clip-path="url(#abfWorkClip)">${shade}</g>`;
   s += axes(x0, y0, plotW, plotH,
-    CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: xMax * f })),
+    CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: xMin + span * f })),
     CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: yMin + (yMax - yMin) * f })),
     v => money(v), v => money(v));
-  [[baseInd, COLORS.individual, "Einzel ohne Gehalt P1"], [baseJoint, COLORS.joint, "Zusammen ohne Gehalt P1"]].forEach(([v, c, label]) => {
+  if (inX(0)) s += zeroXGuide(px(0), y0, plotH);
+  [[baseInd, COLORS.individual, "Einzel ohne Gehalt P1"],
+   [baseJoint, COLORS.joint, "Zusammen ohne Gehalt P1"]].forEach(([v, c, label]) => {
+    if (!inY(v)) return;
     s += `<line x1="${x0}" y1="${py(v)}" x2="${x0 + plotW}" y2="${py(v)}" stroke="${c}" stroke-width="1.5" stroke-dasharray="6 4"/>`;
     s += txt(x0 + plotW - 4, py(v) - 5, `${label}: ${money(v)}`,
       `text-anchor="end" font-size="10" font-weight="600" fill="${c}"`);
@@ -2017,28 +2741,33 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
     ["individualMit", COLORS.individual, null, 1],
     ["jointMit", COLORS.joint, null, 1]
   ];
+  let curveLines = "";
   curves.forEach(([key, color, dash, opacity]) => {
-    s += `<polyline points="${line(key)}" fill="none" stroke="${color}" stroke-width="${dash ? 2 : 2.5}"${dash ? ` stroke-dasharray="${dash}"` : ""} stroke-opacity="${opacity}"/>`;
+    curveLines += `<polyline points="${line(key)}" fill="none" stroke="${color}" stroke-width="${dash ? 2 : 2.5}"${dash ? ` stroke-dasharray="${dash}"` : ""} stroke-opacity="${opacity}"/>`;
   });
-  if (breakEven !== null) {
+  s += `<g clip-path="url(#abfWorkClip)">${curveLines}</g>`;
+  if (breakEven !== null && inX(breakEven)) {
     const bx = px(breakEven), right = bx > x0 + plotW * 0.6;
     s += `<line x1="${bx}" y1="${y0}" x2="${bx}" y2="${y0 + plotH}" stroke="${COLORS.break_even}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
     s += txt(bx + (right ? -6 : 6), y0 + 14, `Break-even ${money(breakEven)}`,
       `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.break_even}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
   }
-  {
+  if (hasWorst && inX(worstG)) {
     const wx = px(worstG), right = wx > x0 + plotW * 0.6;
     const ly = breakEven !== null ? y0 + 30 : y0 + 14;
     s += `<line x1="${wx}" y1="${y0}" x2="${wx}" y2="${y0 + plotH}" stroke="${COLORS.worst_case}" stroke-width="1.5" stroke-dasharray="2 4"/>`;
     s += txt(wx + (right ? -6 : 6), ly, `Worst case ${money(worstG)}`,
       `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.worst_case}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
-    const wy = py(worstNet);
-    s += `<line x1="${x0}" y1="${wy}" x2="${x0 + plotW}" y2="${wy}"
-            stroke="${COLORS.worst_case}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
-    s += txt(x0 + plotW - 4, wy - 5, `Worst case Netto ${money(worstNet)}`,
-      `text-anchor="end" font-size="10" font-weight="600" fill="${COLORS.worst_case}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+    if (inY(worstNet)) {
+      const wy = py(worstNet);
+      s += `<line x1="${x0}" y1="${wy}" x2="${x0 + plotW}" y2="${wy}"
+              stroke="${COLORS.worst_case}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
+      s += txt(x0 + plotW - 4, wy - 5, `Worst case Netto ${money(worstNet)}`,
+        `text-anchor="end" font-size="10" font-weight="600" fill="${COLORS.worst_case}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+    }
   }
-  if (breakEven !== null && recoveryGap > 0.5) {
+  if (hasWorst && breakEven !== null && recoveryGap > 0.5 &&
+      inX(worstG) && inX(breakEven) && inY(breakEvenNet) && inY(worstNet)) {
     const topY = py(breakEvenNet), bottomY = py(worstNet);
     const gx = clamp((px(worstG) + px(breakEven)) / 2, x0 + 70, x0 + plotW - 70);
     const tick = 8;
@@ -2052,16 +2781,19 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
       `text-anchor="start" font-size="9" fill="${COLORS.guide_text}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
   }
 
-  const cur = clamp(input.people[0].gross, 0, xMax);
-  const curInd = netAt(cur, "individual"), curJoint = netAt(cur, "joint");
-  s += `<line x1="${px(cur)}" y1="${y0}" x2="${px(cur)}" y2="${y0 + plotH}" stroke="${COLORS.crosshair}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
-  [["Einzel", curInd, COLORS.individual, -9],
-   ["Zusammen", curJoint, COLORS.joint, 16]].forEach(([name, v, c, dy]) => {
-    s += `<line x1="${x0}" y1="${py(v)}" x2="${px(cur)}" y2="${py(v)}" stroke="${COLORS.crosshair}" stroke-width="1.2" stroke-dasharray="4 4"/>`;
-    s += `<circle cx="${px(cur)}" cy="${py(v)}" r="5" fill="${COLORS.point}" stroke="${c}" stroke-width="2"><title>Gehalt ${money(cur)}: Netto ${money(v)}</title></circle>`;
-    s += txt(px(cur) + 9, py(v) + dy, `${name}: ${money(v)}`,
-      `font-size="10" font-weight="600" fill="${c}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
-  });
+  const cur = input.people[0].gross;
+  if (inX(cur)) {
+    const curInd = netAt(cur, "individual"), curJoint = netAt(cur, "joint");
+    s += `<line x1="${px(cur)}" y1="${y0}" x2="${px(cur)}" y2="${y0 + plotH}" stroke="${COLORS.crosshair}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    [["Einzel", curInd, COLORS.individual, -9],
+     ["Zusammen", curJoint, COLORS.joint, 16]].forEach(([name, v, c, dy]) => {
+      if (!inY(v)) return;
+      s += `<line x1="${x0}" y1="${py(v)}" x2="${px(cur)}" y2="${py(v)}" stroke="${COLORS.crosshair}" stroke-width="1.2" stroke-dasharray="4 4"/>`;
+      s += `<circle cx="${px(cur)}" cy="${py(v)}" r="5" fill="${COLORS.point}" stroke="${c}" stroke-width="2"><title>Gehalt ${money(cur)}: Netto ${money(v)}</title></circle>`;
+      s += txt(px(cur) + 9, py(v) + dy, `${name}: ${money(v)}`,
+        `font-size="10" font-weight="600" fill="${c}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+    });
+  }
   s += txt(x0 + plotW / 2, H - 8, "Bruttojahresgehalt Partner #1 →", `text-anchor="middle" font-weight="600"`);
   s += `<text transform="rotate(-90 20 ${y0 + plotH / 2})" x="20" y="${y0 + plotH / 2}" text-anchor="middle" font-size="11" font-weight="600" fill="${COLORS.axis}">Haushaltsnetto →</text>`;
   s += `</svg>`;
@@ -2073,7 +2805,9 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   const beText = breakEven === null
     ? "kein Break-even im gezeigten Bereich"
     : `Break-even (bestes Netto mit Gehalt P1 = ohne Gehalt P1): <strong>${money(breakEven)}</strong>`;
-  const worstText = `Worst case (bestes Netto am niedrigsten): <strong>${money(worstG)}</strong> → ${money(worstNet)}`;
+  const worstText = hasWorst
+    ? `Worst case bei positiven Gehältern (bestes Netto am niedrigsten): <strong>${money(worstG)}</strong> → ${money(worstNet)}`
+    : "Worst case: nicht definiert, weil nicht beide Gehälter positiv sind";
   const g1 = input.people[0].gross;
   const A = input.people.map(p => p.abfindung || 0);
   const netWithA = bestNetForAbfindungen(input, A);
@@ -2085,7 +2819,7 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
       <span style="color:${abfGainColor};font-weight:800">${money(abfGain)}</span>
       aus ${money(totalA)} brutto
       (bestes Netto mit Abfindung ${money(netWithA)} − bestes Netto ohne Abfindung ${money(netWithoutA)}).<br>`;
-  const netDelta = netWithA - bestWithout;
+  const netDelta = netWithA - data.bestWithout;
   const belowBreakEven = netDelta < -0.5;
   const takeawayColor = belowBreakEven ? COLORS.worst_case : COLORS.net;
   const takeawayText = belowBreakEven
@@ -2111,7 +2845,7 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
     <span><i class="swatch" style="background:${COLORS.joint}"></i>Zusammenveranlagung · mit Fünftel</span>
     <span><i class="swatch" style="${dashSwatch(COLORS.joint)}"></i>Zusammenveranlagung · ohne Fünftel</span>
     <span><i class="swatch" style="background:${COLORS.break_even}"></i>Break-even (bestes Netto mit Gehalt P1 = ohne Gehalt P1)</span>
-    <span><i class="swatch" style="background:${COLORS.worst_case}"></i>Worst case (bestes Netto minimal)</span>
+    <span><i class="swatch" style="background:${COLORS.worst_case}"></i>Worst case (nur positive Gehälter)</span>
   </div>`;
   return s + legend;
 }
@@ -2171,9 +2905,10 @@ function chartProgression(input) {
     Array.from({ length: C.x_ticks }, (_, i) => ({ frac: i / (C.x_ticks - 1), value: xMax * i / (C.x_ticks - 1) })),
     CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: yMin + (yMax - yMin) * f })),
     v => money(v), v => money(v));
+  s += zeroXGuide(px(0), y0, plotH);
   s += `<polyline points="${line("individual")}" fill="none" stroke="${COLORS.individual}" stroke-width="2.5"/>`;
   s += `<polyline points="${line("joint")}" fill="none" stroke="${COLORS.joint}" stroke-width="2.5"/>`;
-  const cx = px(Math.min(input.people[0].gross, xMax));
+  const cx = px(clamp(input.people[0].gross, 0, xMax));
   s += `<line x1="${cx}" y1="${y0}" x2="${cx}" y2="${y0 + plotH}" stroke="${COLORS.guide}" stroke-dasharray="4 4"/>`;
   s += txt(cx + 5, y0 + 12, "aktuelles Gehalt", `fill="${COLORS.guide_text}"`);
   s += `</svg>`;
@@ -2268,6 +3003,21 @@ function renderHeatmap() {
   HEAT_DATA = data;
   document.getElementById("netBruttoSvg").innerHTML = chartNetBruttoMap(HEAT_INPUT, data);
   document.getElementById("netBrutto3dSvg").innerHTML = chartNetBruttoSurface(HEAT_INPUT, data);
+  renderGrossOptimumHints(data);
+}
+
+function renderGrossOptimumHints(data) {
+  const opt = data.optimum || {};
+  const textFor = (point, partner, fixedLabel, fixedValue) => point
+    ? `Bestes ${partner} bei ${fixedLabel} ${money(fixedValue)}: ${money(point[partner === "P1" ? "g1" : "g2"])} · Nettoquote ${pct(point.quote * 100)}`
+    : `Bestes ${partner}: im gezeigten Bereich nicht bestimmt.`;
+  const texts = {
+    p1: textFor(opt.currentByRow, "P1", "P2", data.g2cur),
+    p2: textFor(opt.currentByCol, "P2", "P1", data.g1cur)
+  };
+  document.querySelectorAll("[data-optimum]").forEach(el => {
+    el.textContent = texts[el.dataset.optimum] || "";
+  });
 }
 
 function renderAbfWorkCharts() {
@@ -2343,6 +3093,7 @@ function renderCharts(input, individual, joint) {
     chartProgression(input) +
     chartMarginalRates(individual, joint);
   document.getElementById("chartsCard").hidden = false;
+  setupCurveZoom();
 }
 
 function togglePkvFields() {
@@ -2477,6 +3228,19 @@ function collectDefaultsFromInputs() {
     abfindung1: number("abfindung1"),
     abfindung2: number("abfindung2"),
     kv_zusatz: number("kvZusatz"),
+    weiterbildung1: number("weiterbildung1"),
+    weiterbildung2: number("weiterbildung2"),
+    werbungskosten1: number("werbungskosten1"),
+    werbungskosten2: number("werbungskosten2"),
+    kvPrepayment1: number("kvPrepayment1"),
+    kvPrepayment2: number("kvPrepayment2"),
+    rvExtra1: number("rvExtra1"),
+    rvExtra2: number("rvExtra2"),
+    alg1: number("alg1"),
+    alg2: number("alg2"),
+    donations: number("donations"),
+    rentalLoss: number("rentalLoss"),
+    businessLoss: number("businessLoss"),
     theme: document.documentElement.dataset.theme === "light" ? "light" : "dark"
   };
   for (const suffix of ["1", "2"]) {
@@ -2573,6 +3337,7 @@ function applyConfigToInputs() {
   const grossRange = { min: L.gross.slider_min, max: L.gross.slider_max, step: L.gross.slider_step };
   const abfNumber = { min: L.abfindung.number_min, max: L.abfindung.number_max, step: L.abfindung.number_step };
   const abfRange = { min: L.abfindung.slider_min, max: L.abfindung.slider_max, step: L.abfindung.slider_step };
+  const optNumber = { min: L.optimization.min, max: L.optimization.max, step: L.optimization.step };
   for (const suffix of ["1", "2"]) {
     const saved = key => Object.prototype.hasOwnProperty.call(D, key + suffix) ? D[key + suffix] : D[key];
     const pkvDefaults = {
@@ -2592,7 +3357,13 @@ function applyConfigToInputs() {
       setNumber(key + suffix, L.pkv_amount, val);
     }
     setNumber("pkvChildren" + suffix, L.pkv_children, saved("pkv_children"));
+    ["weiterbildung", "werbungskosten", "kvPrepayment", "rvExtra", "alg"].forEach(key => {
+      setNumber(key + suffix, optNumber, D[key + suffix]);
+    });
   }
+  ["donations", "rentalLoss", "businessLoss"].forEach(key => {
+    setNumber(key, optNumber, D[key]);
+  });
   setRange("abfWorkSlider", grossRange, D.gross1);
   setRange("abfWork2Slider", grossRange, D.gross2);
   setRange("abfWorkAbfSlider", { ...abfRange, step: L.abfindung.work_slider_step }, D.abfindung1);
@@ -2607,6 +3378,8 @@ function init() {
   applyConfigToInputs();
   document.getElementById("inputCard").addEventListener("input", handleLiveInput);
   document.getElementById("inputCard").addEventListener("change", handleLiveInput);
+  document.getElementById("optimizationCard").addEventListener("input", handleLiveInput);
+  document.getElementById("optimizationCard").addEventListener("change", handleLiveInput);
   document.getElementById("themeToggle").addEventListener("click", () => {
     applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
     calculate();
