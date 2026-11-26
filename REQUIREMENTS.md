@@ -41,10 +41,12 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 ## 4. Inputs and live behaviour
 
 - Built-in defaults: tax year 2026, gross `50000` for both partners, `1` child,
-  state NW, no church tax, `gkv` (pflichtversichert) for both partners, joint
+  state NW, no church tax, `gkv_freiwillig` (freiwillig versichert, Auto on)
+  for both partners, joint
   assessment enabled (`joint_allowed = true`), Partner #1 Abfindung `100000`
-  and Partner #2 Abfindung `0`, voluntary-GKV bases of `0`, and all per-partner
-  optimization fields at `0`.
+  and Partner #2 Abfindung `0`, both partners with `minijob_mode = none`,
+  `minijob_gross = 0` and `minijob_rv_exempt = false`, voluntary-GKV bases of
+  `0`, and all per-partner optimization fields at `0`.
 - All inputs recalculate automatically on any change; there is no separate
   **Berechnen** button.
 - Gross salary and Abfindung number fields use `1000` spinner steps, so the
@@ -95,19 +97,68 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   share of KV and PV. `gkv_freiwillig` uses a separate annual `voluntary_base1`
   / `voluntary_base2` field capped at `bbgKVPV`, the full KV and PV rates and no
   employer share. `pkv` uses the entered monthly premiums and subsidy and keeps
-  the existing GKV-equivalent deductible. The insurance mode and voluntary base
-  are part of both sweep cache keys.
+  the existing GKV-equivalent deductible. The insurance mode and Auto flag are
+  part of both sweep cache keys; a manual base is part of the keys, while an
+  Auto base is derived per sampled salary inside `taxScenario()` so moving the
+  current gross marker changes only the marker and not the cached curves.
 - Each voluntary-GKV base has an **Auto** checkbox immediately to the right of
   the number field, so no extra page row is added. Auto is on by default. While
   on, the field is read-only and is recalculated from that partner's current
   gross salary, capped at `bbgKVPV`, on every relevant input change. Unticking
   Auto makes the field editable and uses the entered Bescheid value instead.
-  The Auto flags are persisted with the other defaults and both contribute to
-  the derived voluntary base used in the sweep cache keys.
+  The Auto flags are persisted with the other defaults and are part of the
+  sweep cache keys; the derived base is computed per sampled salary.
 - Old saved `insurance1` / `insurance2` checkboxes migrate on load: `true` →
   `pkv`, `false` → `gkv`. New saved data uses `insurance_mode1` /
   `insurance_mode2`.
 - The generator must not coerce numeric `0`/`1` config values to booleans.
+
+### PDF export
+
+- A German **PDF herunterladen** button opens the browser's native print dialog;
+  the user saves the report as PDF. No runtime PDF library or network request is
+  added to `index.html`.
+- Before printing, the app builds a German `#pdfInputs` table containing every
+  current input and its hint, including hidden Minijob, voluntary-GKV and PKV
+  fields and the selected theme. In single mode Partner #2 fields stay hidden so
+  no forbidden Partner #2 wording appears.
+- All `<details>` blocks (input notes, optimization notes, severance tables and
+  step-by-step calculation) are temporarily opened, and every result panel is
+  shown, so the PDF contains all comments, all information and all SVG plots.
+- Print CSS forces a light, readable A4 landscape report, hides buttons/tabs/
+  sliders, keeps SVG colours exact and lets wide tables wrap.
+- The document title is temporarily set to a dated filename suggestion, and the
+  previous title and details state are restored on `afterprint`.
+
+### Minijobs
+
+- Each partner has a per-partner Minijob selector with `none`, `pauschal` and
+  `individuell` modes. Selecting a mode reveals that partner's annual gross
+  field; the pension-exemption checkbox appears only for `pauschal`. `none`
+  hides the detail block while preserving the stored values.
+- Minijob gross uses `limits.minijob` (`0`–`10000`, step `1`) and is additionally
+  clamped to the selected year's `minijob_annual`: `7236` for 2026 and `7596`
+  for the 2027 draft. Invalid or over-cap values are clamped before calculation
+  and save. The mode, gross amount and exemption flag are persisted per partner.
+- A pauschal Minijob stays outside progressive `zvE` and outside the regular
+  social-contribution bases. The employee pension contribution is
+  `minijob_rv_employee` (`3.6 %`) and is omitted when the exemption is checked.
+  The employer pension contribution is `minijob_rv_employer` (`15 %`) on at
+  least `minijob_rv_min_month × 12`; employer KV/PV for GKV partners uses
+  `minijob_kv_employer` (`13 %` / `17.5 %` draft) and `minijob_pv_employer`
+  (`0 %`), with no employer KV/PV for PKV. The employer-paid Pauschsteuer uses
+  `minijob_pauschsteuer` (`2 %` / `5 %` draft). Employer contributions and
+  Pauschsteuer are informational only and never reduce employee net.
+- An individual Minijob is added to taxable gross and to the RV/AV/KV/PV bases;
+  it uses ordinary employee contributions and the donation cap, with no
+  Pauschsteuer. The exemption flag does not alter the regular pension base.
+- Minijob gross is included in `effectiveGross` for net, in the Nettoquote
+  denominator and in the Auto voluntary-GKV base up to `bbgKVPV`. Kindergeld
+  remains in the numerator only. All three Minijob inputs per partner are part
+  of both sweep cache keys and of the fixed-example neutral person.
+- The German detail tables, hints and notes list the active Minijob, gross,
+  employee RV, employer RV/KV/PV and Pauschsteuer information; the composition
+  chart counts salary plus Minijob gross as income.
 
 ### Steueroptimierung im Abfindungsjahr
 
@@ -188,8 +239,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - It states that the page is **KEINE Steuerberatung**, does not replace
   individual tax advice, and returns only a simplified comparison estimate.
 - It states that the model is intended for couples where the partners are
-  sozialversicherungspflichtig beschäftigt (for example employees, no Minijob
-  and no self-employment). It explains that unticking
+  sozialversicherungspflichtig beschäftigt or have a Minijob (for example
+  employees or Minijob holders, but no self-employment). It explains that unticking
   `Zusammenveranlagung ist möglich` calculates only Partner #1 and individual
   assessment.
 - It names the main excluded cases: betriebliche Altersvorsorge or capital
@@ -213,9 +264,11 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   ```text
   score         = best(individual net, joint net; with/without Fünftelregelung)
                   // includes Kindergeld and Abfindung; unit is EUR
-  quote         = score / (gross Partner #1 + gross Partner #2 + total Abfindung)
+  quote         = score / (gross Partner #1 + gross Partner #2
+                  + Minijob gross Partner #1 + Minijob gross Partner #2
+                  + total Abfindung)
   baselineRatio = score / best net at Partner #1 gross = 0
-                  // same Partner #2 gross and Abfindungen
+                  // same Partner #2 gross, Minijobs and Abfindungen
   ```
 
 - The primary Nettoquote follows the requested definition, including
@@ -225,7 +278,7 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   `Bestes Netto/Jahr`. It is **not** capped at 100 % or at zero; it must be able
   to show negative net, the dip below the “ohne Gehalt” baseline and the rise
   after break-even. The primary Nettoquote is undefined when the denominator
-  (gross salaries plus Abfindungen) is zero or negative.
+  (gross salaries, Minijob-Bruttos and Abfindungen) is zero or negative.
 - The separate `baselineRatio` is labelled `Quote vs. ohne Gehalt`. It is
   `100 %` at Partner #1 gross zero, falls below `100 %` in the loss zone and
   rises above `100 %` after break-even. It follows the household-net U-shape
@@ -247,7 +300,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   both use per-row values from the same heatmap cells and are identified in the
   legend. Negative cells remain visible and feed the break-even and scales.
 - Two extra curves use the same cells and maximise the Nettoquote
-  (`score / (gross salaries + Abfindungen)`), not absolute net: `Opt. P1 je P2`
+  (`score / (gross salaries + Minijob-Bruttos + Abfindungen)`), not absolute net:
+  `Opt. P1 je P2`
   gives the best Partner #1 salary for every Partner #2 salary, and
   `Opt. P2 je P1` gives the best Partner #2 salary for every Partner #1 salary.
   Their drawing code is kept but disabled by
@@ -270,7 +324,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   and Partner #2 gross `0` for all cells, the flat map centres that row and
   suppresses Partner #2 ticks and axis title, the surface renderer is skipped,
   and `#heatModeNote` explains the reduced view. All sweep cache keys include
-  `jointAllowed` and every per-person optimization field.
+  `jointAllowed`, every per-person optimization field and the per-person Minijob
+  mode, gross amount and pension-exemption flag.
 - The compact curve is titled `Absolutes Netto` and its Y axis is labelled
   `Bestes Netto/Jahr`. It sweeps Partner #1 while Partner #2 stays at its
   selected value. In single mode the Partner #2 slider is hidden.
@@ -283,10 +338,11 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   joint assessment it shows a worked example using Partner #1 gross `50000`,
   Partner #2 gross `60000` and Partner #1 Abfindung `200000` (Partner #2
   Abfindung `0`); in single mode it uses Partner #1 gross `50000` and Abfindung
-  `200000` only. The numerator is computed from the current year, children,
-  state and insurance settings; the former supplied `72,51 %` example is
-  removed. It distinguishes the primary quote from the separate
-  “Quote vs. ohne Gehalt”.
+  `200000` only. That example explicitly forces Minijob mode `none` and Minijob
+  gross `0` for both partners, so saved Minijob inputs cannot change it. The
+  numerator is computed from the current year, children, state and insurance
+  settings; the former supplied `72,51 %` example is removed. It distinguishes
+  the primary quote from the separate “Quote vs. ohne Gehalt”.
 - The 3D surface has its own four linked sliders: Brutto Partner #1, Brutto
   Partner #2, Abfindung Partner #1 and Abfindung Partner #2. They write the main
   number inputs, so both diagrams and all tables update together.
@@ -320,8 +376,17 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   worst case uses only positive salaries of both partners; negative gross stays
   in the plotted curves but cannot become the worst case. A neutral dashed guide
   marks gross `0`.
-- A bracket between the worst-case net and the break-even net shows the EUR gap
-  that must be recovered; the same gap is written on its own line in the note.
+- A bracket inside the plot connects the worst-case net and the break-even net.
+  The EUR gap that must be recovered is labelled `Differenz` with
+  `Worst case → Break-even` in the right margin; a dashed arrow leads from the
+  bracket midpoint to that label. The same gap is written on its own line in the
+  note.
+- Marker labels are placed outside the plotted rectangle: break-even and
+  worst-case salary labels above it, and `Einzel ohne Gehalt`,
+  `Zusammen ohne Gehalt`, `Worst case Netto` and the gap label in the right
+  margin with short leader lines. Close right-margin labels are staggered with
+  enough room for the gap label's second line. In single mode only the individual
+  baseline label appears, and no worst-case or gap labels are drawn.
 - The note places break-even, worst case and the gap on separate lines. It also
   shows `Netto aus der Abfindung (bei den aktuellen Gehältern)`: the best net
   with the entered Abfindungen minus the best net at the same gross salaries
@@ -351,7 +416,10 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   circle, an `Aktuell` label and a labelled percentage.
 - Black dashed guides connect the current “mit Gehalt” points to the Y axis.
 - On the compact absolute-net curve, the moving current-point label is red when
-  its text says `weniger als ohne Gehalt` and green otherwise.
+  its text says `weniger als ohne Gehalt` and green otherwise. Its plot height is
+  `150` px (`230` px SVG height, `y0 = 30`) so the Y axis stays readable.
+  Break-even and worst-case salary labels sit above the plot; `Ohne Gehalt` and
+  `Worst case Netto` sit in the right margin with leader lines.
 - Text must say four curves plus two reference lines when joint assessment is
   enabled. In single mode only the two individual-assessment curves and one
   reference line are drawn; the Partner #2 slider is hidden, the worst-case
@@ -376,7 +444,11 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - The **Bedienung:** block has been removed.
 - Notes explain the absolute-net colour scale, the Nettoquote including
   Kindergeld, negative income/net ranges, the red/green moving label and the
-  Abfindung handling.
+  Abfindung handling. A separate German Minijob list states the per-partner
+  modes, annual ceiling, employee/employer RV, employer KV/PV, Pauschsteuer,
+  the individual-taxation treatment and the Minijob share of the Nettoquote
+  denominator and voluntary-GKV Auto base. Pauschal versteuerte Minijobs are no
+  longer listed as an excluded wage-replacement benefit.
 
 ## 10. Calculation rules
 
@@ -386,6 +458,16 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   better net result is used; when disabled, only individual assessment is
   computed. Joint Splitting tax is allocated by `zvE` share.
 - 2027 values are a draft and are clearly marked as such.
+- A pauschal Minijob adds gross to `effectiveGross` but not to `taxGross`, the
+  regular RV/AV/KV/PV bases or progressive `zvE`. It deducts only the separate
+  employee RV from net, unless the exemption is set. Employer RV, employer
+  KV/PV and employer-paid Pauschsteuer are displayed as information and never
+  deducted from net.
+- An individual Minijob adds its gross to both `effectiveGross` and `taxGross`,
+  so it enters progressive `zvE`, the Vorsorgepauschale and the pre-Sonderausgaben
+  donation cap; it has no Pauschsteuer and uses ordinary employee contributions.
+- The Nettoquote denominator is gross salaries plus Minijob-Bruttos plus
+  Abfindungen; Kindergeld remains in the numerator only.
 - Fünftelregelung:
 
   ```text
@@ -431,9 +513,14 @@ py -3 tools/verify_calculation.py
 ```
 
 Expected: four tables, 1040 rows each, PDF-vs-HTML max diff `0.00e+00`.
-Browser checks use a cache-busted URL, must show no console errors and no
-`NaN`/`Infinity`, and must render nine SVGs with joint assessment enabled. They
-also verify the light default and persisted theme toggle, the voluntary-base
+Browser checks use a cache-busted URL, must show no console errors or warnings
+and no `NaN`/`Infinity`, and must render nine SVGs with joint assessment enabled.
+After clearing local storage they confirm that the joint-assessment checkbox is
+ticked and Partner #2 Abfindung is `0`. They verify that break-even and
+worst-case labels sit above both net plots, that the baseline and worst-case-net
+labels sit in the right margin, and that the compact plot is 150 px high. They
+also verify the light default, `gkv_freiwillig` for both partners as the
+built-in insurance default, the persisted theme toggle, the voluntary-base
 Auto checkbox following gross salary and the manual override when unticked,
 **speichern** persistence, automatic cap clamping and the cap callout, the zero
 guides and the labelled 3D depth axis, negative Partner #1/Partner #2 salaries,
@@ -442,4 +529,17 @@ and the red/green compact-curve comparison label. With joint assessment unticked
 they verify that Partner #2 fields/sliders, the joint/compare tabs and the 3D
 surface disappear, the heatmap has one centred row without a Partner #2 axis,
 the AbfWork chart has only individual curves, and hidden Partner #2 DOM values
-survive a mode toggle.
+survive a mode toggle. They also check that fresh defaults show no Minijob and
+hidden detail blocks, that pauschal gross stays outside `zvE` with only employee
+RV deducted while employer RV/KV/PV and Pauschsteuer remain informational, that
+the exemption removes exactly that employee RV and is hidden outside the
+pauschal mode, that individual gross enters `taxGross` and regular RV without a
+Pauschsteuer or employer lump sum, that over-cap amounts clamp to the selected
+year's annual ceiling, that the Nettoquote denominator and both sweep caches
+include Minijob inputs, that the voluntary-GKV Auto base follows salary plus
+Minijob gross, and that saved defaults and the theme toggle include Minijob
+mode, amount and exemption. They also click **PDF herunterladen** with printing
+stubbed, confirm that a full input/hint snapshot is built, all details open and
+the dated title is restored afterwards, and verify that moving Partner #1's
+gross under voluntary-GKV Auto leaves both sweep cache keys and cached data
+unchanged while updating the base and the current point.

@@ -134,6 +134,17 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
   hard-code `#17202a` in SVG text.
 - Print styles must force a light, readable output.
 
+### PDF export
+
+- The German **PDF herunterladen** button uses native `window.print()`; no
+  runtime PDF library is allowed.
+- `buildPdfInputs()` must list every input plus its hint, including hidden
+  Minijob/voluntary-GKV/PKV fields; single mode omits Partner #2 fields.
+- Temporarily open all `<details>` and show all panels for the printout, then
+  restore the exact previous state on `afterprint`.
+- Print CSS: A4 landscape, light colours, no buttons/tabs/sliders, exact SVG
+  colours and wrapped wide tables.
+
 ## Known gotchas
 
 - `tools/generate_config.py` must not turn numeric `0`/`1` into booleans.
@@ -141,7 +152,11 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
 - Year change resets KV-Zusatz to defaults only when the year actually changes.
 - With voluntary-GKV Auto on, the base field is read-only and derived from gross;
   `syncAllVoluntaryBases()` must run before `readInputs()`, which calls
-  `enforceOptimizationCaps()`, so caps use the derived value.
+  `enforceOptimizationCaps()`, so caps use the derived value. In sweeps,
+  `scenarioVoluntaryBase()` derives the base from each sampled salary, and the
+  cache keys use `"auto"` instead of the current derived base. Never put the
+  current gross-derived base in a sweep key: dragging the marker would rebuild
+  all curves, break-even and worst case.
 - `calculate()` already calls `syncChartSliders()`; the delegated chart-slider
   listener also calls it for immediate visual feedback while dragging.
 - `refreshFromInputs()` deduplicates rapid events with `requestAnimationFrame`,

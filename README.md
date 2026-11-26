@@ -15,9 +15,9 @@ heading are `Abfindung, Steuerlast & Netto`. This document is in English.
 A visible German notice at the top of the page states that the page is **not
 tax advice** (`KEINE Steuerberatung`) and is only a simplified comparison
 estimate. The model is intended for couples where the partners are in ordinary
-social-insurance employment (for example employees; no Minijob and no
-self-employment), or where a partner is explicitly marked as voluntarily insured
-in statutory health insurance with a separate contribution base. The checkbox
+social-insurance employment or have a Minijob (no self-employment), or where a
+partner is explicitly marked as voluntarily insured in statutory health
+insurance with a separate contribution base. The checkbox
 **Zusammenveranlagung ist möglich** enables joint assessment; when it is unticked
 the app hides Partner #2, contributes zero for that partner, calculates only
 individual assessment and removes visible Partner #2, `P2`,
@@ -61,10 +61,18 @@ interpreting the results.
    privat versichert**. For voluntary GKV, expand **Erweiterte Annahmen**: the
    annual KV/PV contribution base has an **Auto** checkbox to its right. With
    Auto on (the default), the base always follows that partner's current gross
-   salary, capped at the KV/PV contribution ceiling, and the field is read-only.
-   Untick Auto to enter your own value from the Bescheid instead. For PKV, enter
-   the monthly private premiums, employer subsidy and children covered. There
-   is no automatic detection of voluntary GKV.
+   salary plus any active Minijob gross, capped at the KV/PV contribution
+   ceiling, and the field is read-only. In every chart sweep the Auto base is
+   derived from each sampled salary, so dragging the current gross marker moves
+   only the marker and does not rebuild the curves, break-even or worst case.
+   Untick Auto to enter your own value from
+   the Bescheid instead. For PKV, enter the monthly private premiums, employer
+   subsidy and children covered. There is no automatic detection of voluntary
+   GKV. If a partner has a Minijob, choose **Kein Minijob**, **Pauschal
+   versteuert** or **Individuell versteuert** in the Minijob row and enter the
+   annual gross amount. For the pauschal option, the **Befreiung von der
+   Rentenversicherung** checkbox removes the separate employee pension
+   contribution.
 4. Tick the church-tax checkboxes where applicable.
 5. Enter an optional one-off **Abfindung** for either parent (0 = none).
 6. Optional: in **Erweiterte Annahmen** change the GKV supplementary rate or
@@ -88,13 +96,23 @@ interpreting the results.
    light is the built-in default. The button shows the design it switches to,
    and a toggle also updates the saved theme so it survives a reload. Clearing
    site data restores the built-in light default.
+11. Optional: click **PDF herunterladen**. The app opens the browser's print
+    dialog with a complete German report: every current input (including
+    hidden conditional fields), all hints and comments, all result panels,
+    expanded calculation details and every SVG chart. Choose **Save as PDF** as
+    the printer destination to create the file. The built-in print stylesheet
+    forces light, readable A4 landscape output and uses no runtime library.
+    The details and window title are restored after the dialog closes.
 
 The built-in defaults are tax year 2026, gross salaries of `50,000 EUR` for
-both partners, one child, federal state NW, **GKV pflichtversichert** for both
-partners, no church tax, joint assessment enabled, Partner #1 Abfindung
-`100,000 EUR` and Partner #2 Abfindung `0 EUR`. All optimization amounts and
-voluntary-GKV contribution bases default to `0 EUR`, the **Auto** option for
-both voluntary-GKV bases is on, and the built-in theme is light. Saved browser
+both partners, one child, federal state NW, **GKV freiwillig versichert** for
+both partners with Auto bases following their salaries, no church tax, joint
+assessment enabled, Partner #1 Abfindung
+`100,000 EUR` and Partner #2 Abfindung `0 EUR`. Both partners start with
+**Kein Minijob**, `0 EUR` Minijob gross and no pension exemption. All
+optimization amounts and voluntary-GKV contribution bases default to `0 EUR`,
+the **Auto** option for both voluntary-GKV bases is on, and the built-in theme
+is light. Saved browser
 values override these defaults; old saved PKV checkboxes migrate as
 `true` → PKV and `false` → GKV pflichtversichert, and the former household
 donation/rental-loss/business-loss values are split evenly between the two new
@@ -102,8 +120,9 @@ per-partner fields when no per-partner value was saved. Click **speichern**
 again or clear this site's data to apply the built-in values.
 
 The KV-Vorauszahlung cap is always `3 ×` the modelled own KV/PV contributions
-in the selected tax year. For statutory employees it is based on gross salary,
-for voluntary statutory insurance on the entered contribution base, and for PKV
+in the selected tax year. For statutory employees it is based on gross salary
+plus any taxable Minijob gross, for voluntary statutory insurance on the entered
+contribution base (Auto follows salary plus active Minijob gross), and for PKV
 on the private premium limited to the statutory-equivalent amount. The
 Steueroptimierung callout lists the clamped amount and the formula behind each
 cap as bullet points.
@@ -114,21 +133,23 @@ Results are shown as:
 - detailed tables for both assessment modes with columns **Partner #1**,
   **Partner #2** and **Beide (Haushalt)** — the last column is the sum of
   both partners; child benefit is shown there only. In single mode these tables
-  have only **Partner #1**, and that column includes Kindergeld and the full net,
+  have only **Partner #1**, and that column includes Kindergeld and the full net.
 - a direct comparison table,
 - a dedicated **Abfindung** tab with a six-column household matrix
   (individual/joint × without severance / with severance / with severance plus
   Fünftelregelung), expandable per-parent detail tables and its own chart,
 - in joint-assessment mode, nine SVG charts:
-  1. where the gross income goes (social contributions, taxes, net pay, child benefit),
-     with dashed reference lines at the gross-income levels for comparison,
+  1. where the gross income goes (salary plus Minijob gross, social
+     contributions, taxes, net pay, child benefit), with dashed reference lines
+     at the gross-income levels for comparison,
   2. a heatmap of the best absolute household net across both salaries, with a
      crosshair at the current inputs, four linked gross/Abfindung sliders placed
      between the compact net curve and the map, hatching to show which assessment
      mode wins, and a readout of all four annual net figures
-     (individual/joint × with/without Fünftelregelung); the Nettoquote and the
-     separate baseline-relative quote stay in the tooltip and crosshair label,
-     and purple dashed/red dotted lines mark break-even and worst case,
+     (individual/joint × with/without Fünftelregelung); the tooltip and crosshair
+     label show the Nettoquote (net divided by salaries, Minijob-Bruttos and
+     Abfindungen) and the separate baseline-relative quote, while purple
+     dashed/red dotted lines mark break-even and worst case,
   3. the same absolute net as a 3D surface over both salaries, with the best
      combination and the current input marked, break-even and worst-case ridges
      drawn across both salaries, and its own four linked sliders for both gross
@@ -142,13 +163,21 @@ Results are shown as:
      marks the break-even, a red dotted line (plus a horizontal red dashed
      net-level line) the worst case, and black dashed guides follow the two
      best current points to the Y axis. A bracket shows the net difference from
-     the worst case to the break-even.
+     the worst case to the break-even; its `Differenz` / `Worst case →
+     Break-even` label sits in the right margin and is connected to the bracket
+     by a dashed arrow. Break-even and worst-case salary labels
+     sit above the plot; `Einzel ohne Gehalt`, `Zusammen ohne Gehalt` and
+     `Worst case Netto` sit in the right margin with short leader lines, so the
+     labels do not cover the curves. In single mode only the individual baseline
+     is shown.
      Break-even, worst case and gap are on separate lines in the callout; the
      highlighted key takeaway compares current net with "ohne Gehalt" (red below
      break-even, green above),
-  5. a compact **Absolutes Netto** curve with a `Bestes Netto/Jahr` Y axis, a
-     red/green label for the current comparison with "ohne Gehalt", and four
-     linked sliders for both gross salaries and both Abfindungen,
+  5. a compact **Absolutes Netto** curve with a taller `Bestes Netto/Jahr` Y axis
+     (150 px plot height), break-even and worst-case labels above the plot,
+     `Ohne Gehalt` and `Worst case Netto` labels in the right margin, a red/green
+     label for the current comparison with "ohne Gehalt", and four linked sliders
+     for both gross salaries and both Abfindungen,
   6. individual vs. joint assessment,
   7. household net income as the gross salary of Partner #1 varies,
   8. approximate marginal tax rates for the Grund- and Splittingtabelle, with
@@ -207,6 +236,9 @@ styles from the internet.
 | Federal state | Determines the church-tax rate (8% in BY/BW, 9% elsewhere) and the Saxony-specific GKV care-insurance split. |
 | Church tax | Per-parent checkbox. |
 | Abfindung | One-off gross severance per parent with `1,000` spinner steps; default `100,000` EUR for Partner #1 and `0` for Partner #2. Drives the **Abfindung** report. |
+| Minijob mode | `Kein Minijob` (default), `Pauschal versteuert` or `Individuell versteuert` per parent. Selecting a mode reveals the annual gross field; the pension-exemption checkbox appears only for the pauschal option. |
+| Minijob gross | Annual Minijob gross per parent, capped at `7,236 EUR` for 2026 and `7,596 EUR` in the 2027 draft. Included in net income and in the Nettoquote denominator. |
+| Minijob RV exemption | Per-parent checkbox. For a pauschal Minijob it removes the employee pension contribution; the employer lump sum remains. |
 | KV-Zusatzbeitrag | GKV supplementary rate; default 2.9%. |
 | Children under 25 | Only then do additional children reduce the GKV care-insurance contribution. |
 | Weiterbildung / other Werbungskosten | Annual deductible expenses per parent; uncapped in this model. |
@@ -248,6 +280,36 @@ income produces no social contributions because the contribution bases are
 clamped to zero. The *Jahresarbeitsentgeltgrenze* is shown in the notes, but the
 tool continues to calculate statutory health-insurance contributions above it;
 private insurance is not modelled.
+
+### Minijobs
+
+Each partner can have one Minijob in addition to ordinary employment. The annual
+Minijob gross is capped at `7,236 EUR` in 2026 and `7,596 EUR` in the 2027 draft
+(`603`/`633 EUR` per month); the number field uses `1 EUR` steps and input
+clamping applies the same cap on calculation and save.
+
+- **Pauschal versteuert:** the gross stays outside progressive `zvE` and outside
+  the regular social-contribution bases. Employee pension insurance is
+  `3.6 %` unless the per-partner exemption is checked. Employer pension
+  insurance is `15 %` on at least `2,100 EUR/year` (`175 EUR/month`), which is
+  shown as information only. For GKV partners, employer health insurance is
+  `13 %` in 2026 / `17.5 %` in the 2027 draft and employer care insurance is
+  `0 %` in both years. For PKV partners, no employer KV/PV contribution is
+  shown. The employer-paid Pauschsteuer is `2 %` in 2026 / `5 %` in the 2027
+  draft and is also information only. Neither employer contributions nor
+  Pauschsteuer reduce employee net pay.
+- **Individuell versteuert:** the gross is added to taxable gross and to the RV,
+  AV, KV and PV bases, so regular employee contributions apply. There is no
+  Pauschsteuer and no separate Minijob employer lump-sum display. The pension
+  exemption checkbox removes only the separate employee pension contribution of
+  a pauschal Minijob; it does not change the regular pension base of an
+  individual Minijob.
+
+Minijob gross is included in the detailed per-partner tables, net income, the
+Nettoquote denominator and the voluntary-GKV Auto contribution base (capped at
+the KV/PV ceiling). It is also part of both sweep cache keys, so changing a
+Minijob mode, gross amount or exemption rebuilds the charts. Kindergeld remains
+in the Nettoquote numerator only.
 
 ### Taxable income (`zvE`)
 
@@ -597,6 +659,10 @@ callout compares the regular and fifth-based tax for each assessment mode.
 - Employee allowance: 1,230 EUR
 - Child allowance: 9,756 EUR per child
 - Child benefit: 259 EUR/month per child
+- Minijob ceiling: 603 EUR/month / 7,236 EUR/year
+- Minijob employee/employer pension: 3.6 % / 15 %, with a 175 EUR/month minimum
+  employer-pension basis
+- Minijob employer KV/PV: 13 % / 0 %; employer Pauschsteuer: 2 %
 
 ### 2027 (draft)
 
@@ -608,6 +674,10 @@ callout compares the regular and fifth-based tax for each assessment mode.
 - Child benefit: 267 EUR/month per child
 - Contribution rates and supplementary rates are assumed unchanged where the
   draft does not specify otherwise.
+- Minijob ceiling: 633 EUR/month / 7,596 EUR/year
+- Minijob employee/employer pension: 3.6 % / 15 %, with a 175 EUR/month minimum
+  employer-pension basis
+- Minijob employer KV/PV: 17.5 % / 0 %; employer Pauschsteuer: 5 %
 
 Sources:
 
@@ -671,9 +741,14 @@ and fifth-based ESt formulas, the SolZu inverse lookup, the income-expense
 decomposition and the zero-severance identity with the base scenarios all
 passed (maximum floating-point error `2.9e-11`).
 
-The final cache-busted browser check (`?v=125`) rendered nine SVGs in joint mode
+The final cache-busted browser check (`?v=135`) rendered nine SVGs in joint mode
 and seven in single mode with no console errors, no console warnings and no
-`NaN`/`Infinity`. It verified the three insurance modes, their conditional
+`NaN`/`Infinity`. After clearing local storage it confirmed that
+`Zusammenveranlagung ist möglich` is ticked and Partner #2 Abfindung is `0` by
+default. It also checked that the break-even and worst-case labels sit above both
+net plots, while the `Einzel ohne Gehalt`, `Zusammen ohne Gehalt`, `Ohne Gehalt`
+and `Worst case Netto` labels sit in the right margin, and that the compact plot
+is 150 px high. It verified the three insurance modes, their conditional
 fields and mode-specific KV-Vorauszahlung caps, the voluntary KV/PV Auto
 checkbox following gross salary and the manual override when it is unticked,
 inline concrete Höchstbeträge in the field hints, old checkbox migration, saved
@@ -701,6 +776,34 @@ one centred row without a depth axis, and the source note named only
 (gross `777,777`, Abfindung `123,456`, donations `4,321`) were preserved while
 the mode was off and returned when joint assessment was re-enabled, restoring
 all nine SVGs.
+
+The same `?v=135` run also verified Minijob handling. With cleared storage both
+partners started with `Kein Minijob`, `0 EUR`, no exemption and hidden detail
+blocks. A pauschal Minijob of `6,000 EUR` stayed outside `zvE`, deducted only
+`216 EUR` employee RV, and showed `900 EUR` employer RV, `780 EUR` employer KV
+and `120 EUR` employer Pauschsteuer as information; checking the exemption
+removed exactly the `216 EUR` while leaving the employer figures unchanged. An
+individual Minijob of the same gross raised `taxGross` and regular RV and showed
+no Pauschsteuer or separate employer lump sum. The exemption checkbox was
+hidden outside the pauschal mode, over-cap values clamped to `7,236 EUR` for
+2026 and `7,596 EUR` for the 2027 draft, and the Nettoquote denominator, both
+sweep caches and the fixed quote-example numerator behaved as documented while
+the voluntary-GKV Auto base followed salary plus Minijob gross. Saved defaults
+and the theme toggle included the Minijob mode, amount and exemption, and the
+gap bracket's dashed arrow and right-margin `Differenz` label kept their
+previous positions.
+
+Additional cache-busted checks (`?v=133`–`?v=135`) confirmed that fresh storage
+now starts both partners on **GKV freiwillig versichert** with Auto bases
+`50,000 EUR`, while saved scenarios still load unchanged. The German
+**PDF herunterladen** button calls `window.print()` once, builds a 55-row input
+snapshot that includes hidden Minijob/PKV fields and the theme, expands all
+details blocks, sets a dated print title and restores the previous details and
+title on `afterprint`. With saved voluntary-GKV Auto insurance, moving Partner
+#1's gross changed the displayed contribution base but left both sweep cache
+keys, cached data and the break-even/worst-case values untouched; moving it back
+restored the original inputs. No console messages, `NaN` or `Infinity` appeared,
+and joint mode still rendered nine SVGs.
 
 ## Disclaimer
 

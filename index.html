@@ -101,6 +101,7 @@
   .inline-field .check { margin: 0; font-size: .86rem; white-space: nowrap; }
   .inline-field .check input { margin: 0; }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
+  .print-only { display: none; }
   button { border: 0; border-radius: 8px; padding: 11px 20px; font: inherit; font-weight: 700;
            cursor: pointer; background: var(--accent); color: #fff; }
   button.secondary { background: var(--secondary-bg); color: var(--secondary-fg); }
@@ -199,6 +200,7 @@
   .insurance-groups legend { padding: 0 6px; font-weight: 600; font-size: .9rem; color: var(--accent); }
   .insurance-groups .check { display: flex; align-items: flex-start; margin: 6px 0; }
   #error { color: var(--bad); font-weight: 600; min-height: 1.3em; margin-top: 10px; }
+  @page { size: A4 landscape; margin: 10mm; }
   @media print {
     html, html[data-theme] { --bg: #fff; --card: #fff; --ink: #17202a; --muted: #5d6b7a;
       --line: #dce3eb; --input-bg: #fff; --secondary-bg: #e6edf3; --secondary-fg: #17202a;
@@ -209,8 +211,16 @@
     header, [data-theme="dark"] header { background: #155e75 !important; box-shadow: none;
       -webkit-print-color-adjust: exact; }
     header h1, [data-theme="dark"] header h1 { color: #fff !important; background: none !important; }
-    .card { box-shadow: none; break-inside: avoid; } button, .actions { display: none !important; }
+    .card { box-shadow: none; break-inside: avoid; }
+    button, .actions, .tabs, .zoom-reset, .zoom-selection, input[type=range] { display: none !important; }
     .panel { display: block !important; }
+    #results[hidden], #chartsCard[hidden] { display: block !important; }
+    .print-only { display: block !important; }
+    .print-only table { font-size: .78rem; }
+    .print-only th, .print-only td { vertical-align: top; white-space: normal; }
+    .tablewrap { overflow: visible !important; }
+    .chart { break-inside: avoid; }
+    svg, .chart svg { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     abbr.acronym::after { display: none; }
   }
 </style>
@@ -233,7 +243,7 @@
   <aside class="card scope-notice" role="note" aria-labelledby="scope-title">
     <h2 id="scope-title">Hinweis zum Geltungsbereich</h2>
     <p><strong>Diese Seite ist KEINE Steuerberatung</strong> und ersetzt keine individuelle steuerliche Beratung. Die Ergebnisse sind eine vereinfachte Schätzung zum Vergleich.</p>
-    <p>Der Rechner ist auf Paare zugeschnitten, bei denen die Partner sozialversicherungspflichtig beschäftigt sind (z. B. als Arbeitnehmer; kein Minijob und keine Selbstständigkeit).
+    <p>Der Rechner ist auf Paare zugeschnitten, bei denen die Partner sozialversicherungspflichtig beschäftigt sind oder einen Minijob haben (keine Selbstständigkeit).
       <span data-joint-only>Ist Zusammenveranlagung nicht möglich, das Kontrollkästchen „Zusammenveranlagung ist möglich“ abwählen: Dann werden nur Partner #1 und die Einzelveranlagung gerechnet.</span>
       <span data-single-only="inline">In diesem Modus werden nur Partner #1 und die Einzelveranlagung gerechnet.</span>
       Zinseinkünfte und Mietgewinne werden vereinfacht erfasst, zählen aber nicht zur KV/PV-Beitragsgrundlage. Steuerfreie Lohnersatzleistungen nach § 32b EStG sind als eine Gruppe je Partner erfasst; andere Leistungen, betriebliche Altersvorsorge (bAV) und eine Günstigerprüfung Kindergeld/Kinderfreibetrag unter Einbeziehung der Abfindung bleiben außen vor.</p>
@@ -280,6 +290,36 @@
             </fieldset>
           </div>
           <span class="hint">Freiwillige GKV nutzt die Beitragsbasis unten; PKV nutzt die Prämien unter „Erweiterte Annahmen“.</span>
+        </div>
+      </div>
+      <div class="input-row two" id="minijobRow">
+        <div>
+          <label for="minijobMode1">Minijob – Partner #1</label>
+          <select id="minijobMode1">
+            <option value="none">Kein Minijob</option>
+            <option value="pauschal">Pauschal versteuert</option>
+            <option value="individuell">Individuell versteuert</option>
+          </select>
+          <div id="minijobDetails1">
+            <label for="minijobGross1">Minijob-Brutto pro Jahr – Partner #1 (€)</label>
+            <input id="minijobGross1" type="number" inputmode="decimal">
+            <label class="check"><input id="minijobRvExempt1" type="checkbox"> <span>Befreiung von der Rentenversicherung</span></label>
+            <span class="hint" id="minijobHint1"></span>
+          </div>
+        </div>
+        <div data-partner="2">
+          <label for="minijobMode2">Minijob – Partner #2</label>
+          <select id="minijobMode2">
+            <option value="none">Kein Minijob</option>
+            <option value="pauschal">Pauschal versteuert</option>
+            <option value="individuell">Individuell versteuert</option>
+          </select>
+          <div id="minijobDetails2">
+            <label for="minijobGross2">Minijob-Brutto pro Jahr – Partner #2 (€)</label>
+            <input id="minijobGross2" type="number" inputmode="decimal">
+            <label class="check"><input id="minijobRvExempt2" type="checkbox"> <span>Befreiung von der Rentenversicherung</span></label>
+            <span class="hint" id="minijobHint2"></span>
+          </div>
         </div>
       </div>
       <div class="input-row">
@@ -417,6 +457,8 @@
       </div>
     </details>
     <div class="actions">
+      <button id="exportPdf" type="button" class="secondary"
+              title="Alle Eingaben, Hinweise und Diagramme als PDF speichern">PDF herunterladen</button>
       <button id="saveDefaults" type="button" class="secondary"
               title="Aktuelle Eingaben als Standardwerte für den nächsten Start speichern">speichern</button>
       <span id="saveStatus" class="hint" role="status"></span>
@@ -584,6 +626,7 @@
         </div>
       </div>
     </details>
+    <div id="pdfInputs" class="print-only"></div>
   </section>
 
   <section class="card" id="results" hidden aria-live="polite">
@@ -605,7 +648,7 @@
     <h2>Diagramme</h2>
     <div class="chart" id="netBruttoChart">
       <h3><span data-joint-only>Bestes Netto/Jahr in Abhängigkeit von beiden Gehältern</span><span data-single-only="inline">Bestes Netto/Jahr in Abhängigkeit vom Gehalt von Partner #1</span></h3>
-      <p data-joint-only>Für jedes Gehalts-Paar werden alle verfügbaren Fälle geprüft: Einzel- und – falls möglich – Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung. Farbe und Skala zeigen das <em>beste</em> Netto/Jahr inklusive Kindergeld und Abfindung in EUR. Die Nettoquote ist dieses Netto geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; die gesonderte „Quote vs. ohne Gehalt“ sinkt im unteren Gehaltsbereich unter 100 % und steigt nach dem Break-even wieder darüber. Schraffierte Zellen gehören zur Einzelveranlagung, glatte Zellen zur Zusammenveranlagung; eine feine hellrote gestrichelte Linie markiert die Grenze zwischen den beiden Bereichen. Höher = mehr Netto. Das höchste Netto je Brutto-plus-Abfindung und die zugehörige Nettoquote stehen unter jedem Gehaltsregler. Die Gehaltsregler bleiben bei 0–150.000 €; größere Gehälter können im Zahlenfeld eingegeben werden. Beide Diagrammachsen zoomen dann automatisch in groben Schritten bis maximal 10 Mio. € und fallen beim Absenken wieder zurück. Am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0; der Tooltip nennt alle vier Netto-Werte und den Vorteil. Die violette gestrichelte Linie markiert den Break-even (bestes Netto mit = ohne Gehalt), die rote gepunktete Linie den Worst case (geringstes bestes Netto) für jedes Gehalt von Partner #2.</p>
+      <p data-joint-only>Für jedes Gehalts-Paar werden alle verfügbaren Fälle geprüft: Einzel- und – falls möglich – Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung. Farbe und Skala zeigen das <em>beste</em> Netto/Jahr inklusive Kindergeld und Abfindung in EUR. Die Nettoquote ist dieses Netto geteilt durch die Summe aus beiden Bruttogehältern, beiden Minijob-Bruttos und beiden Abfindungen; die gesonderte „Quote vs. ohne Gehalt“ sinkt im unteren Gehaltsbereich unter 100 % und steigt nach dem Break-even wieder darüber. Schraffierte Zellen gehören zur Einzelveranlagung, glatte Zellen zur Zusammenveranlagung; eine feine hellrote gestrichelte Linie markiert die Grenze zwischen den beiden Bereichen. Höher = mehr Netto. Das höchste Netto je Brutto-plus-Abfindung und die zugehörige Nettoquote stehen unter jedem Gehaltsregler. Die Gehaltsregler bleiben bei 0–150.000 €; größere Gehälter können im Zahlenfeld eingegeben werden. Beide Diagrammachsen zoomen dann automatisch in groben Schritten bis maximal 10 Mio. € und fallen beim Absenken wieder zurück. Am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0; der Tooltip nennt alle vier Netto-Werte und den Vorteil. Die violette gestrichelte Linie markiert den Break-even (bestes Netto mit = ohne Gehalt), die rote gepunktete Linie den Worst case (geringstes bestes Netto) für jedes Gehalt von Partner #2.</p>
       <p data-single-only="block">Für jedes Gehalt von Partner #1 werden die beiden Fälle der Einzelveranlagung <em>mit</em> und <em>ohne</em> Fünftelregelung geprüft. Farbe und Skala zeigen das <em>beste</em> Netto/Jahr inklusive Kindergeld und Abfindung in EUR. Die Heatmap zeigt eine einzelne Zeile ohne Tiefenachse; die Nettoquote und die gesonderte „Quote vs. ohne Gehalt“ bleiben wie beschrieben. Der Gehaltsregler bleibt bei 0–150.000 €; größere Gehälter können im Zahlenfeld eingegeben werden.</p>
       <div id="heatReadout" class="heat-readout"></div>
       <p id="heatModeNote" class="small"></p>
@@ -666,7 +709,7 @@
     </div>
     <div class="chart" id="abfWorkChart">
       <h3>Lohnt sich Arbeiten im Abfindungsjahr?</h3>
-      <p id="abfWorkIntro">Vier Netto-Kurven: Einzel- und Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung, alle mit Gehalt von Partner #1 (mit Fünftel durchgezogen, ohne strichpunktiert). Dazu zwei horizontale gestrichelte Referenzlinien für dieselben Veranlagungen <em>ohne</em> Gehalt von Partner #1, nur mit Abfindung (jeweils die bessere Fünftel-Variante). Der rote Bereich markiert bis zum Break-even Gehälter, bei denen Arbeiten das Netto <em>senkt</em>. Violett = Break-even (bestes Netto mit = ohne Gehalt), rot gestrichelt = Worst case (bestes Netto am niedrigsten); die horizontale rote Linie markiert dessen Netto-Niveau. Schwarze gestrichelte Linien verbinden die aktuellen „mit Gehalt“-Punkte mit der Y-Achse und wandern mit dem Gehalt von Partner #1. Das Gehalt von Partner #2 wird über den eigenen Regler eingestellt und bleibt für die Kurven konstant. Break-even, Worst case und Differenz stehen im Text auf eigenen Zeilen; der Vergleich des aktuellen Netto mit „ohne Gehalt“ ist als wichtigste Aussage farbig hervorgehoben.</p>
+      <p id="abfWorkIntro">Vier Netto-Kurven: Einzel- und Zusammenveranlagung jeweils <em>mit</em> und <em>ohne</em> Fünftelregelung, alle mit Gehalt von Partner #1 (mit Fünftel durchgezogen, ohne strichpunktiert). Dazu zwei horizontale gestrichelte Referenzlinien für dieselben Veranlagungen <em>ohne</em> Gehalt von Partner #1, nur mit Abfindung (jeweils die bessere Fünftel-Variante). Der rote Bereich markiert bis zum Break-even Gehälter, bei denen Arbeiten das Netto <em>senkt</em>. Violett = Break-even (bestes Netto mit = ohne Gehalt), rot gestrichelt = Worst case (bestes Netto am niedrigsten); die horizontale rote Linie markiert dessen Netto-Niveau. Schwarze gestrichelte Linien verbinden die aktuellen „mit Gehalt“-Punkte mit der Y-Achse und wandern mit dem Gehalt von Partner #1. Das Gehalt von Partner #2 wird über den eigenen Regler eingestellt und bleibt für die Kurven konstant. Break-even und Worst case stehen oben, die Netto-Werte und die Differenz mit Pfeil rechts außerhalb des Diagramms; alle Werte stehen zusätzlich im Text auf eigenen Zeilen. Der Vergleich des aktuellen Netto mit „ohne Gehalt“ ist als wichtigste Aussage farbig hervorgehoben.</p>
       <p class="small">Ziehe im Diagramm ein Rechteck, um X- und Y-Grenzen festzulegen; die Kurven werden dann mit diesen Achsengrenzen neu gezeichnet. „↺ Zoom aufheben“ stellt die ursprünglichen Grenzen wieder her.</p>
       <div class="chart-controls">
         <div>
@@ -702,9 +745,9 @@
 
   <section class="card" id="quoteInfoCard">
     <h2>So wird die Nettoquote berechnet</h2>
-    <p>Die Nettoquote zeigt, wie viel Netto pro Euro an Bruttogehältern und Abfindungen übrig bleibt.</p>
-    <p class="formula"><span data-joint-only>Nettoquote = bestes Haushaltsnetto / (Brutto Partner #1 + Brutto Partner #2 + Abfindung Partner #1 + Abfindung Partner #2) × 100 %</span><span data-single-only="inline">Nettoquote = bestes Netto / (Brutto Partner #1 + Abfindung Partner #1) × 100 %</span></p>
-    <p><span data-joint-only>Im Zähler steht das bessere der vier geprüften Fälle – Einzel- oder Zusammenveranlagung, jeweils mit und ohne Fünftelregelung – inklusive Kindergeld und Abfindung. Der Nenner ist die Summe beider Bruttogehälter und beider Abfindungen.</span><span data-single-only="inline">Im Zähler steht das bessere der geprüften Fälle inklusive Kindergeld und Abfindung. Der Nenner ist Brutto und Abfindung von Partner #1.</span> Ohne Abzüge und ohne zusätzliches Kindergeld ist die Quote 100 %; durch Kindergeld im Zähler kann sie auch über 100 % liegen.</p>
+    <p>Die Nettoquote zeigt, wie viel Netto pro Euro an Bruttogehältern, Minijob-Bruttos und Abfindungen übrig bleibt.</p>
+    <p class="formula"><span data-joint-only>Nettoquote = bestes Haushaltsnetto / (Brutto Partner #1 + Brutto Partner #2 + Minijob-Brutto Partner #1 + Minijob-Brutto Partner #2 + Abfindung Partner #1 + Abfindung Partner #2) × 100 %</span><span data-single-only="inline">Nettoquote = bestes Netto / (Brutto Partner #1 + Minijob-Brutto Partner #1 + Abfindung Partner #1) × 100 %</span></p>
+    <p><span data-joint-only>Im Zähler steht das bessere der vier geprüften Fälle – Einzel- oder Zusammenveranlagung, jeweils mit und ohne Fünftelregelung – inklusive Kindergeld und Abfindung. Der Nenner ist die Summe beider Bruttogehälter, beider Minijob-Bruttos und beider Abfindungen.</span><span data-single-only="inline">Im Zähler steht das bessere der geprüften Fälle inklusive Kindergeld und Abfindung. Der Nenner ist Brutto, Minijob-Brutto und Abfindung von Partner #1.</span> Ohne Abzüge und ohne zusätzliches Kindergeld ist die Quote 100 %; durch Kindergeld im Zähler kann sie auch über 100 % liegen.</p>
     <p class="formula" id="quoteExample"></p>
     <p class="small"><span data-joint-only>Zusätzlich zeigen Heatmap und 3D-Fläche eine gesonderte „Quote vs. ohne Gehalt“.</span><span data-single-only="inline">Zusätzlich zeigt die Heatmap eine gesonderte „Quote vs. ohne Gehalt“.</span> Sie vergleicht das Netto bei aktuellem Gehalt von Partner #1 mit dem besten Netto bei Gehalt 0 bei sonst gleichen Eingaben und ist deshalb bei Gehalt 0 immer 100 %. Sie folgt der U-Form des Netto, ist aber nicht die Nettoquote.</p>
   </section>
@@ -714,7 +757,7 @@
 
 <script>
 /* CONFIG_START */
-const CONFIG = {"general":{"months_per_year":12,"percent_divisor":100,"half_percent_divisor":200,"table_step":1000,"marginal_half_range":500,"theme":"light","show_optimum_curves":false},"defaults":{"year":2026,"gross1":50000,"gross2":50000,"children":1,"state":"NW","insurance_mode1":"gkv","insurance_mode2":"gkv","voluntary_base1":0,"voluntary_base2":0,"auto_voluntary_base1":true,"auto_voluntary_base2":true,"church1":false,"church2":false,"child_under_25":true,"joint_allowed":true,"abfindung1":100000,"abfindung2":0,"kv_zusatz":2.9,"pkv_kv":0,"pkv_pv":0,"pkv_child":0,"pkv_children":0,"pkv_ag":0,"weiterbildung1":0,"weiterbildung2":0,"werbungskosten1":0,"werbungskosten2":0,"kvPrepayment1":0,"kvPrepayment2":0,"rvExtra1":0,"rvExtra2":0,"alg1":0,"alg2":0,"donations1":0,"donations2":0,"rentalLoss1":0,"rentalLoss2":0,"rentalProfit1":0,"rentalProfit2":0,"businessLoss1":0,"businessLoss2":0,"interest1":0,"interest2":0},"quote_example":{"gross1":50000,"gross2":60000,"abfindung1":200000},"limits":{"gross":{"number_min":-1000000,"number_max":10000000,"number_step":1000,"plot_min":-100000,"slider_min":0,"slider_max":150000,"slider_step":1000,"chart_axis_max":150000,"chart_step":2500,"zoom_steps":[150000,250000,500000,1000000,2000000,5000000,10000000],"zoom_expand_at":0.9,"zoom_shrink_at":0.5},"abfindung":{"number_min":0,"number_max":100000000,"number_step":1000,"slider_min":0,"slider_max":500000,"slider_step":1000,"work_slider_step":10000},"optimization":{"min":0,"max":10000000,"step":100},"children":{"min":0,"max":20,"step":1},"kv_zusatz":{"min":0,"max":10,"step":0.1},"pkv_amount":{"min":0,"max":100000,"step":0.01},"pkv_children":{"min":0,"max":20,"step":1},"voluntary_base":{"min":0,"max":10000000,"step":1000}},"social":{"pv_employer":1.8,"pv_employer_saxony":1.3},"params":{"2026":{"label":2026,"draft":false,"bbgRV":101400,"bbgKVPV":69750,"jaeg":77400,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1230,"sonderPausch":36,"kfb":9756,"kindergeldMonth":259,"grundfreibetrag":12348,"top_rate":45,"rvHoechstFactor":24.7,"rvCapSingle":30826,"rvCapJoint":61652,"donationRate":20,"kvPrepaymentFactor":3,"businessLossCapSingle":10000,"businessLossCapJoint":20000,"capitalTaxRate":25,"interestAllowance":1000,"educationCap":6000,"table_files":"tabelle/grundtabelle-2026-ueberblick-klein.pdf / tabelle/splittingtabelle-2026-ueberblick-klein.pdf","source":"endgültige Werte (SV-Rechengrößenverordnung 2026; EStG 2026)"},"2027":{"label":2027,"draft":true,"bbgRV":106200,"bbgKVPV":76500,"jaeg":84150,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1430,"sonderPausch":36,"kfb":10056,"kindergeldMonth":267,"grundfreibetrag":12564,"top_rate":47,"rvHoechstFactor":24.7,"rvCapSingle":32308,"rvCapJoint":64616,"donationRate":20,"kvPrepaymentFactor":3,"businessLossCapSingle":10000,"businessLossCapJoint":20000,"capitalTaxRate":25,"interestAllowance":1000,"educationCap":6000,"table_files":"tabelle/grundtabelle-2027-ueberblick-klein.pdf / tabelle/splittingtabelle-2027-ueberblick-klein.pdf","source":"Regierungsentwurf EStReformG 2027 (BT-Drs. 21/8235) und voraussichtliche SV-Werte 2027 (AOK; Stand 23.11.2026)"}},"states":[["BW","Baden-Württemberg",8,false],["BY","Bayern",8,false],["BE","Berlin",9,false],["BB","Brandenburg",9,false],["HB","Bremen",9,false],["HH","Hamburg",9,false],["HE","Hessen",9,false],["MV","Mecklenburg-Vorpommern",9,false],["NI","Niedersachsen",9,false],["NW","Nordrhein-Westfalen",9,false],["RP","Rheinland-Pfalz",9,false],["SL","Saarland",9,false],["SN","Sachsen",9,true],["ST","Sachsen-Anhalt",9,false],["SH","Schleswig-Holstein",9,false],["TH","Thüringen",9,false]],"colors":{"sv":"#0284c7","est":"#ea580c","solzu":"#facc15","kist":"#a855f7","net":"#059669","kg":"#6ee7b7","individual":"#2563eb","joint":"#0f766e","winner_individual":"#ea580c","winner_joint":"#0f766e","winner_border":"#fca5a5","grid":"#e2e8f0","axis":"#64748b","crosshair":"#0f172a","guide":"#94a3b8","guide_text":"#475569","break_even":"#7c3aed","worst_case":"#b91c1c","opt_g1":"#f59e0b","opt_g2":"#db2777","shade":"rgba(185,28,28,0.10)","heat_stops":[[224,242,254],[125,211,252],[12,74,110]],"halo":"#fff","point":"#fff"},"colors_dark":{"sv":"#38bdf8","est":"#fb923c","solzu":"#facc15","kist":"#c084fc","net":"#34d399","kg":"#6ee7b7","individual":"#60a5fa","joint":"#2dd4bf","winner_individual":"#fb923c","winner_joint":"#2dd4bf","winner_border":"#fca5a5","grid":"#334155","axis":"#94a3b8","crosshair":"#f8fafc","guide":"#64748b","guide_text":"#cbd5e1","break_even":"#c084fc","worst_case":"#f87171","opt_g1":"#fbbf24","opt_g2":"#f472b6","shade":"rgba(248,113,113,0.16)","heat_stops":[[8,47,73],[14,165,233],[190,242,100]],"halo":"#0b1020","point":"#0b1020"},"charts":{"common":{"tick_fractions":[0,0.25,0.5,0.75,1],"marginal_y_ticks":[0,10,20,30,40,50]},"composition":{"width":940,"height":360,"x0":78,"y0":36,"plot_width":757,"plot_height":254,"bar_width":64},"abf":{"width":940,"height":330,"x0":210,"y0":36,"plot_width":620,"plot_height":234,"bar_height":15},"netBrutto":{"width":940,"height":430,"x0":78,"y0":40,"plot_width":740,"plot_height":330,"nx":18,"ny":14,"axis_max":150000,"pad_ratio":0.08,"pad_min_eur":10000,"hatch_spacing":5,"hatch_opacity":0.3,"winner_border_width":1,"winner_border_dash":"3 3"},"netBrutto3d":{"width":940,"height":430,"x0":120,"y0":355,"x_span":590,"y_depth":105,"y_skew":0.55,"z_height":195},"netTrend":{"width":940,"height":190,"x0":82,"y0":26,"plot_width":720,"plot_height":110,"y_round":10000,"y_pad":5000},"abfWork":{"width":940,"height":390,"x0":82,"y0":42,"plot_width":720,"plot_height":285,"x_max":150000,"step":2500,"y_round":10000,"y_pad":10000,"bad_tolerance":0.5},"comparison":{"width":940,"height":330,"x0":175,"y0":35,"plot_width":675,"plot_height":235,"bar_height":18},"progression":{"width":940,"height":340,"x0":80,"y0":30,"plot_width":835,"plot_height":245,"points":41,"factor":1.5,"axis_round":50000,"axis_min":200000,"x_ticks":5,"y_min_factor":0.96,"y_max_factor":1.03},"marginal":{"width":940,"height":380,"x0":70,"y0":25,"plot_width":845,"plot_height":220,"x_min":12000,"x_max":600000,"y_max":50,"step":2000,"x_ticks":7}},"notes":{"year_hint":"2027 ist noch nicht verabschiedet – siehe Hinweise.","draft_warning":"2027 basiert auf dem noch nicht verabschiedeten Regierungsentwurf vom 02.09.2026 (Stand 06.11.2026). Alle Angaben ohne Gewähr; keine Steuerberatung. Für eine verbindliche Berechnung bitte Steuerberatung hinzuziehen.","negative_charts_note":"Die Gehaltsachsen der Diagramme beginnen bei -100.000 € und erweitern sich bei stärker negativen Gehältern, damit negative Einkünfte und negative Netto-Werte im Abfindungsjahr sichtbar bleiben. Negative Gehälter können im Zahlenfeld eingegeben werden; die Regler bleiben bei 0–150.000 €. Auch die Netto-Skalen und die Y-Achsen zeigen negative Beträge ohne Kappung.","charts_note_single":"Die Heatmap zeigt das beste Netto/Jahr in Abhängigkeit vom Gehalt von Partner #1. Für jedes Gehalt werden die beiden Fälle der Einzelveranlagung mit und ohne Fünftelregelung geprüft. Farbe kodiert das beste Netto in EUR; die Skala heißt „Bestes Netto/Jahr“. Die Nettoquote ist das beste Netto inklusive Kindergeld geteilt durch das Bruttogehalt von Partner #1 und dessen Abfindung; ohne Abzüge wäre sie 100 %. Zusätzlich zeigt die „Quote vs. ohne Gehalt“ das Netto im Verhältnis zum besten Netto bei Gehalt 0 von Partner #1. Eine 100-%-Grenze gibt es für den EUR-Wert nicht. Violett gestrichelt = Break-even, rot gepunktet = Worst case (nur bei positiven Gehältern). Eine grau gestrichelte Linie markiert das Gehalt 0. Der Gehaltsregler bleibt bei 0–150.000 € und der Abfindungsregler bei 0–500.000 €; größere Beträge können in den Zahlenfeldern eingegeben werden. Die Achsen zoomen automatisch mit: Sie beginnen bei -100.000 € bis 150.000 €, erweitern sich in groben Schritten bis maximal 10 Mio. €, sobald ein Gehalt über 90 % der aktuellen Skala liegt, und zoomen zurück, wenn es unter 50 % fällt; am aktuellen Punkt stehen Netto, Nettoquote und der Vergleich mit Gehalt 0. Die Zahlenfelder für Gehalt und Abfindung verwenden 1.000er-Schritte. In diesem Modus wird nur Partner #1 dargestellt; die 3D-Fläche ist ausgeblendet.","charts_note":"Die Heatmap zeigt das beste Netto/Jahr in Abhängigkeit von beiden Gehältern: Für jedes Gehalts-Paar werden alle vier Fälle geprüft – Einzel- oder Zusammenveranlagung jeweils mit und ohne Fünftelregelung. Farbe und 3D-Höhe kodieren das beste Haushaltsnetto in EUR; die Skala heißt „Bestes Netto/Jahr“. Die Nettoquote ist das beste Netto inklusive Kindergeld geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; ohne Abzüge wäre sie 100 %. Zusätzlich zeigt die „Quote vs. ohne Gehalt“ das Netto im Verhältnis zum besten Netto bei Gehalt 0 von Partner #1 und folgt der U-Form des Haushaltsnettos. Eine 100-%-Grenze gibt es für den EUR-Wert nicht. Schraffiert = Einzelveranlagung, glatt = Zusammenveranlagung, die feine hellrote gestrichelte Linie markiert die Grenze; violett gestrichelt = Break-even, rot gepunktet = Worst case (nur bei positiven Gehältern beider Partner). Eine grau gestrichelte Linie markiert in allen Gehaltsdiagrammen das Gehalt 0; bei der 3D-Fläche ist die Tiefe das Bruttojahresgehalt von Partner #2. Die Gehaltsregler bleiben bei 0–150.000 € und die Abfindungsregler bei 0–500.000 €; größere Beträge können in den Zahlenfeldern eingegeben werden. Beide Diagrammachsen zoomen automatisch mit: Sie beginnen bei -100.000 € bis 150.000 €, erweitern sich in groben Schritten bis maximal 10 Mio. €, sobald ein Gehalt über 90 % der aktuellen Skala liegt, und zoomen zurück, wenn beide Gehälter unter 50 % fallen; am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0. Die Zahlenfelder für Gehalt und Abfindung verwenden 1.000er-Schritte. Das höchste Netto je Brutto-plus-Abfindung und die zugehörige Nettoquote stehen unter allen Gehaltsreglern. Die 3D-Fläche zeigt dieselben Zellen als Höhe und Farbe; eine violette Linie mit „P2 …“ folgt dem eingestellten Gehalt von Partner #2 über alle Gehälter von Partner #1; violett mit „Break-even“ und rot gepunktet mit „Worst case“ sind die entsprechenden Linien über alle Gehälter von Partner #2; grün markiert die günstigste Gehaltskombination, weiß die aktuellen Eingaben. Die Kurve „Absolutes Netto“ variiert das Gehalt von Partner #1 bei eingestelltem Gehalt von Partner #2; ihre Y-Achse zeigt das beste Netto/Jahr in EUR. Im Diagramm „Lohnt sich Arbeiten im Abfindungsjahr?“ bleibt das Gehalt von Partner #2 für die Kurven konstant; eine horizontale rote Linie markiert das Netto-Niveau des Worst case. Break-even, Worst case und Differenz stehen auf eigenen Zeilen; als wichtigste Aussage ist der Vergleich des aktuellen Netto mit „ohne Gehalt“ farbig hervorgehoben (rot bei weniger Netto, grün bei mehr Netto). Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün. Im Grenzsteuersatz-Diagramm markieren gestrichelte Linien den Beginn nach dem Grundfreibetrag, die Zonenwechsel bei etwa 24 % und 42 % sowie den Eintritt in den Spitzensteuersatz; die X-Achse reicht bis 600.000 € zvE; der Grenzsteuersatz steht mit „G“ und „S“ auf der Y-Achse und der zvE kurz in drei versetzten Zeilen unter der X-Achse. Die dunklen gestrichelten Linien und Punkte mit „Aktuell ...“ bezeichnen die aktuellen Werte beider Tarife; ihre zvE-Werte sind unter der Achse fett. Die Abfindung wird als echte Entschädigung ohne Sozialabgaben behandelt; Lohn-, Urlaubs- oder Freistellungszahlungen wären anders zu bewerten."}};
+const CONFIG = {"general":{"months_per_year":12,"percent_divisor":100,"half_percent_divisor":200,"table_step":1000,"marginal_half_range":500,"theme":"light","show_optimum_curves":false},"defaults":{"year":2026,"gross1":50000,"gross2":50000,"children":1,"state":"NW","insurance_mode1":"gkv_freiwillig","insurance_mode2":"gkv_freiwillig","voluntary_base1":0,"voluntary_base2":0,"auto_voluntary_base1":true,"auto_voluntary_base2":true,"church1":false,"church2":false,"child_under_25":true,"joint_allowed":true,"abfindung1":100000,"abfindung2":0,"minijob_mode1":"none","minijob_mode2":"none","minijob_gross1":0,"minijob_gross2":0,"minijob_rv_exempt1":false,"minijob_rv_exempt2":false,"kv_zusatz":2.9,"pkv_kv":0,"pkv_pv":0,"pkv_child":0,"pkv_children":0,"pkv_ag":0,"weiterbildung1":0,"weiterbildung2":0,"werbungskosten1":0,"werbungskosten2":0,"kvPrepayment1":0,"kvPrepayment2":0,"rvExtra1":0,"rvExtra2":0,"alg1":0,"alg2":0,"donations1":0,"donations2":0,"rentalLoss1":0,"rentalLoss2":0,"rentalProfit1":0,"rentalProfit2":0,"businessLoss1":0,"businessLoss2":0,"interest1":0,"interest2":0},"quote_example":{"gross1":50000,"gross2":60000,"abfindung1":200000},"limits":{"gross":{"number_min":-1000000,"number_max":10000000,"number_step":1000,"plot_min":-100000,"slider_min":0,"slider_max":150000,"slider_step":1000,"chart_axis_max":150000,"chart_step":2500,"zoom_steps":[150000,250000,500000,1000000,2000000,5000000,10000000],"zoom_expand_at":0.9,"zoom_shrink_at":0.5},"abfindung":{"number_min":0,"number_max":100000000,"number_step":1000,"slider_min":0,"slider_max":500000,"slider_step":1000,"work_slider_step":10000},"optimization":{"min":0,"max":10000000,"step":100},"minijob":{"min":0,"max":10000,"step":1},"children":{"min":0,"max":20,"step":1},"kv_zusatz":{"min":0,"max":10,"step":0.1},"pkv_amount":{"min":0,"max":100000,"step":0.01},"pkv_children":{"min":0,"max":20,"step":1},"voluntary_base":{"min":0,"max":10000000,"step":1000}},"social":{"pv_employer":1.8,"pv_employer_saxony":1.3},"params":{"2026":{"label":2026,"draft":false,"bbgRV":101400,"bbgKVPV":69750,"jaeg":77400,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1230,"sonderPausch":36,"kfb":9756,"kindergeldMonth":259,"grundfreibetrag":12348,"top_rate":45,"rvHoechstFactor":24.7,"rvCapSingle":30826,"rvCapJoint":61652,"donationRate":20,"kvPrepaymentFactor":3,"businessLossCapSingle":10000,"businessLossCapJoint":20000,"capitalTaxRate":25,"interestAllowance":1000,"educationCap":6000,"minijob_monthly":603,"minijob_annual":7236,"minijob_rv_employer":15,"minijob_rv_employee":3.6,"minijob_rv_min_month":175,"minijob_kv_employer":13,"minijob_pv_employer":0,"minijob_pauschsteuer":2,"minijob_pauschsteuer_draft":false,"table_files":"tabelle/grundtabelle-2026-ueberblick-klein.pdf / tabelle/splittingtabelle-2026-ueberblick-klein.pdf","source":"endgültige Werte (SV-Rechengrößenverordnung 2026; EStG 2026)"},"2027":{"label":2027,"draft":true,"bbgRV":106200,"bbgKVPV":76500,"jaeg":84150,"rvRate":18.6,"avRate":2.6,"kvRate":14.6,"kvZusatz":2.9,"pvRate":3.6,"pvChildless":0.6,"pvDiscount":0.25,"pvMaxDiscount":1.0,"pauschale":1430,"sonderPausch":36,"kfb":10056,"kindergeldMonth":267,"grundfreibetrag":12564,"top_rate":47,"rvHoechstFactor":24.7,"rvCapSingle":32308,"rvCapJoint":64616,"donationRate":20,"kvPrepaymentFactor":3,"businessLossCapSingle":10000,"businessLossCapJoint":20000,"capitalTaxRate":25,"interestAllowance":1000,"educationCap":6000,"minijob_monthly":633,"minijob_annual":7596,"minijob_rv_employer":15,"minijob_rv_employee":3.6,"minijob_rv_min_month":175,"minijob_kv_employer":17.5,"minijob_pv_employer":0,"minijob_pauschsteuer":5,"minijob_pauschsteuer_draft":true,"table_files":"tabelle/grundtabelle-2027-ueberblick-klein.pdf / tabelle/splittingtabelle-2027-ueberblick-klein.pdf","source":"Regierungsentwurf EStReformG 2027 (BT-Drs. 21/8235) und voraussichtliche SV-Werte 2027 (AOK; Stand 23.11.2026)"}},"states":[["BW","Baden-Württemberg",8,false],["BY","Bayern",8,false],["BE","Berlin",9,false],["BB","Brandenburg",9,false],["HB","Bremen",9,false],["HH","Hamburg",9,false],["HE","Hessen",9,false],["MV","Mecklenburg-Vorpommern",9,false],["NI","Niedersachsen",9,false],["NW","Nordrhein-Westfalen",9,false],["RP","Rheinland-Pfalz",9,false],["SL","Saarland",9,false],["SN","Sachsen",9,true],["ST","Sachsen-Anhalt",9,false],["SH","Schleswig-Holstein",9,false],["TH","Thüringen",9,false]],"colors":{"sv":"#0284c7","est":"#ea580c","solzu":"#facc15","kist":"#a855f7","net":"#059669","kg":"#6ee7b7","individual":"#2563eb","joint":"#0f766e","winner_individual":"#ea580c","winner_joint":"#0f766e","winner_border":"#fca5a5","grid":"#e2e8f0","axis":"#64748b","crosshair":"#0f172a","guide":"#94a3b8","guide_text":"#475569","break_even":"#7c3aed","worst_case":"#b91c1c","opt_g1":"#f59e0b","opt_g2":"#db2777","shade":"rgba(185,28,28,0.10)","heat_stops":[[224,242,254],[125,211,252],[12,74,110]],"halo":"#fff","point":"#fff"},"colors_dark":{"sv":"#38bdf8","est":"#fb923c","solzu":"#facc15","kist":"#c084fc","net":"#34d399","kg":"#6ee7b7","individual":"#60a5fa","joint":"#2dd4bf","winner_individual":"#fb923c","winner_joint":"#2dd4bf","winner_border":"#fca5a5","grid":"#334155","axis":"#94a3b8","crosshair":"#f8fafc","guide":"#64748b","guide_text":"#cbd5e1","break_even":"#c084fc","worst_case":"#f87171","opt_g1":"#fbbf24","opt_g2":"#f472b6","shade":"rgba(248,113,113,0.16)","heat_stops":[[8,47,73],[14,165,233],[190,242,100]],"halo":"#0b1020","point":"#0b1020"},"charts":{"common":{"tick_fractions":[0,0.25,0.5,0.75,1],"marginal_y_ticks":[0,10,20,30,40,50]},"composition":{"width":940,"height":360,"x0":78,"y0":36,"plot_width":757,"plot_height":254,"bar_width":64},"abf":{"width":940,"height":330,"x0":210,"y0":36,"plot_width":620,"plot_height":234,"bar_height":15},"netBrutto":{"width":940,"height":430,"x0":78,"y0":40,"plot_width":740,"plot_height":330,"nx":18,"ny":14,"axis_max":150000,"pad_ratio":0.08,"pad_min_eur":10000,"hatch_spacing":5,"hatch_opacity":0.3,"winner_border_width":1,"winner_border_dash":"3 3"},"netBrutto3d":{"width":940,"height":430,"x0":120,"y0":355,"x_span":590,"y_depth":105,"y_skew":0.55,"z_height":195},"netTrend":{"width":940,"height":230,"x0":82,"y0":30,"plot_width":720,"plot_height":150,"y_round":10000,"y_pad":5000},"abfWork":{"width":940,"height":390,"x0":82,"y0":42,"plot_width":720,"plot_height":285,"x_max":150000,"step":2500,"y_round":10000,"y_pad":10000,"bad_tolerance":0.5},"comparison":{"width":940,"height":330,"x0":175,"y0":35,"plot_width":675,"plot_height":235,"bar_height":18},"progression":{"width":940,"height":340,"x0":80,"y0":30,"plot_width":835,"plot_height":245,"points":41,"factor":1.5,"axis_round":50000,"axis_min":200000,"x_ticks":5,"y_min_factor":0.96,"y_max_factor":1.03},"marginal":{"width":940,"height":380,"x0":70,"y0":25,"plot_width":845,"plot_height":220,"x_min":12000,"x_max":600000,"y_max":50,"step":2000,"x_ticks":7}},"notes":{"year_hint":"2027 ist noch nicht verabschiedet – siehe Hinweise.","draft_warning":"2027 basiert auf dem noch nicht verabschiedeten Regierungsentwurf vom 02.09.2026 (Stand 06.11.2026). Alle Angaben ohne Gewähr; keine Steuerberatung. Für eine verbindliche Berechnung bitte Steuerberatung hinzuziehen.","negative_charts_note":"Die Gehaltsachsen der Diagramme beginnen bei -100.000 € und erweitern sich bei stärker negativen Gehältern, damit negative Einkünfte und negative Netto-Werte im Abfindungsjahr sichtbar bleiben. Negative Gehälter können im Zahlenfeld eingegeben werden; die Regler bleiben bei 0–150.000 €. Auch die Netto-Skalen und die Y-Achsen zeigen negative Beträge ohne Kappung.","charts_note_single":"Die Heatmap zeigt das beste Netto/Jahr in Abhängigkeit vom Gehalt von Partner #1. Für jedes Gehalt werden die beiden Fälle der Einzelveranlagung mit und ohne Fünftelregelung geprüft. Farbe kodiert das beste Netto in EUR; die Skala heißt „Bestes Netto/Jahr“. Die Nettoquote ist das beste Netto inklusive Kindergeld geteilt durch das Bruttogehalt von Partner #1 und dessen Abfindung; ohne Abzüge wäre sie 100 %. Zusätzlich zeigt die „Quote vs. ohne Gehalt“ das Netto im Verhältnis zum besten Netto bei Gehalt 0 von Partner #1. Eine 100-%-Grenze gibt es für den EUR-Wert nicht. Violett gestrichelt = Break-even, rot gepunktet = Worst case (nur bei positiven Gehältern). Eine grau gestrichelte Linie markiert das Gehalt 0. Der Gehaltsregler bleibt bei 0–150.000 € und der Abfindungsregler bei 0–500.000 €; größere Beträge können in den Zahlenfeldern eingegeben werden. Die Achsen zoomen automatisch mit: Sie beginnen bei -100.000 € bis 150.000 €, erweitern sich in groben Schritten bis maximal 10 Mio. €, sobald ein Gehalt über 90 % der aktuellen Skala liegt, und zoomen zurück, wenn es unter 50 % fällt; am aktuellen Punkt stehen Netto, Nettoquote und der Vergleich mit Gehalt 0. Die Zahlenfelder für Gehalt und Abfindung verwenden 1.000er-Schritte. In diesem Modus wird nur Partner #1 dargestellt; die 3D-Fläche ist ausgeblendet.","charts_note":"Die Heatmap zeigt das beste Netto/Jahr in Abhängigkeit von beiden Gehältern: Für jedes Gehalts-Paar werden alle vier Fälle geprüft – Einzel- oder Zusammenveranlagung jeweils mit und ohne Fünftelregelung. Farbe und 3D-Höhe kodieren das beste Haushaltsnetto in EUR; die Skala heißt „Bestes Netto/Jahr“. Die Nettoquote ist das beste Netto inklusive Kindergeld geteilt durch die Summe aus beiden Bruttogehältern und beiden Abfindungen; ohne Abzüge wäre sie 100 %. Zusätzlich zeigt die „Quote vs. ohne Gehalt“ das Netto im Verhältnis zum besten Netto bei Gehalt 0 von Partner #1 und folgt der U-Form des Haushaltsnettos. Eine 100-%-Grenze gibt es für den EUR-Wert nicht. Schraffiert = Einzelveranlagung, glatt = Zusammenveranlagung, die feine hellrote gestrichelte Linie markiert die Grenze; violett gestrichelt = Break-even, rot gepunktet = Worst case (nur bei positiven Gehältern beider Partner). Eine grau gestrichelte Linie markiert in allen Gehaltsdiagrammen das Gehalt 0; bei der 3D-Fläche ist die Tiefe das Bruttojahresgehalt von Partner #2. Die Gehaltsregler bleiben bei 0–150.000 € und die Abfindungsregler bei 0–500.000 €; größere Beträge können in den Zahlenfeldern eingegeben werden. Beide Diagrammachsen zoomen automatisch mit: Sie beginnen bei -100.000 € bis 150.000 €, erweitern sich in groben Schritten bis maximal 10 Mio. €, sobald ein Gehalt über 90 % der aktuellen Skala liegt, und zoomen zurück, wenn beide Gehälter unter 50 % fallen; am aktuellen Punkt stehen Haushaltsnetto, Nettoquote und der Vergleich mit Gehalt 0. Die Zahlenfelder für Gehalt und Abfindung verwenden 1.000er-Schritte. Das höchste Netto je Brutto-plus-Abfindung und die zugehörige Nettoquote stehen unter allen Gehaltsreglern. Die 3D-Fläche zeigt dieselben Zellen als Höhe und Farbe; eine violette Linie mit „P2 …“ folgt dem eingestellten Gehalt von Partner #2 über alle Gehälter von Partner #1; violett mit „Break-even“ und rot gepunktet mit „Worst case“ sind die entsprechenden Linien über alle Gehälter von Partner #2; grün markiert die günstigste Gehaltskombination, weiß die aktuellen Eingaben. Die Kurve „Absolutes Netto“ variiert das Gehalt von Partner #1 bei eingestelltem Gehalt von Partner #2; ihre Y-Achse zeigt das beste Netto/Jahr in EUR. Im Diagramm „Lohnt sich Arbeiten im Abfindungsjahr?“ bleibt das Gehalt von Partner #2 für die Kurven konstant; eine horizontale rote Linie markiert das Netto-Niveau des Worst case. Break-even, Worst case und Differenz stehen auf eigenen Zeilen; als wichtigste Aussage ist der Vergleich des aktuellen Netto mit „ohne Gehalt“ farbig hervorgehoben (rot bei weniger Netto, grün bei mehr Netto). Die Beschriftung am wandernden Punkt ist rot, wenn „weniger als ohne Gehalt“ angezeigt wird, sonst grün. Im Grenzsteuersatz-Diagramm markieren gestrichelte Linien den Beginn nach dem Grundfreibetrag, die Zonenwechsel bei etwa 24 % und 42 % sowie den Eintritt in den Spitzensteuersatz; die X-Achse reicht bis 600.000 € zvE; der Grenzsteuersatz steht mit „G“ und „S“ auf der Y-Achse und der zvE kurz in drei versetzten Zeilen unter der X-Achse. Die dunklen gestrichelten Linien und Punkte mit „Aktuell ...“ bezeichnen die aktuellen Werte beider Tarife; ihre zvE-Werte sind unter der Achse fett. Die Abfindung wird als echte Entschädigung ohne Sozialabgaben behandelt; Lohn-, Urlaubs- oder Freistellungszahlungen wären anders zu bewerten."}};
 /* CONFIG_END */
 
 /* TABLES_START */
@@ -733,6 +776,8 @@ const money = (n) => DE.format(Math.round(n)) + " €";
 const money2 = (n) => DE2.format(n) + " €";
 const pct = (n) => DE2.format(n) + " %";
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, ch =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 
 const INSURANCE_MODES = ["gkv", "gkv_freiwillig", "pkv"];
 const INSURANCE_MODE_LABELS = {
@@ -753,8 +798,41 @@ function setInsuranceMode(suffix, mode) {
 function insuranceModeLabel(mode) {
   return INSURANCE_MODE_LABELS[mode] || INSURANCE_MODE_LABELS.gkv;
 }
-// Voluntary GKV can follow the gross salary automatically. Without Auto the
-// manually entered contribution basis is used.
+
+const MINIJOB_MODES = ["none", "pauschal", "individuell"];
+const MINIJOB_MODE_LABELS = {
+  none: "Kein Minijob",
+  pauschal: "Pauschal versteuert",
+  individuell: "Individuell versteuert"
+};
+function readMinijobMode(suffix) {
+  const el = document.getElementById("minijobMode" + suffix);
+  const value = el ? el.value : "none";
+  return MINIJOB_MODES.includes(value) ? value : "none";
+}
+function setMinijobMode(suffix, mode) {
+  const value = MINIJOB_MODES.includes(mode) ? mode : "none";
+  const el = document.getElementById("minijobMode" + suffix);
+  if (el) el.value = value;
+  return value;
+}
+function minijobModeLabel(mode) {
+  return MINIJOB_MODE_LABELS[mode] || MINIJOB_MODE_LABELS.none;
+}
+function minijobIncome(person, params) {
+  const mode = person && person.minijobMode;
+  if (!MINIJOB_MODES.includes(mode) || mode === "none") return 0;
+  const raw = Number(person.minijobGross);
+  if (!params || !Number.isFinite(raw)) return 0;
+  const cap = Math.min(CONFIG.limits.minijob.max, params.minijob_annual);
+  return clamp(raw, CONFIG.limits.minijob.min, cap);
+}
+function minijobGrossTotal(people, params) {
+  return (people || []).reduce((sum, person) => sum + minijobIncome(person, params), 0);
+}
+
+// Voluntary GKV can follow gross salary plus an active Minijob automatically.
+// Without Auto the manually entered contribution basis is used.
 function autoVoluntaryBaseEnabled(suffix) {
   const el = document.getElementById("autoVoluntaryBase" + suffix);
   return el ? el.checked : true;
@@ -762,15 +840,31 @@ function autoVoluntaryBaseEnabled(suffix) {
 function computedVoluntaryBase(suffix) {
   const params = PARAMS[document.getElementById("year").value];
   const gross = Number(document.getElementById("gross" + suffix).value);
-  return params && Number.isFinite(gross)
-    ? clamp(Math.max(0, gross), 0, params.bbgKVPV)
-    : 0;
+  const mjGross = readMinijobMode(suffix) === "none"
+    ? 0 : Number(document.getElementById("minijobGross" + suffix).value);
+  const income = (Number.isFinite(gross) ? Math.max(0, gross) : 0) +
+                 (Number.isFinite(mjGross) ? Math.max(0, mjGross) : 0);
+  return params ? clamp(income, 0, params.bbgKVPV) : 0;
 }
 function effectiveVoluntaryBase(suffix, mode) {
   if (mode !== "gkv_freiwillig") return 0;
   if (autoVoluntaryBaseEnabled(suffix)) return computedVoluntaryBase(suffix);
   const value = Number(document.getElementById("voluntaryBase" + suffix).value);
   return Number.isFinite(value) ? value : 0;
+}
+// Sweeps replace a person's gross while keeping the Auto flag. Deriving the
+// base here makes every sampled salary use its own Auto base, so moving only
+// the current marker does not change the cached curves.
+function scenarioVoluntaryBase(person, params) {
+  const value = Number(person && person.voluntaryBase);
+  if (!person || person.insuranceMode !== "gkv_freiwillig" || !person.autoVoluntaryBase) {
+    return Number.isFinite(value) ? value : 0;
+  }
+  const gross = Number(person.gross);
+  const mjGross = minijobIncome(person, params);
+  const income = (Number.isFinite(gross) ? Math.max(0, gross) : 0) +
+                 (Number.isFinite(mjGross) ? Math.max(0, mjGross) : 0);
+  return params ? clamp(income, 0, params.bbgKVPV) : 0;
 }
 function syncVoluntaryBase(suffix) {
   const field = document.getElementById("voluntaryBase" + suffix);
@@ -787,7 +881,7 @@ function syncVoluntaryBase(suffix) {
   hint.textContent = mode !== "gkv_freiwillig"
     ? "Nur bei freiwilliger gesetzlicher Versicherung mit eigener KV/PV-Beitragsbasis relevant."
     : auto
-      ? `Auto aktiv: die KV/PV-Beitragsbasis folgt dem Bruttogehalt bis zur KV/PV-Bemessungsgrenze (${money(params.bbgKVPV)}). Abwählen für den eigenen Wert.`
+      ? `Auto aktiv: die KV/PV-Beitragsbasis folgt dem Bruttogehalt zuzüglich Minijob-Brutto bis zur KV/PV-Bemessungsgrenze (${money(params.bbgKVPV)}). Abwählen für den eigenen Wert.`
       : "Eigene KV/PV-Beitragsbasis laut Bescheid, höchstens die KV/PV-Bemessungsgrenze; Mindestbemessungsgrenze wird nicht geprüft.";
 }
 function syncAllVoluntaryBases() {
@@ -983,6 +1077,36 @@ function social(gross, p, yearState, params, kvZusatz, children,
   };
 }
 
+/* Minijob: pauschal versteuerte Beiträge bleiben außerhalb des progressiven
+   Tarifs; individuell versteuerte Beiträge zählen als Bruttoeinkommen. Die
+   Pauschsteuer ist eine Arbeitgeberinformation und mindert nicht das Netto. */
+function minijobData(person, params, insuranceMode) {
+  const mode = MINIJOB_MODES.includes(person && person.minijobMode) ? person.minijobMode : "none";
+  const empty = {
+    active: false, mode, gross: 0, taxable: false, rvBase: 0, employeeRV: 0,
+    employerRV: 0, employerKV: 0, employerPV: 0, pauschsteuer: 0
+  };
+  if (mode === "none" || !params) return empty;
+  const gross = minijobIncome(person, params);
+  if (!(gross > 0)) return empty;
+  const rvBase = Math.max(gross, params.minijob_rv_min_month * CONFIG.general.months_per_year);
+  const employeeRV = person.minijobRvExempt === true
+    ? 0 : gross * params.minijob_rv_employee / CONFIG.general.percent_divisor;
+  const pauschal = mode === "pauschal";
+  const noEmployerKV = insuranceMode === "pkv";
+  return {
+    active: true, mode, gross, taxable: !pauschal, rvBase, employeeRV,
+    employerRV: pauschal
+      ? rvBase * params.minijob_rv_employer / CONFIG.general.percent_divisor : 0,
+    employerKV: pauschal && !noEmployerKV
+      ? gross * params.minijob_kv_employer / CONFIG.general.percent_divisor : 0,
+    employerPV: pauschal && !noEmployerKV
+      ? gross * params.minijob_pv_employer / CONFIG.general.percent_divisor : 0,
+    pauschsteuer: pauschal
+      ? gross * params.minijob_pauschsteuer / CONFIG.general.percent_divisor : 0
+  };
+}
+
 /* PKV-Beiträge: Arbeitnehmerkosten nach Arbeitgeberzuschuss und steuerlicher Abzug. */
 function privateInsurance(person, sv) {
   const m = CONFIG.general.months_per_year;
@@ -1001,9 +1125,17 @@ function privateInsurance(person, sv) {
 }
 
 function insuranceCost(x) {
-  return x.insurance
+  const base = x.insurance
     ? x.sv.rv + x.sv.av + x.insurance.employeeCost
     : x.sv.rv + x.sv.kv + x.sv.pv + x.sv.av;
+  // Pauschal versteuerte Minijobs zahlen keine KV/PV/AV; die RV wird getrennt
+  // vom regulären sv.rv ausgewiesen, damit sie nicht in die Vorsorgepauschale
+  // der progressiven ESt einfließt.
+  const miniRV = x.minijob && x.minijob.mode === "pauschal" ? x.minijob.employeeRV : 0;
+  return base + miniRV;
+}
+function grossForNet(x) {
+  return x && x.effectiveGross !== undefined ? x.effectiveGross : x.person.gross;
 }
 
 function nonNeg(v) { return Number.isFinite(v) ? Math.max(0, v) : 0; }
@@ -1074,9 +1206,12 @@ function taxScenario(mode, people, children, childUnder25, year, state, kvZusatz
   // § 10 Abs. 3 EStG: der Höchstbetrag ist 30.826 € (Einzel) bzw. 61.652 €
   // (Zusammen) und wird um Arbeitnehmer- und steuerfreien Arbeitgeberanteil
   // gekürzt. Bei Zusammenveranlagung gilt der doppelte Betrag gemeinsam.
-  const svList = people.map(person => social(person.gross, p, state, p, kvZusatz,
-                                              relevantChildren, person.insuranceMode,
-                                              person.voluntaryBase));
+  const mjList = people.map(person => minijobData(person, p, person.insuranceMode));
+  const svList = people.map((person, i) => social(
+    person.gross + (mjList[i].taxable ? mjList[i].gross : 0),
+    p, state, p, kvZusatz,
+    relevantChildren, person.insuranceMode,
+    scenarioVoluntaryBase(person, p)));
   const rvWanted = people.map(person => nonNeg(optOf(person).rvExtra));
   const rvWantedTotal = rvWanted.reduce((s, v) => s + v, 0);
   const rvJointCap = Math.max(0, p.rvCapJoint -
@@ -1086,6 +1221,9 @@ function taxScenario(mode, people, children, childUnder25, year, state, kvZusatz
 
   const base = people.map((person, i) => {
     const sv = svList[i];
+    const mj = mjList[i];
+    const taxGross = person.gross + (mj.taxable ? mj.gross : 0);
+    const effectiveGross = person.gross + mj.gross;
     const insurance = person.insurance === "pkv" ? privateInsurance(person, sv) : null;
     // Vereinfachte Vorsorgepauschale: GKV-Beiträge bzw. gedeckelte PKV-Kosten.
     const vsp = sv.rv + (insurance ? insurance.deductible : sv.kv + sv.pv);
@@ -1107,19 +1245,20 @@ function taxScenario(mode, people, children, childUnder25, year, state, kvZusatz
     // Ein nicht ausgeschöpfter Arbeitnehmer-Pauschbetrag mindert die
     // Lohnersatzleistungen. Zusätzliche Werbungskosten verbrauchen ihn zuerst;
     // andere Sonderausgaben oder Verluste anderer Einkunftsarten tun das nicht.
-    const usedPauschale = Math.min(p.pauschale, Math.max(0, person.gross) + werbung);
+    const usedPauschale = Math.min(p.pauschale, Math.max(0, taxGross) + werbung);
     const progression = Math.max(0, alg - Math.max(0, p.pauschale - usedPauschale));
-    const rawZve = person.gross - p.pauschale - p.sonderPausch - vsp - werbung -
+    const rawZve = taxGross - p.pauschale - p.sonderPausch - vsp - werbung -
                    kvPrepay - rvExtra - rentalLoss - businessShare + rentalProfit;
     const zveBeforeDonation = Math.max(0, rawZve);
     // § 10b EStG: 20 % des Gesamtbetrags der Einkünfte. Das ist die Summe der
     // Einkünfte nach Werbungskosten/Betriebsausgaben, aber VOR Sonderausgaben
     // wie Vorsorgepauschale, KV-Vorauszahlungen und zusätzlicher RV. Steuerfreie
     // Lohnersatzleistungen und Abgeltungsteuer-Kapitalerträge zählen nicht dazu.
-    const einkuenfte = person.gross - p.pauschale - werbung - rentalLoss -
+    const einkuenfte = taxGross - p.pauschale - werbung - rentalLoss -
                        businessShare + rentalProfit + nonNeg(person.abfindung);
     return {
-      person, sv, insurance, vsp, werbung, kvPrepay, rvCap, rvExtra, alg, progression,
+      person, sv, minijob: mj, taxGross, effectiveGross,
+      insurance, vsp, werbung, kvPrepay, rvCap, rvExtra, alg, progression,
       rentalLoss, rentalProfit, interest, businessShare, rawZve, zveBeforeDonation,
       einkuenfte, donationCap: Math.max(0, einkuenfte) * donationRate,
       capitalEst: capitalEstFor(interest, p),
@@ -1181,7 +1320,7 @@ function taxScenario(mode, people, children, childUnder25, year, state, kvZusatz
     const kist = mode === "joint"
       ? (x.person.church ? est * state.kirchensteuer / CONFIG.general.percent_divisor : 0)
       : (x.person.church ? (state.kirchensteuer === 8 ? tax.kist8 : tax.kist9) : 0);
-    const net = x.person.gross - insuranceCost(x) - x.costs - est - capitalEst -
+    const net = grossForNet(x) - insuranceCost(x) - x.costs - est - capitalEst -
                 solzu - capitalSolzu - kist - capitalKist + x.alg +
                 x.rentalProfit + x.interest;
     return {
@@ -1272,7 +1411,7 @@ function severanceScenario(base, mode, abfindungen, fuenftel, year, state) {
     const kist = (totalA <= 0 && A[i] <= 0) ? x.kist
       : x.person.church ? progressiveEsts[i] * churchRate : 0;
     const solzu = progressiveSolzu + capitalSolzu;
-    const net = x.person.gross - insuranceCost(x) - x.costs -
+    const net = grossForNet(x) - insuranceCost(x) - x.costs -
                 ests[i] - solzu - kist - capitalKist + A[i] + x.alg +
                 (x.rentalProfit || 0) + (x.interest || 0);
     const zve = baseZve[i] + A[i];
@@ -1349,7 +1488,7 @@ function severanceNet(base, mode, abfindungen, fuenftel, year, state) {
     const capitalSolzu = incrementalSolzu(year, tariff, progressiveEsts[i], capitalEst);
     const capitalKist = churchTaxFor(x.person.church, capitalEst, state);
     const kist = x.person.church ? progressiveEsts[i] * churchRate : 0;
-    totalNet += x.person.gross - insuranceCost(x) - x.costs - progressiveEsts[i] - capitalEst -
+    totalNet += grossForNet(x) - insuranceCost(x) - x.costs - progressiveEsts[i] - capitalEst -
                 progressiveSolzu - capitalSolzu - kist - capitalKist +
                 A[i] + x.alg + (x.rentalProfit || 0) + (x.interest || 0);
   });
@@ -1404,6 +1543,13 @@ function personTable(scenario, params, state, kvZusatz, jointAllowed = true) {
   const hasPrivate = shown.some(x => x.insurance);
   const hasGkv = shown.some(x => !x.insurance);
   const hasVoluntary = shown.some(x => !x.insurance && x.person.insuranceMode === "gkv_freiwillig");
+  const hasMinijob = shown.some(x => x.minijob && x.minijob.active);
+  const hasPauschal = shown.some(x => x.minijob && x.minijob.active && x.minijob.mode === "pauschal");
+  const miniGross = (x) => x.minijob ? x.minijob.gross : 0;
+  const miniRV = (x) => x.minijob && x.minijob.mode === "pauschal" ? x.minijob.employeeRV : 0;
+  const miniAgRV = (x) => x.minijob ? x.minijob.employerRV : 0;
+  const miniAgKV = (x) => x.minijob ? x.minijob.employerKV + x.minijob.employerPV : 0;
+  const miniPausch = (x) => x.minijob ? x.minijob.pauschsteuer : 0;
   const dash = (x) => x === null || x === undefined ? "–" : money2(x);
   const progressiveEst = progressiveEstOf;
   const colCount = jointAllowed ? shown.length + 1 : 2;
@@ -1417,12 +1563,19 @@ function personTable(scenario, params, state, kvZusatz, jointAllowed = true) {
   const rowNullable = (label, a, b, total, cls = "") => rowFmt(label, a, b, total, dash, cls);
 
   html += row("Bruttojahresgehalt", r1.person.gross, r2.person.gross, sum(x => x.person.gross));
+  if (hasMinijob) {
+    html += row("Minijob-Brutto (zusätzlich)", miniGross(r1), miniGross(r2), sum(miniGross));
+  }
   if (scenario.hasAbfindung) {
     html += row("Abfindung (einmalig, brutto)", r1.abfindung, r2.abfindung, sum(x => x.abfindung));
     html += row("zvE ohne Abfindung", r1.baseZve, r2.baseZve, sum(x => x.baseZve));
   }
   html += `<tr class="sub"><td colspan="${colCount}">Sozialabgaben / Versicherung (Arbeitnehmeranteile)</td></tr>`;
   html += row(`Rentenversicherung (${pct(params.rvRate / 2)}, bis ${money(params.bbgRV)})`, r1.sv.rv, r2.sv.rv, sum(x => x.sv.rv));
+  if (shown.some(x => miniRV(x) > 0)) {
+    html += row(`Rentenversicherung aus pauschalem Minijob (${pct(params.minijob_rv_employee)})`,
+                miniRV(r1), miniRV(r2), sum(miniRV));
+  }
   if (hasGkv) {
     const kvRateText = hasVoluntary
       ? `Pflicht ${pct(params.kvRate / 2 + kvZusatz / 2)}, freiwillig ${pct(params.kvRate + kvZusatz)}`
@@ -1451,6 +1604,16 @@ function personTable(scenario, params, state, kvZusatz, jointAllowed = true) {
   html += row(`Arbeitslosenversicherung (${pct(params.avRate / 2)}, bis ${money(params.bbgRV)})`, r1.sv.av, r2.sv.av, sum(x => x.sv.av));
   html += row("Versicherungskosten gesamt", insuranceCost(r1), insuranceCost(r2),
               sum(x => insuranceCost(x)), "total");
+  if (hasPauschal) {
+    html += `<tr class="sub"><td colspan="${colCount}">Arbeitgeberanteile zum Minijob (Info, nicht vom Netto abgezogen)</td></tr>`;
+    html += row("Arbeitgeber-RV zum Minijob", miniAgRV(r1), miniAgRV(r2), sum(miniAgRV));
+    if (shown.some(x => miniAgKV(x) > 0)) {
+      html += row("Arbeitgeber-KV/PV zum pauschalen Minijob", miniAgKV(r1), miniAgKV(r2), sum(miniAgKV));
+    }
+    if (shown.some(x => miniPausch(x) > 0)) {
+      html += row("Pauschsteuer des Arbeitgebers (Info)", miniPausch(r1), miniPausch(r2), sum(miniPausch));
+    }
+  }
 
   html += `<tr class="sub"><td colspan="${colCount}">Steuern (aus ${scenario.mode === "joint" ? "Splittingtabelle" : "Grundtabelle"})</td></tr>`;
   html += row("Arbeitnehmer-Pauschbetrag (abgezogen)", params.pauschale, params.pauschale, sum(() => params.pauschale));
@@ -1514,6 +1677,13 @@ function personTable(scenario, params, state, kvZusatz, jointAllowed = true) {
   }
   if (hasPrivate) {
     html += `<div class="callout">PKV-Hinweis: Private Beiträge werden als Jahresbeiträge aus den Monatsangaben gerechnet. Der Arbeitgeberzuschuss ist auf den GKV-Arbeitgeberanteil und höchstens auf die eigenen PKV-Beiträge begrenzt. Steuerlich werden PKV-Kosten nur bis zur Höhe der jeweiligen GKV-Arbeitnehmerbeiträge berücksichtigt.</div>`;
+  }
+  if (hasMinijob) {
+    const modes = shown.map(x => `${x.person.label}: ${minijobModeLabel(x.minijob.mode)} ${money(x.minijob.gross)}/Jahr${x.minijob.mode === "pauschal" && x.person.minijobRvExempt ? " (RV befreit)" : ""}`).join("; ");
+    const employerNote = hasPauschal
+      ? " Arbeitgeber-RV/KV/PV und die vom Arbeitgeber getragene Pauschsteuer sind Information und werden nicht vom Netto abgezogen."
+      : "";
+    html += `<div class="callout">Minijob: ${modes}. Pauschal versteuerte Minijobs bleiben außerhalb des zvE; nur die Arbeitnehmer-RV mindert das Netto. Individuell versteuerte Minijobs zählen zu zvE und Beitragsgrundlagen.${employerNote}</div>`;
   }
   if (scenario.kfbChildren > 0) {
     html += `<div class="callout">Für ${scenario.kfbChildren} Kind(er) ist der Kinderfreibetrag (${money(params.kfb / 2)} je Elternteil und Kind) günstiger als das Kindergeld. Das Kindergeld wird dafür nicht zusätzlich gezahlt.</div>`;
@@ -1641,9 +1811,10 @@ function renderNotes(year, state, params, kvZusatz, individual, joint, jointAllo
       <li><strong>Jahresarbeitsentgeltgrenze ${year}:</strong> ${money(params.jaeg)}/Jahr. Darüber besteht keine gesetzliche KV-Pflicht mehr; die Versicherungsart wird daher ausdrücklich gewählt. „GKV pflichtversichert“ rechnet mit Beiträgen aus dem Bruttogehalt, „GKV freiwillig“ mit der eingegebenen KV/PV-Beitragsbasis und „PKV“ mit den eingegebenen Privatbeiträgen.</li>
       <li><strong>Beitragssätze (GKV):</strong> RV ${pct(params.rvRate)} (je ${pct(params.rvRate / 2)}), AV ${pct(params.avRate)} (je ${pct(params.avRate / 2)}), KV ${pct(params.kvRate)} + ${pct(kvZusatz)} Zusatzbeitrag (je ${pct(params.kvRate / 2 + kvZusatz / 2)}), PV ${pct(params.pvRate)} (Arbeitnehmer ${pct(params.pvRate - employerPV)}, Arbeitgeber ${pct(employerPV)}), Kinderlose ${pct(params.pvChildless)} Aufschlag, ab 2. Kind ${pct(params.pvDiscount)}Abschlag je Kind (max. ${pct(params.pvMaxDiscount)}).</li>
       <li><strong>Krankenversicherung:</strong> Privat versichert: ${privatePeople.length ? privatePeople.join(" und ") : "niemand"}. Freiwillig gesetzlich versichert: ${voluntaryPeople.length ? voluntaryPeople.join(" und ") : "niemand"}. Alle übrigen Personen werden als gesetzlich pflichtversicherte Arbeitnehmer behandelt. Bei PKV werden die eingegebenen Monatsbeiträge für KV, PV und Kinder in Jahresbeiträge umgerechnet. Der Arbeitgeberzuschuss wird auf den GKV-Arbeitgeberanteil und höchstens auf die eigenen PKV-Beiträge begrenzt. Steuerlich werden PKV-Kosten nur bis zur Höhe der jeweiligen GKV-Arbeitnehmerbeiträge (inkl. Zusatzbeitrag) abgezogen; Kinderbeiträge sind in dieser Obergrenze enthalten. Bei freiwilliger GKV werden KV und PV aus der eingegebenen Beitragsbasis bis zur KV/PV-Bemessungsgrenze berechnet; ein Arbeitgeberanteil wird nicht unterstellt.</li>
+      <li><strong>Minijobs:</strong> Je Partner wählbar: kein Minijob, pauschal versteuert oder individuell versteuert. Das Jahresbrutto ist auf ${money(params.minijob_annual)} begrenzt (${money(params.minijob_monthly)}/Monat). Pauschal versteuerte Minijobs bleiben außerhalb des zvE: Arbeitnehmer-RV ${pct(params.minijob_rv_employee)} (auf Wunsch befreit), Arbeitgeber-RV ${pct(params.minijob_rv_employer)} mindestens auf ${money(params.minijob_rv_min_month * M)}/Jahr, Arbeitgeber-KV ${pct(params.minijob_kv_employer)} und Arbeitgeber-PV ${pct(params.minijob_pv_employer)} (bei PKV keine Arbeitgeber-KV/PV) sowie Pauschsteuer ${pct(params.minijob_pauschsteuer)} vom Arbeitgeber. Individuell versteuerte Minijobs zählen mit dem vollen Brutto zu zvE und Beitragsgrundlagen; dort fällt keine Pauschsteuer an. Das Minijob-Brutto gehört in den Nettoquote-Nenner und in die automatische GKV-Beitragsbasis; Kindergeld bleibt im Zähler und außerhalb des Nenners.</li>
       <li><strong>Kinder:</strong> Freibetrag je Kind und Jahr ${money(params.kfb)}${jointAllowed ? ` (für beide Eltern zusammen, ${money(params.kfb / 2)} je Elternteil)` : " (hier für Partner #1)"}, Kindergeld ${money(params.kindergeldMonth)}/Monat. Günstigerprüfung pro Kind: Der Freibetrag wird nur angesetzt, wenn die Steuerersparnis über dem Kindergeld liegt.</li>
       ${jointAllowed ? `<li><strong>Zusammenveranlagung:</strong> Die Zusammenveranlagung wird geprüft; zusätzliche RV-Beiträge nutzen den gemeinsamen § 10-Höchstbetrag.</li>` : ""}
-      <li><strong>zvE-Ermittlung (vereinfacht):</strong> Brutto − Arbeitnehmer-Pauschbetrag (${money(params.pauschale)}) − Sonderausgaben-Pauschbetrag (${money(params.sonderPausch)}) − Vorsorgepauschale (hier: Arbeitnehmeranteile RV plus GKV-Beiträge bzw. gedeckelte PKV-Kosten) − die je Partner erfassten Ausgaben und Verluste + Mietgewinne. Zinsen bleiben außerhalb des zvE und der KV/PV-Beitragsgrundlage; nach dem Sparer-Pauschbetrag werden sie mit ${pct(params.capitalTaxRate)} Abgeltungsteuer zuzüglich SolZu und ggf. KiSt belastet. Der Spenden-Höchstbetrag wird dagegen aus dem Gesamtbetrag der Einkünfte vor Sonderausgaben berechnet: Brutto + Abfindung − Pauschbetrag/Werbungskosten ± Miet- und Gewerbeergebnisse, ohne Lohnersatzleistungen, Zinsen, Vorsorgepauschale und KV-Vorauszahlungen. Eine Günstigerprüfung für Kapitalerträge, die 4-‰-Alternative nach § 10b, bAV, Steuerklassen, Minijobs und weitere Besonderheiten des Tarifs sind nicht berücksichtigt.</li>
+      <li><strong>zvE-Ermittlung (vereinfacht):</strong> Brutto − Arbeitnehmer-Pauschbetrag (${money(params.pauschale)}) − Sonderausgaben-Pauschbetrag (${money(params.sonderPausch)}) − Vorsorgepauschale (hier: Arbeitnehmeranteile RV plus GKV-Beiträge bzw. gedeckelte PKV-Kosten) − die je Partner erfassten Ausgaben und Verluste + Mietgewinne. Zinsen bleiben außerhalb des zvE und der KV/PV-Beitragsgrundlage; nach dem Sparer-Pauschbetrag werden sie mit ${pct(params.capitalTaxRate)} Abgeltungsteuer zuzüglich SolZu und ggf. KiSt belastet. Der Spenden-Höchstbetrag wird dagegen aus dem Gesamtbetrag der Einkünfte vor Sonderausgaben berechnet: Brutto + Abfindung − Pauschbetrag/Werbungskosten ± Miet- und Gewerbeergebnisse, ohne Lohnersatzleistungen, Zinsen, Vorsorgepauschale und KV-Vorauszahlungen. Eine Günstigerprüfung für Kapitalerträge, die 4-‰-Alternative nach § 10b, bAV, Steuerklassen und weitere Besonderheiten des Tarifs sind nicht berücksichtigt.</li>
       <li><strong>Steueroptimierung im Abfindungsjahr:</strong> Weiterbildung und weitere Werbungskosten werden unbegrenzt vom zvE abgezogen. KV-Vorauszahlungen werden auf das Dreifache der laufenden Jahresbeiträge begrenzt: bei Pflicht-GKV aus dem Bruttogehalt, bei freiwilliger GKV aus der eingegebenen Beitragsbasis und bei PKV aus dem steuerlich berücksichtigten Beitrag. Zusätzliche RV-Beiträge werden aus dem ${jointAllowed ? `§ 10-Höchstbetrag ${money(params.rvCapSingle)} (Einzel) bzw. ${money(params.rvCapJoint)} (Zusammen)` : `einfachen § 10-Höchstbetrag ${money(params.rvCapSingle)}`} abzüglich 2 × bereits gezahlter Arbeitnehmer-RV begrenzt. Spenden (${pct(params.donationRate)} des Gesamtbetrags der Einkünfte nach Werbungskosten, aber vor Sonderausgaben), gewerbliche Verluste (${money(params.businessLossCapSingle)}${jointAllowed ? ` einzeln bzw. ${money(params.businessLossCapJoint)} zusammen` : ""}) und alle neuen Ausgaben werden je Partner erfasst; Vermietungsverluste bleiben unbegrenzt. Eingaben über dem jeweiligen Höchstbetrag werden automatisch auf ihn begrenzt. Steuerfreie Lohnersatzleistungen nach § 32b Abs. 1 Satz 1 Nr. 1 EStG werden je Partner summiert (Arbeitslosengeld I, Kurzarbeitergeld, Insolvenzgeld, Krankengeld, Mutterschaftsgeld, Verletztengeld, Elterngeld, Übergangsgeld, Qualifizierungsgeld und vergleichbare Leistungen; nicht Bürgergeld, Wohngeld, Kindergeld oder BAföG). Sie sind steuerfrei, werden aber über den Progressionsvorbehalt in den Steuersatz einbezogen; ein ungenutzter Arbeitnehmer-Pauschbetrag wird zuerst abgezogen.</li>
       <li><strong>Negative Einkünfte:</strong> Negative Gehälter erzeugen keine Sozialabgaben; Einkommensteuer wird dann nicht erhoben. Die Ausgaben und Verluste werden trotzdem vom Netto abgezogen, sodass das ${jointAllowed ? "Haushaltsnetto" : "Netto"} negativ werden kann. Die Diagramme zeigen negative Gehälter und negative Netto-Werte ohne Kappung.</li>
       <li><strong>Abfindung:</strong> Als einmalige Bruttozahlung ohne Sozialabgaben behandelt. Regulär wird sie dem zvE hinzugerechnet; bei der Fünftelregelung gilt <code>ESt = 5 × ESt(zvE + A/5) − 4 × ESt(zvE)</code>. SolZu wird aus der so ermittelten ESt über die Tabelle zurückgerechnet (Freigrenze/Anstiegsklausel bleiben erhalten). Der Bericht „Abfindung“ zeigt ${jointAllowed ? "alle sechs" : "die drei möglichen"} Kombinationen aus Veranlagungsart und Behandlungsart. Voraussetzungen des § 34 EStG und die gesetzliche Günstigerprüfung werden nicht geprüft.</li>
@@ -1660,6 +1831,7 @@ function zeroPerson(label) {
   return {
     label, gross: 0, abfindung: 0, church: false,
     insurance: "gkv", insuranceMode: "gkv", voluntaryBase: 0, autoVoluntaryBase: false,
+    minijobMode: "none", minijobGross: 0, minijobRvExempt: false,
     pkvKV: 0, pkvPV: 0, pkvChild: 0, pkvChildren: 0, pkvAG: 0,
     opt: {
       weiterbildung: 0, werbungskosten: 0, kvPrepayment: 0, rvExtra: 0,
@@ -1694,6 +1866,13 @@ function enforceOptimizationCaps() {
     const clamped = clamp(safe(num(id)), OL.min, OL.max);
     if (String(clamped) !== el.value) el.value = String(clamped);
   });
+  ["1", "2"].forEach(suffix => {
+    if (!jointAllowed && suffix === "2") return;
+    const el = document.getElementById("minijobGross" + suffix);
+    const max = Math.min(GL.minijob.max, p.minijob_annual);
+    const clamped = clamp(safe(num("minijobGross" + suffix)), GL.minijob.min, max);
+    if (String(clamped) !== el.value) el.value = String(clamped);
+  });
 
   const state = STATES.find(s => s[0] === document.getElementById("state").value) || STATES[0];
   const stateObj = { short: state[0], name: state[1], kirchensteuer: state[2], saxony: state[3] };
@@ -1707,6 +1886,9 @@ function enforceOptimizationCaps() {
       insuranceMode: insurance,
       autoVoluntaryBase: autoVoluntaryBaseEnabled(suffix),
       voluntaryBase: effectiveVoluntaryBase(suffix, insurance),
+      minijobMode: readMinijobMode(suffix),
+      minijobGross: safe(num("minijobGross" + suffix)),
+      minijobRvExempt: document.getElementById("minijobRvExempt" + suffix).checked,
       pkvKV: insurance === "pkv" ? safe(num("pkvKV" + suffix)) : 0,
       pkvPV: insurance === "pkv" ? safe(num("pkvPV" + suffix)) : 0,
       pkvChild: insurance === "pkv" ? safe(num("pkvChild" + suffix)) : 0,
@@ -1798,6 +1980,12 @@ function readInputs() {
          voluntaryBase > L.voluntary_base.max)) {
       throw new Error(`Bitte gültige KV/PV-Beitragsbasis für ${label} eingeben (${L.voluntary_base.min}–${L.voluntary_base.max} €).`);
     }
+    const minijobMode = readMinijobMode(suffix);
+    const minijobGross = num("minijobGross" + suffix);
+    const minijobMax = Math.min(L.minijob.max, PARAMS[document.getElementById("year").value].minijob_annual);
+    if (!Number.isFinite(minijobGross) || minijobGross < L.minijob.min || minijobGross > minijobMax) {
+      throw new Error(`Bitte gültiges Minijob-Brutto für ${label} eingeben (${L.minijob.min}–${minijobMax} €).`);
+    }
     let pkv = { pkvKV: 0, pkvPV: 0, pkvChild: 0, pkvChildren: 0, pkvAG: 0 };
     if (insurance === "pkv") {
       pkv = {
@@ -1831,7 +2019,10 @@ function readInputs() {
     return {
       gross, abfindung, church: document.getElementById("church" + suffix).checked,
       label, insurance, insuranceMode: insurance, voluntaryBase,
-      autoVoluntaryBase: autoVoluntaryBaseEnabled(suffix), opt, ...pkv
+      autoVoluntaryBase: autoVoluntaryBaseEnabled(suffix),
+      minijobMode, minijobGross,
+      minijobRvExempt: document.getElementById("minijobRvExempt" + suffix).checked,
+      opt, ...pkv
     };
   };
 
@@ -1860,6 +2051,7 @@ function readInputs() {
 function renderOptimizationLimits(input, individual, joint, jointAllowedParam = true) {
   const el = document.getElementById("optimizationLimits");
   const p = PARAMS[input.year];
+  updateMinijobHints(input, individual, p);
   const rvPaidTotal = individual.results.reduce((s, x) => s + x.sv.rv, 0);
   const rvJointCap = joint.results[0].rvCap;
   const jointAllowed = jointAllowedParam && input.jointAllowed !== false;
@@ -1877,9 +2069,9 @@ function renderOptimizationLimits(input, individual, joint, jointAllowedParam = 
       ? "PKV-Beitrag, begrenzt auf den GKV-Vergleichswert"
       : person.insuranceMode === "gkv_freiwillig"
         ? (person.autoVoluntaryBase
-          ? "KV/PV aus Beitragsbasis (Auto: Bruttogehalt)"
+          ? "KV/PV aus Beitragsbasis (Auto: Gehalt + Minijob-Brutto)"
           : "KV/PV aus eingegebener Beitragsbasis")
-        : "KV/PV aus Bruttogehalt";
+        : "KV/PV aus Gehalt zuzüglich steuerpflichtigem Minijob-Brutto";
     const rvText = jointAllowed
       ? `§ 10-Höchstbetrag ${money(p.rvCapJoint)} − 2 × ${money(rvPaidTotal)} gezahlte RV = ${money(rvJointCap)} (gemeinsam, anteilig gekürzt)`
       : `§ 10-Höchstbetrag ${money(p.rvCapSingle)} − 2 × ${money(r.sv.rv)} = ${money(r.rvCap)}`;
@@ -2036,6 +2228,37 @@ function txt(x, y, value, extra = "") {
   });
   const out = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(" ");
   return `<text x="${x}" y="${y}" ${out}>${value}</text>`;
+}
+
+/* Marker labels live in the SVG margin outside the plotted rectangle. Close
+   horizontal reference lines are staggered and connected with short leaders. */
+function layoutSideLabels(items, y0, plotH, minGap = 27) {
+  const minY = y0 + 12, maxY = y0 + plotH - 4;
+  const sorted = items.slice().sort((a, b) => a.targetY - b.targetY);
+  let last = -Infinity;
+  sorted.forEach(item => {
+    const target = clamp(item.targetY, minY, maxY);
+    item.labelY = Math.min(maxY, Math.max(target, last + minGap));
+    last = item.labelY;
+  });
+  const overflow = last - maxY;
+  if (overflow > 0) sorted.forEach(item => { item.labelY = Math.max(minY, item.labelY - overflow); });
+  return sorted;
+}
+
+function renderSideLabels(items, targetX, labelX) {
+  return items.map(item => {
+    const leader = `<line x1="${targetX}" y1="${item.targetY.toFixed(1)}" x2="${labelX - 5}" y2="${(item.labelY - 3).toFixed(1)}"
+      stroke="${item.color}" stroke-width="1" stroke-dasharray="3 3" stroke-opacity="0.8"><title>${item.title}</title></line>`;
+    const common = `font-size="9" font-weight="700" fill="${item.color}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`;
+    return leader +
+      txt(labelX, item.labelY - 3, item.label, common) +
+      txt(labelX, item.labelY + 8, money(item.value), common) +
+      (item.subLabel
+        ? txt(labelX, item.labelY + 20, item.subLabel,
+            `font-size="8" fill="${COLORS.guide_text}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`)
+        : "");
+  }).join("");
 }
 
 /* Neutral guide at a gross salary of zero. It stays visible next to the
@@ -2258,11 +2481,12 @@ function chartComposition(individual, joint, jointAllowed = true) {
     if (jointAllowed) groups.push({ label: `${name} · Partner #2`, s, i: 1 });
     groups.push({ label: jointAllowed ? `${name} · Beide (Haushalt)` : `${name} · inkl. Kindergeld`, s, i: null });
   });
+  const incomeOf = (x) => x.person.gross + (x.minijob ? x.minijob.gross : 0);
   const totalGross = (s) => jointAllowed
-    ? s.results.reduce((a, x) => a + x.person.gross, 0)
-    : s.results[0].person.gross;
+    ? s.results.reduce((a, x) => a + incomeOf(x), 0)
+    : incomeOf(s.results[0]);
   const totalOf = (g) => g.i === null
-    ? totalGross(g.s) + g.s.kindergeld : g.s.results[g.i].person.gross;
+    ? totalGross(g.s) + g.s.kindergeld : incomeOf(g.s.results[g.i]);
   const totals = groups.map(totalOf);
   const maxV = Math.max(...totals, 1);
   const scale = plotH / maxV;
@@ -2315,7 +2539,7 @@ function chartComposition(individual, joint, jointAllowed = true) {
     Kirchensteuer: COLORS.kist, Netto: COLORS.net, Kindergeld: COLORS.kg
   }).map(([k, v]) => `<span><i class="swatch" style="background:${v}"></i>${k}</span>`).join("")}</div>`;
   return `<div class="chart"><h3>Wofür das Brutto verbraucht wird</h3>
-    <p>Jeweils von unten nach oben: Sozialabgaben bzw. Versicherungskosten, Steuern, Netto und Kindergeld. Balkenhöhe = Brutto${jointAllowed ? " (zzgl. Kindergeld bei Beide/Haushalt)" : " zuzüglich Kindergeld beim Balken „inkl. Kindergeld“"}. Gestrichelte Linien markieren die Brutto-Niveaus zum Vergleich.</p>${s}${legend}</div>`;
+    <p>Jeweils von unten nach oben: Sozialabgaben bzw. Versicherungskosten, Steuern, Netto und Kindergeld. Balkenhöhe = Gehalt zuzüglich Minijob-Brutto${jointAllowed ? " (zzgl. Kindergeld bei Beide/Haushalt)" : " sowie Kindergeld beim Balken „inkl. Kindergeld“"}. Gestrichelte Linien markieren die Brutto-Niveaus zum Vergleich.</p>${s}${legend}</div>`;
 }
 
 /* Chart-only gross domain. The range sliders stay at the configured
@@ -2395,8 +2619,11 @@ function heatSweepKey(input, xMin, axisMax) {
     kvZusatz: input.kvZusatz,
     jointAllowed: input.jointAllowed !== false,
     people: input.people.map(p => ({
-      insurance: p.insurance, insuranceMode: p.insuranceMode, voluntaryBase: p.voluntaryBase,
+      insurance: p.insurance, insuranceMode: p.insuranceMode,
+      autoVoluntaryBase: p.autoVoluntaryBase === true,
+      voluntaryBase: p.autoVoluntaryBase ? "auto" : p.voluntaryBase,
       church: p.church, abfindung: p.abfindung || 0,
+      minijobMode: p.minijobMode, minijobGross: p.minijobGross, minijobRvExempt: p.minijobRvExempt,
       opt: p.opt || {},
       pkvKV: p.pkvKV, pkvPV: p.pkvPV, pkvChild: p.pkvChild,
       pkvChildren: p.pkvChildren, pkvAG: p.pkvAG
@@ -2439,6 +2666,7 @@ function optimumCurveData(cells, nx, ny, g1cur, g2cur) {
 
 function computeHeatmapData(input) {
   const C = CONFIG.charts.netBrutto;
+  const params = PARAMS[input.year];
   const domain = grossDomain();
   const jointAllowed = input.jointAllowed !== false;
   const nx = C.nx, ny = jointAllowed ? C.ny : 1;
@@ -2446,6 +2674,7 @@ function computeHeatmapData(input) {
   const g1cur = input.people[0].gross, g2cur = input.people[1].gross;
   const A = input.people.map(p => p.abfindung || 0);
   const totalA = A.reduce((s, v) => s + v, 0);
+  const minijobTotal = minijobGrossTotal(input.people, params);
   const key = heatSweepKey(input, xMin, axisMax);
   if (HEAT_SWEEP_CACHE.key !== key) {
     // Separate comparison: best net with Partner #1 salary = 0 at the same
@@ -2473,16 +2702,17 @@ function computeHeatmapData(input) {
         const jointBase = jointAllowed ? taxScenario("joint", ...args) : indBase;
         // All available cases are evaluated; the best absolute net is the
         // encoded value. The primary Nettoquote divides that net by gross
-        // salaries plus Abfindungen; the baseline ratio is a separate comparison.
+        // salaries, Minijob-Bruttos and Abfindungen; the baseline ratio is a
+        // separate comparison.
         const variants = abfindungVariants(indBase, jointBase, A, input.year, input.state, jointAllowed);
         const kindergeld = indBase.kindergeld;
         const netIndNoKg = variants.bestInd - kindergeld;
         const netJointNoKg = variants.bestJoint - kindergeld;
         const gross = g1 + g2;
-        const denominator = gross + totalA;
+        const denominator = gross + minijobTotal + totalA;
         const best = variants.bestOption.net;
         const cell = {
-          jx, jy, g1, g2, gross, abf: totalA,
+          jx, jy, g1, g2, gross, minijob: minijobTotal, abf: totalA,
           netInd: variants.bestInd, netJoint: variants.bestJoint,
           netIndNoKg, netJointNoKg, best,
           bestOption: variants.bestOption, variants,
@@ -2529,7 +2759,7 @@ function computeHeatmapData(input) {
   const currentKindergeld = currentInd.kindergeld;
   const currentNet = currentVariants.bestOption.net;
   const currentNetNoKg = currentNet - currentKindergeld;
-  const currentTotal = g1cur + g2cur + currentTotalA;
+  const currentTotal = g1cur + g2cur + minijobTotal + currentTotalA;
   const currentBaseline = baselineNet(g2cur);
   const currentQuote = currentTotal > 0 ? currentNet / currentTotal : null;
   const currentBaselineRatio = currentBaseline > 0 ? currentNet / currentBaseline : null;
@@ -2582,6 +2812,7 @@ function chartNetBruttoMap(input, data = computeHeatmapData(input)) {
     if (jointAllowed) tipParts.push(jointTip, advantage);
     tipParts.push(`Nettoquote ${Number.isFinite(c.quote) ? pct(c.quote * 100) : "–"}`,
                   `Quote vs. ohne Gehalt ${Number.isFinite(c.baselineRatio) ? pct(c.baselineRatio * 100) : "–"}`);
+    if (c.minijob > 0) tipParts.push(`Minijob-Brutto ${money(c.minijob)}`);
     if (ab) tipParts.push(`Abfindung ${money(c.abf)}`);
     const tip = tipParts.join("; ");
     s += box(x, y, cw + 0.4, ch + 0.4, color, tip);
@@ -2776,7 +3007,7 @@ function chartNetBruttoSurface(input, data = computeHeatmapData(input)) {
         ? `Zusammen mit Fünftel ${money(c.variants.joint.mit)}, ohne ${money(c.variants.joint.ohne)}`
         : `Zusammen ${money(c.variants.joint.mit)}`;
       const cases = jointAllowed ? `${indTip}; ${jointTip}` : indTip;
-      const tip = `P1 ${money(c.g1)} · P2 ${money(c.g2)}: Bestes Netto/Jahr ${money(c.best)} inkl. Kindergeld (${winner}, ${c.bestOption.treatment}); ${cases}; Nettoquote ${Number.isFinite(c.quote) ? pct(c.quote * 100) : "–"}; Quote vs. ohne Gehalt ${Number.isFinite(c.baselineRatio) ? pct(c.baselineRatio * 100) : "–"}`;
+      const tip = `P1 ${money(c.g1)} · P2 ${money(c.g2)}: Bestes Netto/Jahr ${money(c.best)} inkl. Kindergeld (${winner}, ${c.bestOption.treatment}); ${cases}; Nettoquote ${Number.isFinite(c.quote) ? pct(c.quote * 100) : "–"}; Quote vs. ohne Gehalt ${Number.isFinite(c.baselineRatio) ? pct(c.baselineRatio * 100) : "–"}${c.minijob > 0 ? `; Minijob-Brutto ${money(c.minijob)}` : ""}`;
       s += `<polygon points="${pts}" fill="${colorFor(c.score)}" fill-opacity="0.94"
               stroke="${COLORS.grid}" stroke-width="0.4"><title>${tip}</title></polygon>`;
     }
@@ -2984,7 +3215,8 @@ function householdLabelText(value) {
 
 /* Shared sweep of Partner #1 gross. Both the detailed AbfWork chart and the
    compact trend chart in the heatmap card use the same computed data. Partner
-   #1's current gross only moves the marker, so it is not part of the cache key. */
+   #1's current gross only moves the marker, so it is not part of the cache key;
+   an Auto voluntary-GKV base is derived per sampled salary, not from the marker. */
 let ABF_SWEEP_CACHE = { key: null };
 
 function abfSweepKey(input, xMin, xMax, step) {
@@ -2998,8 +3230,11 @@ function abfSweepKey(input, xMin, xMax, step) {
     jointAllowed: input.jointAllowed !== false,
     people: input.people.map((p, i) => ({
       gross: i === 0 ? 0 : p.gross,
-      insurance: p.insurance, insuranceMode: p.insuranceMode, voluntaryBase: p.voluntaryBase,
+      insurance: p.insurance, insuranceMode: p.insuranceMode,
+      autoVoluntaryBase: p.autoVoluntaryBase === true,
+      voluntaryBase: p.autoVoluntaryBase ? "auto" : p.voluntaryBase,
       church: p.church, abfindung: p.abfindung || 0,
+      minijobMode: p.minijobMode, minijobGross: p.minijobGross, minijobRvExempt: p.minijobRvExempt,
       opt: p.opt || {},
       pkvKV: p.pkvKV, pkvPV: p.pkvPV, pkvChild: p.pkvChild,
       pkvChildren: p.pkvChildren, pkvAG: p.pkvAG
@@ -3116,7 +3351,7 @@ function bestNetForAbfindungen(input, abfindungen) {
    it makes the dip in the Abfindung year and the recovery visible. */
 function chartNetTrend(input, data = computeAbfWorkData(input)) {
   const C = CONFIG.charts.netTrend;
-  const { series, bestWithout, bestWith, breakEven, hasWorst, worstG } = data;
+  const { series, bestWithout, bestWith, breakEven, hasWorst, worstG, worstNet } = data;
   const { xMin, xMax, yMin, yMax } = curveViewport("netTrendSvg", data);
   const W = C.width, H = C.height, x0 = C.x0, y0 = C.y0, plotW = C.plot_width, plotH = C.plot_height;
   const best = series.individual.map((p, i) => ({ g: p.g, net: bestWith(i) }));
@@ -3125,6 +3360,9 @@ function chartNetTrend(input, data = computeAbfWorkData(input)) {
   const py = v => y0 + plotH - (v - yMin) / (yMax - yMin) * plotH;
   const inX = v => v >= xMin && v <= xMax;
   const inY = v => v >= yMin && v <= yMax;
+  const topLabelY1 = Math.max(9, y0 - 7);
+  const topLabelY2 = Math.max(9, topLabelY1 - 10);
+  const sideLabels = [];
 
   let shade = "";
   const dipEnd = breakEven === null ? xMax : clamp(breakEven, xMin, xMax);
@@ -3143,8 +3381,8 @@ function chartNetTrend(input, data = computeAbfWorkData(input)) {
   if (inY(bestWithout)) {
     s += `<line x1="${x0}" y1="${py(bestWithout)}" x2="${x0 + plotW}" y2="${py(bestWithout)}"
             stroke="${COLORS.net}" stroke-width="1.5" stroke-dasharray="6 4"/>`;
-    s += txt(x0 + plotW - 4, py(bestWithout) - 5, `Ohne Gehalt: ${money(bestWithout)}`,
-      `text-anchor="end" font-size="10" font-weight="600" fill="${COLORS.net}"`);
+    sideLabels.push({ targetY: py(bestWithout), label: "Ohne Gehalt", value: bestWithout,
+                      color: COLORS.net, title: `Ohne Gehalt: ${money(bestWithout)}` });
   }
   let curves = `<polyline points="${best.map(p => `${px(p.g).toFixed(1)},${py(p.net).toFixed(1)}`).join(" ")}"
                   fill="none" stroke="${COLORS.net}" stroke-width="2.5"/>`;
@@ -3153,15 +3391,22 @@ function chartNetTrend(input, data = computeAbfWorkData(input)) {
     const bx = px(breakEven), right = bx > x0 + plotW * 0.6;
     s += `<line x1="${bx}" y1="${y0}" x2="${bx}" y2="${y0 + plotH}" stroke="${COLORS.break_even}"
             stroke-width="1.5" stroke-dasharray="7 4"/>`;
-    s += txt(bx + (right ? -6 : 6), y0 + 12, `Break-even ${money(breakEven)}`,
+    s += txt(bx + (right ? -6 : 6), topLabelY1, `Break-even ${money(breakEven)}`,
       `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.break_even}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
   }
   if (hasWorst && inX(worstG)) {
     const wx = px(worstG), wRight = wx > x0 + plotW * 0.6;
     s += `<line x1="${wx}" y1="${y0}" x2="${wx}" y2="${y0 + plotH}" stroke="${COLORS.worst_case}"
             stroke-width="1.5" stroke-dasharray="2 4"/>`;
-    s += txt(wx + (wRight ? -6 : 6), y0 + 28, `Worst case ${money(worstG)}`,
+    s += txt(wx + (wRight ? -6 : 6), topLabelY2, `Worst case ${money(worstG)}`,
       `text-anchor="${wRight ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.worst_case}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+    if (inY(worstNet)) {
+      const wy = py(worstNet);
+      s += `<line x1="${x0}" y1="${wy}" x2="${x0 + plotW}" y2="${wy}" stroke="${COLORS.worst_case}"
+              stroke-width="1.5" stroke-dasharray="7 4"/>`;
+      sideLabels.push({ targetY: wy, label: "Worst case Netto", value: worstNet,
+                        color: COLORS.worst_case, title: `Worst case Netto: ${money(worstNet)}` });
+    }
   }
 
   const cur = input.people[0].gross;
@@ -3186,6 +3431,7 @@ function chartNetTrend(input, data = computeAbfWorkData(input)) {
         `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="700" fill="${deltaColor}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
     }
   }
+  s += renderSideLabels(layoutSideLabels(sideLabels, y0, plotH, 23), x0 + plotW, x0 + plotW + 10);
   s += txt(x0 + plotW / 2, H - 6, "Bruttojahresgehalt Partner #1 →", `text-anchor="middle" font-weight="600"`);
   s += `</svg>`;
   return s;
@@ -3264,18 +3510,22 @@ function renderAbfWorkSteps(input, data, netWithA, netWithoutA) {
   const shownPeople = jointAllowed ? input.people : input.people.slice(0, 1);
   const insuranceText = shownPeople.map(p =>
     `${p.label}: ${insuranceModeLabel(p.insuranceMode)}${p.church ? " · Kirchensteuer" : ""}`).join("; ");
-  const salaryText = jointAllowed
+  const params = PARAMS[input.year];
+  const miniText = shownPeople.map(p => minijobIncome(p, params) > 0
+    ? `${p.label}: ${money(minijobIncome(p, params))} (${minijobModeLabel(p.minijobMode)})` : null)
+    .filter(Boolean).join("; ");
+  const salaryText = (jointAllowed
     ? `${money(input.people[0].gross)} + ${money(input.people[1].gross)}`
-    : money(input.people[0].gross);
+    : money(input.people[0].gross)) + (miniText ? `; Minijob ${miniText}` : "");
   const abfText = jointAllowed
     ? `${money(A[0])} + ${money(A[1])} = <strong>${money(totalA)}</strong>`
     : `${money(A[0])} = <strong>${money(totalA)}</strong>`;
 
   const html = `
-    <p class="small">Alle Beträge sind Jahreswerte. <strong>Netto = Bruttogehälter − Sozialabgaben (RV/AV/KV/PV) − weitere Ausgaben und Verluste − ESt − SolZu − KiSt + Kindergeld + steuerfreie Lohnersatzleistungen + Abfindung.</strong> Die ESt stammt aus den eingebetteten Tabellen; die Günstigerprüfung Kindergeld/Kinderfreibetrag ist in zvE und Kindergeld bereits enthalten. Negative Gehälter erzeugen keine Sozialabgaben; Ausgaben und Verluste können das Netto negativ machen.</p>
+    <p class="small">Alle Beträge sind Jahreswerte. <strong>Netto = Gehälter zuzüglich Minijob-Bruttos − Sozialabgaben (RV/AV/KV/PV) − weitere Ausgaben und Verluste − ESt − SolZu − KiSt + Kindergeld + steuerfreie Lohnersatzleistungen + Abfindung.</strong> Pauschal versteuerte Minijobs sind nicht im zvE, ihre Arbeitnehmer-RV ist aber im Netto abgezogen; vom Arbeitgeber getragene Pauschsteuer und Arbeitgeberanteile mindern das Netto nicht. Die ESt stammt aus den eingebetteten Tabellen; die Günstigerprüfung Kindergeld/Kinderfreibetrag ist in zvE und Kindergeld bereits enthalten. Negative Gehälter erzeugen keine Sozialabgaben; Ausgaben und Verluste können das Netto negativ machen.</p>
     <h4>1. Eingaben</h4>
     <p>Steuerjahr ${input.year} · ${input.state.name} · Kinder ${input.children}${input.childUnder25 ? " (alle unter 25)" : ""} · KV-Zusatz ${pct(input.kvZusatz)} · ${insuranceText}.<br>
-      Bruttogehälter ${salaryText} · Abfindungen ${abfText}.</p>
+      Gehälter und Minijob-Bruttos ${salaryText} · Abfindungen ${abfText}.</p>
     <h4>2. Ausgangslage ohne Abfindung bei den aktuellen Gehältern</h4>
     <p>Diese Werte sind die Vergleichsbasis für „Netto aus der Abfindung“. Die Abfindungen werden hier auf 0 gesetzt.</p>
     ${table(jointAllowed
@@ -3324,7 +3574,7 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   const intro = document.getElementById("abfWorkIntro");
   if (intro) {
     intro.textContent = jointAllowed
-      ? "Vier Netto-Kurven: Einzel- und Zusammenveranlagung jeweils mit und ohne Fünftelregelung, alle mit Gehalt von Partner #1 (mit Fünftel durchgezogen, ohne strichpunktiert). Dazu zwei horizontale gestrichelte Referenzlinien ohne Gehalt von Partner #1, nur mit Abfindung. Der rote Bereich markiert bis zum Break-even Gehälter, bei denen Arbeiten das Netto senkt. Violett = Break-even, rot gestrichelt = Worst case; die horizontale rote Linie markiert dessen Netto-Niveau. Schwarze gestrichelte Linien verbinden die aktuellen Punkte mit der Y-Achse. Gehalt von Partner #2 und beide Abfindungen bleiben über die Regler konstant."
+      ? "Vier Netto-Kurven: Einzel- und Zusammenveranlagung jeweils mit und ohne Fünftelregelung, alle mit Gehalt von Partner #1 (mit Fünftel durchgezogen, ohne strichpunktiert). Dazu zwei horizontale gestrichelte Referenzlinien ohne Gehalt von Partner #1, nur mit Abfindung. Der rote Bereich markiert bis zum Break-even Gehälter, bei denen Arbeiten das Netto senkt. Violett = Break-even, rot gestrichelt = Worst case; die horizontale rote Linie markiert dessen Netto-Niveau. Schwarze gestrichelte Linien verbinden die aktuellen Punkte mit der Y-Achse. Gehalt von Partner #2 und beide Abfindungen bleiben über die Regler konstant. Break-even und Worst case stehen oben, die Netto-Werte und die Differenz mit Pfeil rechts außerhalb des Diagramms."
       : "Zwei Netto-Kurven: nur Einzelveranlagung mit und ohne Fünftelregelung, beide mit Gehalt von Partner #1 (mit Fünftel durchgezogen, ohne strichpunktiert). Dazu eine horizontale gestrichelte Referenzlinie ohne Gehalt von Partner #1, nur mit Abfindung von Partner #1. Der rote Bereich markiert bis zum Break-even Gehälter, bei denen Arbeiten das Netto senkt. In diesem Modus entfällt der Worst case. Die wichtigste Aussage ist der farbig hervorgehobene Vergleich des aktuellen Netto mit „ohne Gehalt“.";
   }
   const { xMin, xMax, yMin, yMax } = curveViewport("abfWorkSvg", data);
@@ -3349,22 +3599,26 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   }
 
   let s = svgOpen(W, H);
-  s += `<defs><clipPath id="abfWorkClip"><rect x="${x0}" y="${y0}" width="${plotW}" height="${plotH}"/></clipPath></defs>`;
+  s += `<defs><clipPath id="abfWorkClip"><rect x="${x0}" y="${y0}" width="${plotW}" height="${plotH}"/></clipPath>
+    <marker id="abfGapArrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="${COLORS.break_even}"/></marker></defs>`;
   s += `<g clip-path="url(#abfWorkClip)">${shade}</g>`;
   s += axes(x0, y0, plotW, plotH,
     CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: xMin + span * f })),
     CONFIG.charts.common.tick_fractions.map(f => ({ frac: f, value: yMin + (yMax - yMin) * f })),
     v => money(v), v => money(v));
   if (inX(0)) s += zeroXGuide(px(0), y0, plotH);
+  const topLabelY1 = Math.max(9, y0 - 8);
+  const topLabelY2 = Math.max(9, topLabelY1 - 12);
+  const sideLabels = [];
   const baselines = jointAllowed
-    ? [[baseInd, COLORS.individual, "Einzel ohne Gehalt P1"],
-       [baseJoint, COLORS.joint, "Zusammen ohne Gehalt P1"]]
-    : [[baseInd, COLORS.individual, "Einzel ohne Gehalt P1"]];
+    ? [[baseInd, COLORS.individual, "Einzel ohne Gehalt"],
+       [baseJoint, COLORS.joint, "Zusammen ohne Gehalt"]]
+    : [[baseInd, COLORS.individual, "Einzel ohne Gehalt"]];
   baselines.forEach(([v, c, label]) => {
     if (!inY(v)) return;
     s += `<line x1="${x0}" y1="${py(v)}" x2="${x0 + plotW}" y2="${py(v)}" stroke="${c}" stroke-width="1.5" stroke-dasharray="6 4"/>`;
-    s += txt(x0 + plotW - 4, py(v) - 5, `${label}: ${money(v)}`,
-      `text-anchor="end" font-size="10" font-weight="600" fill="${c}"`);
+    sideLabels.push({ targetY: py(v), label, value: v, color: c, title: `${label}: ${money(v)}` });
   });
   const line = key => series[key].map(p => `${px(p.g).toFixed(1)},${py(p.net).toFixed(1)}`).join(" ");
   const curves = jointAllowed
@@ -3386,21 +3640,20 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
   if (breakEven !== null && inX(breakEven)) {
     const bx = px(breakEven), right = bx > x0 + plotW * 0.6;
     s += `<line x1="${bx}" y1="${y0}" x2="${bx}" y2="${y0 + plotH}" stroke="${COLORS.break_even}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
-    s += txt(bx + (right ? -6 : 6), y0 + 14, `Break-even ${money(breakEven)}`,
+    s += txt(bx + (right ? -6 : 6), topLabelY1, `Break-even ${money(breakEven)}`,
       `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.break_even}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
   }
   if (hasWorst && inX(worstG)) {
     const wx = px(worstG), right = wx > x0 + plotW * 0.6;
-    const ly = breakEven !== null ? y0 + 30 : y0 + 14;
     s += `<line x1="${wx}" y1="${y0}" x2="${wx}" y2="${y0 + plotH}" stroke="${COLORS.worst_case}" stroke-width="1.5" stroke-dasharray="2 4"/>`;
-    s += txt(wx + (right ? -6 : 6), ly, `Worst case ${money(worstG)}`,
+    s += txt(wx + (right ? -6 : 6), topLabelY2, `Worst case ${money(worstG)}`,
       `text-anchor="${right ? "end" : "start"}" font-size="10" font-weight="600" fill="${COLORS.worst_case}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
     if (inY(worstNet)) {
       const wy = py(worstNet);
       s += `<line x1="${x0}" y1="${wy}" x2="${x0 + plotW}" y2="${wy}"
               stroke="${COLORS.worst_case}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
-      s += txt(x0 + plotW - 4, wy - 5, `Worst case Netto ${money(worstNet)}`,
-        `text-anchor="end" font-size="10" font-weight="600" fill="${COLORS.worst_case}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+      sideLabels.push({ targetY: wy, label: "Worst case Netto", value: worstNet,
+                        color: COLORS.worst_case, title: `Worst case Netto: ${money(worstNet)}` });
     }
   }
   if (hasWorst && breakEven !== null && recoveryGap > 0.5 &&
@@ -3408,14 +3661,16 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
     const topY = py(breakEvenNet), bottomY = py(worstNet);
     const gx = clamp((px(worstG) + px(breakEven)) / 2, x0 + 70, x0 + plotW - 70);
     const tick = 8;
+    const gapTargetY = (topY + bottomY) / 2;
     s += `<line x1="${gx - tick}" y1="${topY}" x2="${gx + tick}" y2="${topY}" stroke="${COLORS.break_even}" stroke-width="1.5"/>`;
     s += `<line x1="${gx - tick}" y1="${bottomY}" x2="${gx + tick}" y2="${bottomY}" stroke="${COLORS.worst_case}" stroke-width="1.5"/>`;
     s += `<line x1="${gx}" y1="${topY}" x2="${gx}" y2="${bottomY}" stroke="${COLORS.guide}" stroke-width="1.5" stroke-dasharray="3 3"/>`;
-    const labelY = (topY + bottomY) / 2;
-    s += txt(gx + 10, labelY - 4, `Differenz ${money(recoveryGap)}`,
-      `text-anchor="start" font-size="10" font-weight="700" fill="${COLORS.break_even}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="4"`);
-    s += txt(gx + 10, labelY + 10, "Worst case → Break-even",
-      `text-anchor="start" font-size="9" fill="${COLORS.guide_text}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
+    s += `<line x1="${gx}" y1="${gapTargetY}" x2="${x0 + plotW - 3}" y2="${gapTargetY}" stroke="${COLORS.break_even}" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#abfGapArrow)"><title>Worst case → Break-even: ${money(recoveryGap)}</title></line>`;
+    sideLabels.push({
+      targetY: gapTargetY, label: "Differenz", value: recoveryGap,
+      subLabel: "Worst case → Break-even", color: COLORS.break_even,
+      title: `Worst case → Break-even: ${money(recoveryGap)}`
+    });
   }
 
   const cur = input.people[0].gross;
@@ -3434,6 +3689,7 @@ function chartAbfWorkYear(input, data = computeAbfWorkData(input)) {
         `font-size="10" font-weight="600" fill="${c}" paint-order="stroke" stroke="${COLORS.halo}" stroke-width="3"`);
     });
   }
+  s += renderSideLabels(layoutSideLabels(sideLabels, y0, plotH, 42), x0 + plotW, x0 + plotW + 10);
   s += txt(x0 + plotW / 2, H - 8, "Bruttojahresgehalt Partner #1 →", `text-anchor="middle" font-weight="600"`);
   s += `<text transform="rotate(-90 20 ${y0 + plotH / 2})" x="20" y="${y0 + plotH / 2}" text-anchor="middle" font-size="11" font-weight="600" fill="${COLORS.axis}">${jointAllowed ? "Haushaltsnetto" : "Netto"} →</text>`;
   s += `</svg>`;
@@ -3707,7 +3963,8 @@ function renderQuoteExample(input) {
   const people = input.people.map((p, i) => ({
     ...p,
     gross: i === 0 ? E.gross1 : jointAllowed && i === 1 ? E.gross2 : 0,
-    abfindung: i === 0 ? E.abfindung1 : 0
+    abfindung: i === 0 ? E.abfindung1 : 0,
+    minijobMode: "none", minijobGross: 0, minijobRvExempt: false
   }));
   const net = bestNetForInput({ ...input, jointAllowed, people });
   const denominator = jointAllowed ? E.gross1 + E.gross2 + E.abfindung1 : E.gross1 + E.abfindung1;
@@ -3725,6 +3982,7 @@ function renderCharts(input, individual, joint, jointAllowed = true) {
   renderAbfWorkCharts();
   const A = input.people.map(p => p.abfindung || 0);
   const totalA = A.reduce((s, v) => s + v, 0);
+  const minijobTotal = minijobGrossTotal(input.people, PARAMS[input.year]);
   const variants = abfindungVariants(individual, joint, A, input.year, input.state, jointAllowed);
   const best = variants.bestOption.net;
   const bestMode = `${variants.bestOption.modeLabel} · ${variants.bestOption.treatment}`;
@@ -3740,6 +3998,9 @@ function renderCharts(input, individual, joint, jointAllowed = true) {
   const abfRow = totalA > 0
     ? `<span>Abfindung gesamt (einmalig) <strong>${money(totalA)}</strong> · mit und ohne Fünftelregelung geprüft</span>`
     : "";
+  const minijobRow = minijobTotal > 0
+    ? `<span>Minijob-Bruttos gesamt <strong>${money(minijobTotal)}</strong> (im Nettoquote-Nenner)</span>`
+    : "";
   const pairLine = (label, v) => totalA > 0
     ? `<span>${label}: mit Fünftel <strong>${money(v.mit)}</strong> · ohne <strong>${money(v.ohne)}</strong></span>`
     : `<span>${label} <strong>${money(v.mit)}</strong></span>`;
@@ -3751,7 +4012,8 @@ function renderCharts(input, individual, joint, jointAllowed = true) {
     ${jointAllowed ? pairLine("Zusammen", variants.joint) : ""}
     ${jointAllowed ? `<span class="positive">${advantageLabel}
       <strong>${money(Math.abs(variants.delta))}</strong></span>` : ""}
-    <span class="hint">Nettoquote = bestes Netto inkl. Kindergeld ÷ (Gehälter + Abfindungen) · „vs. ohne Gehalt“ ist der separate U-Form-Vergleich</span>${abfRow}`;
+    ${minijobRow}
+    <span class="hint">Nettoquote = bestes Netto inkl. Kindergeld ÷ (Gehälter + Minijob-Bruttos + Abfindungen) · „vs. ohne Gehalt“ ist der separate U-Form-Vergleich</span>${abfRow}`;
   renderQuoteExample(input);
   document.getElementById("charts").innerHTML =
     chartComposition(individual, joint, jointAllowed) +
@@ -3767,6 +4029,46 @@ function toggleInsuranceFields() {
     const mode = readInsuranceMode(suffix);
     document.getElementById("pkv" + suffix + "Fields").hidden = mode !== "pkv";
     document.getElementById("voluntary" + suffix + "Fields").hidden = mode !== "gkv_freiwillig";
+  }
+}
+
+function toggleMinijobFields() {
+  for (const suffix of ["1", "2"]) {
+    const mode = readMinijobMode(suffix);
+    const details = document.getElementById("minijobDetails" + suffix);
+    if (details) details.hidden = mode === "none";
+    const exempt = document.getElementById("minijobRvExempt" + suffix);
+    if (exempt && exempt.closest("label")) {
+      exempt.closest("label").hidden = mode !== "pauschal";
+    }
+  }
+}
+
+function updateMinijobHints(input, individual, params) {
+  for (const suffix of ["1", "2"]) {
+    const hint = document.getElementById("minijobHint" + suffix);
+    if (!hint) continue;
+    const idx = suffix === "1" ? 0 : 1;
+    const person = input.people[idx];
+    const result = individual.results[idx];
+    const mj = result && result.minijob;
+    if (!person || !mj || !mj.active) {
+      hint.textContent = "Kein Minijob ausgewählt.";
+      continue;
+    }
+    const cap = money(Math.min(CONFIG.limits.minijob.max, params.minijob_annual));
+    const minRvBase = money(params.minijob_rv_min_month * CONFIG.general.months_per_year);
+    if (mj.mode === "pauschal") {
+      const rv = person.minijobRvExempt
+        ? "keine Arbeitnehmer-RV (befreit)"
+        : `Arbeitnehmer-RV ${pct(params.minijob_rv_employee)} = ${money(mj.employeeRV)}`;
+      const agKv = person.insuranceMode === "pkv"
+        ? "keine Arbeitgeber-KV/PV bei PKV"
+        : `Arbeitgeber-KV ${pct(params.minijob_kv_employer)} und Arbeitgeber-PV ${pct(params.minijob_pv_employer)}`;
+      hint.textContent = `Pauschal versteuert bis ${cap}/Jahr: ${rv}; Arbeitgeber-RV ${pct(params.minijob_rv_employer)} mindestens auf ${minRvBase}/Jahr; ${agKv}; Pauschsteuer ${pct(params.minijob_pauschsteuer)} = ${money(mj.pauschsteuer)} (vom Arbeitgeber getragen). Bleibt außerhalb des zvE.`;
+    } else {
+      hint.textContent = `Individuell versteuert bis ${cap}/Jahr: das Minijob-Brutto zählt zu zvE und zu den Beitragsgrundlagen; RV, AV, KV und PV werden wie beim Gehalt berechnet. Keine Pauschsteuer.`;
+    }
   }
 }
 
@@ -3928,6 +4230,12 @@ function collectDefaultsFromInputs() {
     joint_allowed: checked("jointAllowed"),
     abfindung1: number("abfindung1"),
     abfindung2: number("abfindung2"),
+    minijob_mode1: readMinijobMode("1"),
+    minijob_mode2: readMinijobMode("2"),
+    minijob_gross1: number("minijobGross1"),
+    minijob_gross2: number("minijobGross2"),
+    minijob_rv_exempt1: checked("minijobRvExempt1"),
+    minijob_rv_exempt2: checked("minijobRvExempt2"),
     kv_zusatz: number("kvZusatz"),
     weiterbildung1: number("weiterbildung1"),
     weiterbildung2: number("weiterbildung2"),
@@ -3982,6 +4290,104 @@ function rememberThemeInDefaults(theme) {
   } catch (_) { /* ignore */ }
 }
 
+/* Native print-to-PDF keeps index.html dependency-free. Before printing we add
+   a complete German input snapshot, expand every details block and show every
+   result panel; after printing the UI returns to its previous state. */
+const PDF_PRINT_STATE = { prepared: false, title: "", details: [] };
+
+function pdfCleanText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function pdfLabel(control) {
+  const label = (control.labels && control.labels[0]) || control.closest("label");
+  if (!label) return control.getAttribute("aria-label") || control.id;
+  const clone = label.cloneNode(true);
+  clone.querySelectorAll(".flow-badge").forEach(node => node.remove());
+  const single = document.body.classList.contains("single-mode");
+  clone.querySelectorAll(single ? "[data-joint-only]" : "[data-single-only]")
+    .forEach(node => node.remove());
+  return pdfCleanText(clone.textContent) || control.getAttribute("aria-label") || control.id;
+}
+
+function pdfHint(control) {
+  const candidates = [];
+  if (control.id) candidates.push(document.getElementById(control.id + "Hint"));
+  const group = control.closest(".input-row") || control.parentElement;
+  if (group) candidates.push(group.querySelector(".hint"));
+  if (control.parentElement) candidates.push(control.parentElement.querySelector(".hint"));
+  const special = {
+    minijobGross1: "minijobHint1", minijobGross2: "minijobHint2",
+    voluntaryBase1: "voluntary1Hint", voluntaryBase2: "voluntary2Hint"
+  };
+  if (control.id && special[control.id]) candidates.push(document.getElementById(special[control.id]));
+  const found = candidates.find(node => node && pdfCleanText(node.textContent));
+  return found ? pdfCleanText(found.textContent) : "";
+}
+
+function buildPdfInputs() {
+  const host = document.getElementById("pdfInputs");
+  if (!host) return;
+  const single = document.body.classList.contains("single-mode");
+  const seenRadioGroups = new Set();
+  const rows = [];
+  const controls = document.querySelectorAll(
+    "#inputCard input, #inputCard select, #optimizationCard input, #optimizationCard select");
+  controls.forEach(control => {
+    if (control.type === "range" || (single && control.closest('[data-partner="2"]'))) return;
+    let label = pdfLabel(control);
+    let value = "";
+    if (control.type === "radio") {
+      if (seenRadioGroups.has(control.name)) return;
+      seenRadioGroups.add(control.name);
+      const legend = control.closest("fieldset")?.querySelector("legend");
+      if (legend) label = `Krankenversicherung – ${pdfCleanText(legend.textContent)}`;
+      const checked = document.querySelector(`input[name="${control.name}"]:checked`);
+      value = checked ? pdfLabel(checked) : "–";
+    } else if (control.tagName === "SELECT") {
+      value = pdfCleanText(control.selectedOptions[0]?.textContent || control.value);
+    } else if (control.type === "checkbox") {
+      value = control.checked ? "ja" : "nein";
+    } else {
+      const number = Number(control.value);
+      value = Number.isFinite(number) ? DE2.format(number) : pdfCleanText(control.value);
+    }
+    rows.push({ label, value, hint: pdfHint(control) });
+  });
+  rows.push({
+    label: "Design",
+    value: document.documentElement.dataset.theme === "dark" ? "dunkel" : "hell",
+    hint: ""
+  });
+  host.innerHTML = `
+    <h2>Alle Eingaben im Überblick</h2>
+    <p class="small">Erstellt am ${escapeHtml(new Date().toLocaleString("de-DE"))}. Auch ausgeblendete Felder des gewählten Modus sind aufgeführt.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Eingabe</th><th>Wert</th><th>Hinweis</th></tr></thead>
+      <tbody>${rows.map(row => `<tr><td>${escapeHtml(row.label)}</td><td class="num">${escapeHtml(row.value)}</td><td>${escapeHtml(row.hint)}</td></tr>`).join("")}</tbody>
+    </table></div>`;
+}
+
+function preparePdfPrint() {
+  if (PDF_PRINT_STATE.prepared) return;
+  PDF_PRINT_STATE.title = document.title;
+  PDF_PRINT_STATE.details = Array.from(document.querySelectorAll("details")).map(el => ({ el, open: el.open }));
+  PDF_PRINT_STATE.details.forEach(item => { item.el.open = true; });
+  const year = document.getElementById("year").value;
+  const date = new Date().toISOString().slice(0, 10);
+  document.title = `Abfindung-Steuerlast-Netto-${year}-${date}`;
+  buildPdfInputs();
+  PDF_PRINT_STATE.prepared = true;
+}
+
+function restorePdfPrint() {
+  if (!PDF_PRINT_STATE.prepared) return;
+  PDF_PRINT_STATE.details.forEach(item => { item.el.open = item.open; });
+  document.title = PDF_PRINT_STATE.title;
+  PDF_PRINT_STATE.details = [];
+  PDF_PRINT_STATE.prepared = false;
+}
+
 let lastInputYear = null;
 let refreshQueued = false;
 
@@ -4005,6 +4411,7 @@ function refreshFromInputs() {
   requestAnimationFrame(() => {
     refreshQueued = false;
     toggleInsuranceFields();
+    toggleMinijobFields();
     updateYearUI();
     calculate();
   });
@@ -4075,6 +4482,11 @@ function applyConfigToInputs() {
     setNumber("abfindung" + suffix, abfNumber, D["abfindung" + suffix]);
     setRange("chartAbf" + suffix + "Slider", abfRange, D["abfindung" + suffix]);
     setRange("surfaceAbf" + suffix + "Slider", abfRange, D["abfindung" + suffix]);
+    setNumber("minijobGross" + suffix, L.minijob, D["minijob_gross" + suffix]);
+    setMinijobMode(suffix, D["minijob_mode" + suffix]);
+    const mjExempt = D["minijob_rv_exempt" + suffix];
+    document.getElementById("minijobRvExempt" + suffix).checked =
+      mjExempt === true || mjExempt === "true" || mjExempt === 1;
     setInsuranceMode(suffix, D["insurance_mode" + suffix]);
     setNumber("voluntaryBase" + suffix, L.voluntary_base, saved("voluntary_base"));
     const autoDefault = D["auto_voluntary_base" + suffix];
@@ -4091,6 +4503,7 @@ function applyConfigToInputs() {
     });
   }
   syncAllVoluntaryBases();
+  toggleMinijobFields();
   setRange("abfWorkSlider", grossRange, D.gross1);
   setRange("abfWork2Slider", grossRange, D.gross2);
   setRange("abfWorkAbfSlider", { ...abfRange, step: L.abfindung.work_slider_step }, D.abfindung1);
@@ -4114,6 +4527,16 @@ function init() {
     rememberThemeInDefaults(next);
     calculate();
   });
+  document.getElementById("exportPdf").addEventListener("click", () => {
+    try {
+      preparePdfPrint();
+      window.print();
+    } catch (err) {
+      document.getElementById("error").textContent = err.message;
+    }
+  });
+  window.addEventListener("beforeprint", preparePdfPrint);
+  window.addEventListener("afterprint", restorePdfPrint);
   // One delegated listener covers every chart slider, including both four-slider
   // rows (compact curve and 3D surface). The number input, all linked sliders
   // and all outputs update immediately; frame-capped recalculation keeps
@@ -4123,6 +4546,7 @@ function init() {
     refreshFromInputs();
   });
   toggleInsuranceFields();
+  toggleMinijobFields();
   document.getElementById("saveDefaults").addEventListener("click", () => {
     const error = document.getElementById("error");
     const status = document.getElementById("saveStatus");
