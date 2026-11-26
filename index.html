@@ -132,6 +132,10 @@
              border-radius: 0 8px 8px 0; margin: 12px 0; }
   .callout.warn { border-color: var(--warn); background: var(--warn-bg); }
   .callout .takeaway { display: block; margin-top: 8px; font-size: 1.15rem; font-weight: 800; }
+  .scope-notice { border-left: 5px solid var(--warn); background: var(--warn-bg); }
+  .scope-notice h2 { color: var(--warn); font-size: 1.05rem; margin-bottom: 8px; }
+  .scope-notice p { margin: 0 0 8px; }
+  .scope-notice p:last-child { margin-bottom: 0; }
   .note-list { margin: 8px 0 0; padding-left: 20px; }
   .note-list li { margin: 5px 0; }
   code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .88em; }
@@ -176,7 +180,8 @@
     html, html[data-theme] { --bg: #fff; --card: #fff; --ink: #17202a; --muted: #5d6b7a;
       --line: #dce3eb; --input-bg: #fff; --secondary-bg: #e6edf3; --secondary-fg: #17202a;
       --good: #166534; --bad: #b91c1c;
-      --callout-bg: #f0fdfa; --heat-bg: #f8fafc; --code-bg: #eef2f6; --thead-bg: #eef3f7; }
+      --callout-bg: #f0fdfa; --heat-bg: #f8fafc; --code-bg: #eef2f6; --thead-bg: #eef3f7;
+      --warn: #92400e; --warn-bg: #fffbeb; }
     body { background: #fff !important; color: #17202a !important; }
     header, [data-theme="dark"] header { background: #155e75 !important; box-shadow: none;
       -webkit-print-color-adjust: exact; }
@@ -199,6 +204,11 @@
 </header>
 
 <main>
+  <aside class="card scope-notice" role="note" aria-labelledby="scope-title">
+    <h2 id="scope-title">Hinweis zum Geltungsbereich</h2>
+    <p><strong>Diese Seite ist KEINE Steuerberatung</strong> und ersetzt keine individuelle steuerliche Beratung. Die Ergebnisse sind eine vereinfachte Schätzung zum Vergleich.</p>
+    <p>Der Rechner ist auf Ehepaare zugeschnitten, bei denen beide Partner sozialversicherungspflichtig beschäftigt sind (z. B. als Arbeitnehmer; kein Minijob und keine Selbstständigkeit). Für Alleinstehende wird die Zusammenveranlagung zwar angezeigt, ist aber nicht anwendbar. Nicht berücksichtigt sind außerdem betriebliche Altersvorsorge (bAV) oder Zinseinkünfte als Beitragsgrundlage für KV/PV, weitere Lohnersatzleistungen und eine Günstigerprüfung Kindergeld/Kinderfreibetrag unter Einbeziehung der Abfindung.</p>
+  </aside>
   <section class="card" id="inputCard" aria-labelledby="input-title">
     <h2 id="input-title">Eingaben</h2>
     <div class="input-grid">

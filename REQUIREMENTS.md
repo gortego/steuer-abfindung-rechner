@@ -114,6 +114,21 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   and a dedicated **Abfindung** tab.
 - A small, muted `by gortego` credit appears below the main content.
 
+### Visible scope notice
+
+- A visible German notice sits at the top of `main`, before the input card.
+- It states that the page is **KEINE Steuerberatung**, does not replace
+  individual tax advice, and returns only a simplified comparison estimate.
+- It states that the model is intended for married couples where both partners
+  are sozialversicherungspflichtig beschäftigt (for example employees, no
+  Minijob and no self-employment). It explicitly warns that joint assessment is
+  shown for single people but is not applicable to them.
+- It names the main excluded cases: betriebliche Altersvorsorge or capital
+  income as a KV/PV contribution base, wage-replacement benefits other than
+  Arbeitslosengeld, and a Kindergeld/Kinderfreibetrag Günstigerprüfung that
+  accounts for the Abfindung.
+- The notice stays readable in the dark theme, the light theme and print output.
+
 ## 6. Heatmap — bestes Netto/Jahr
 
 - No metric dropdown; `heatMetric` / `heat_metric` are fully removed.

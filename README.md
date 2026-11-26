@@ -10,6 +10,19 @@ The user interface and all results are in German, apart from the small
 `by gortego` credit at the bottom of the page. The browser title and page
 heading are `Abfindung, Steuerlast & Netto`. This document is in English.
 
+## Scope and limitations
+
+A visible German notice at the top of the page states that the page is **not
+tax advice** (`KEINE Steuerberatung`) and is only a simplified comparison
+estimate. The model is intended for married couples where both partners are in
+ordinary social-insurance employment (for example employees; no Minijob and no
+self-employment). It is not valid for single people — joint assessment is still
+shown but is not applicable — nor for company pensions or capital income as a
+KV/PV contribution base, wage-replacement benefits other than Arbeitslosengeld,
+or cases where the Kindergeld/Kinderfreibetrag Günstigerprüfung would change once
+the Abfindung is included. Both assessment modes are always calculated and the
+better one is used, so the notice is essential for interpreting the results.
+
 ## Files
 
 | File | Purpose |
@@ -583,10 +596,11 @@ and fifth-based ESt formulas, the SolZu inverse lookup, the income-expense
 decomposition and the zero-severance identity with the base scenarios all
 passed (maximum floating-point error `2.9e-11`).
 
-The current cache-busted browser check (`?v=107`) rendered nine SVGs with no
-console errors and no `NaN`/`Infinity`. It verified the dark default and
-persisted theme toggle, **speichern** persistence for inputs, optimization
-amounts and theme, automatic cap clamping and the cap callout, zero guides in
+The current cache-busted browser check (`?v=108`) rendered nine SVGs with no
+console errors and no `NaN`/`Infinity`. It verified the visible German scope
+notice in dark and light themes, the dark default and persisted theme toggle,
+**speichern** persistence for inputs, optimization amounts and theme, automatic
+cap clamping and the cap callout, zero guides in
 all gross plots, the labelled 3D depth axis, positive-only worst-case markers
 in both AbfWork and the heatmap/3D ridges, negative Partner #1 and Partner #2
 salaries with negative net values and axis/scale labels, the red/green
@@ -602,4 +616,7 @@ state survives recalculation and theme changes without being saved.
 
 The 2027 values are based on a draft law and may change. This tool is a
 simplified estimate for comparison purposes only. It is not tax advice. For a
-binding calculation, consult a tax adviser.
+binding calculation, consult a tax adviser. The scope notice described above is
+rendered visibly at the top of `index.html` in every theme and in print. German
+tax law on who may provide tax advice (including § 5 StBerG) requires separate
+legal review before this page is distributed to colleagues or published.
