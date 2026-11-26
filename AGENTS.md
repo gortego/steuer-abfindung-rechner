@@ -125,7 +125,9 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
 
 ### Theme
 
-- Default theme is dark, from `CONFIG.general.theme`.
+- Default theme is light, from `CONFIG.general.theme`.
+- The toggle button label names the target theme; clicking it persists the new
+  theme in the saved defaults as well as in the theme key.
 - Apply theme before `applyConfigToInputs()` in `init()`.
 - Redraw charts after toggling so SVG colours follow `COLORS`.
 - Bar-total labels use `COLORS.guide_text` with a `COLORS.halo` stroke; never
@@ -137,6 +139,9 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
 - `tools/generate_config.py` must not turn numeric `0`/`1` into booleans.
 - `loadSavedDefaults()` only accepts string/number/boolean values.
 - Year change resets KV-Zusatz to defaults only when the year actually changes.
+- With voluntary-GKV Auto on, the base field is read-only and derived from gross;
+  `syncAllVoluntaryBases()` must run before `readInputs()`, which calls
+  `enforceOptimizationCaps()`, so caps use the derived value.
 - `calculate()` already calls `syncChartSliders()`; the delegated chart-slider
   listener also calls it for immediate visual feedback while dragging.
 - `refreshFromInputs()` deduplicates rapid events with `requestAnimationFrame`,

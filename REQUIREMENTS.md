@@ -41,8 +41,10 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 ## 4. Inputs and live behaviour
 
 - Built-in defaults: tax year 2026, gross `50000` for both partners, `1` child,
-  state NW, no church tax, GKV for both, Partner #1 Abfindung `100000` and
-  Partner #2 Abfindung `0`.
+  state NW, no church tax, `gkv` (pflichtversichert) for both partners, joint
+  assessment enabled (`joint_allowed = true`), Partner #1 Abfindung `100000`
+  and Partner #2 Abfindung `0`, voluntary-GKV bases of `0`, and all per-partner
+  optimization fields at `0`.
 - All inputs recalculate automatically on any change; there is no separate
   **Berechnen** button.
 - Gross salary and Abfindung number fields use `1000` spinner steps, so the
@@ -73,33 +75,98 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   - inputs: `steuer-abfindung-rechner.defaults.v1`
   - theme: `steuer-abfindung-rechner.theme`
 - Saved PKV defaults use per-partner keys such as `pkv_kv1`, `pkv_kv2`.
+- `joint_allowed` controls eligibility. When false, `body.single-mode` hides
+  every `[data-partner="2"]` input and slider, `#surfaceSection`, the joint and
+  compare tabs/panels, and sets Partner #2 to a neutral zero person in every
+  calculation and sweep. Hidden DOM values are preserved for later re-enable.
+  The flat heatmap collapses to one Partner #2 = 0 row with no Partner #2 axis,
+  and the 3D surface is not rendered. No visible German text may mention
+  `Partner #2`, `P2`, `Zusammenveranlagung`, `Splitting` or `Haushalt`,
+  including hints, notes, chart legends, intros, result tables and the
+  source-table filename; single-mode alternatives are supplied instead. The
+  detailed result tables have only `Position` and `Partner #1`, with Kindergeld
+  and the full net in that column. The worked Nettoquote example uses
+  `jointAllowed: false` in single mode, with Partner #1 gross `50000` and
+  Abfindung `200000`.
+- Insurance status is an explicit, mutually exclusive radio choice per partner:
+  `gkv` (pflichtversichert employee), `gkv_freiwillig` (freiwillig versichert)
+  or `pkv`. There is no automatic detection of voluntary GKV.
+- `gkv` calculates KV/PV from gross salary up to `bbgKVPV` with the employee
+  share of KV and PV. `gkv_freiwillig` uses a separate annual `voluntary_base1`
+  / `voluntary_base2` field capped at `bbgKVPV`, the full KV and PV rates and no
+  employer share. `pkv` uses the entered monthly premiums and subsidy and keeps
+  the existing GKV-equivalent deductible. The insurance mode and voluntary base
+  are part of both sweep cache keys.
+- Each voluntary-GKV base has an **Auto** checkbox immediately to the right of
+  the number field, so no extra page row is added. Auto is on by default. While
+  on, the field is read-only and is recalculated from that partner's current
+  gross salary, capped at `bbgKVPV`, on every relevant input change. Unticking
+  Auto makes the field editable and uses the entered Bescheid value instead.
+  The Auto flags are persisted with the other defaults and both contribute to
+  the derived voluntary base used in the sweep cache keys.
+- Old saved `insurance1` / `insurance2` checkboxes migrate on load: `true` →
+  `pkv`, `false` → `gkv`. New saved data uses `insurance_mode1` /
+  `insurance_mode2`.
 - The generator must not coerce numeric `0`/`1` config values to booleans.
 
 ### Steueroptimierung im Abfindungsjahr
 
 - A dedicated German section collects genuine cash outflows and income for the
-  severance year: Weiterbildung and other Werbungskosten per partner,
-  health-insurance prepayments, extra pension contributions, tax-free wage
-  replacement payments (Arbeitslosengeld), donations, rental losses and
-  business losses.
+  severance year **per partner**: Weiterbildung and other Werbungskosten,
+  health-insurance prepayments, extra pension contributions, grouped tax-free
+  wage replacement benefits, donations, rental losses, rental profits, business
+  losses and interest. No household amount is split 50/50.
 - All optimization fields are annual amounts with `100` spinner steps and a
-  common configured range (`0`–`10000000`). Every field has a German hint with a
-  statutory anchor or example, and a collapsed German details section explains
-  § 10 EStG, § 10b EStG, § 32b EStG and § 15b EStG.
+  common configured range (`0`–`10000000`). Every field has a German hint that
+  states how its maximum is calculated, and a collapsed German details section
+  explains § 10 EStG, § 10b EStG, § 32b EStG and § 15b EStG.
 - Weiterbildung/other Werbungskosten are uncapped. Health-insurance prepayments
-  are capped at `3 ×` the current-year KV/PV contributions per § 10 EStG; extra
-  pension contributions at approximately `24.7 %` of `bbgRV` minus employee and
-  employer RV; donations at `20 %` of the approximated total income per
-  § 10b EStG; business losses at `10000` individual / `20000` joint; rental
-  losses are uncapped. Household losses are split equally between partners.
-  Every optimization input is clamped to its current Höchstbetrag before any
-  calculation or save; the live callout shows the applied amounts and limits.
-- Arbeitslosengeld is added tax-free to net income but raises the tax rate on
-  the remaining income via the Progressionsvorbehalt (§ 32b EStG). Unused
-  employee allowance reduces the progression amount. Its two fields are marked
-  with a green `+ Einnahme` badge and green left border; every expense/loss
-  field has a red `− Ausgabe` badge and red left border. The written badge
-  carries the meaning, so colour is never the only cue.
+  are capped at `3 ×` the current-year KV/PV contributions per § 10 EStG: from
+  gross salary for `gkv`, from the entered voluntary contribution base for
+  `gkv_freiwillig`, and from the GKV-equivalent deductible for `pkv`. Extra
+  pension contributions are capped at `30826` individual / `61652` joint in
+  2026 and `32308` / `64616` in 2027, reduced by twice the modelled employee RV.
+  Business losses are capped at `10000` individual / `20000` joint. Rental
+  losses and rental profits are uncapped.
+- Donations are capped at `20 %` of the **Gesamtbetrag der Einkünfte** before
+  Sonderausgaben (§ 10b EStG), never at gross salary and never at post-
+  Sonderausgaben zvE. The modelled amount is gross pay plus Abfindung after the
+  employee allowance and actual Werbungskosten and after rental/business
+  results, but before Vorsorge, KV prepayments, extra RV, tax-free wage
+  replacement benefits and interest. The cap is per partner in individual
+  assessment and shared in joint assessment.
+- Interest uses an Abgeltungsteuer-style model: `25 %` on the amount above a
+  `1000 EUR` Sparer-Pauschbetrag per partner, outside progressive zvE and
+  outside the KV/PV base, with Soli and church tax where applicable and no
+  Günstigerprüfung.
+- Every visible optimization input is clamped to its current Höchstbetrag before
+  any calculation or save. Hidden Partner #2 inputs are neither validated nor
+  clamped. Field hints show the concrete current Höchstbetrag inline instead of
+  referring to another box; the live callout shows the clamped amount, the
+  current maximum and the formula used to derive it as a bulleted list. Older
+  saved household keys `donations`, `rentalLoss` and `businessLoss` are split
+  equally into the new per-partner keys on load only when no per-partner value
+  was saved.
+- German acronyms in static and generated UI text (for example `PKV`, `GKV`,
+  `KV`, `PV`, `RV`, `EStG`, `zvE`, `bAV`, `BBG`, `JAEG`) are annotated with
+  `<abbr>` elements. Hovering or focusing them shows a visible tooltip with the
+  German meaning; native `title` text is used as a fallback. SVG text, scripts,
+  styles and existing `<abbr>` elements are skipped, and the annotation is
+  reapplied to generated content after each calculation.
+- Tax-free wage replacement benefits are grouped in one field per partner and
+  labelled `Steuerfreie Lohnersatzleistungen`. The group covers § 32b Abs. 1
+  Satz 1 Nr. 1 EStG benefits such as Arbeitslosengeld I, Teilarbeitslosengeld,
+  Kurzarbeitergeld, Insolvenzgeld, Übergangsgeld, Qualifizierungsgeld,
+  Krankengeld/Kinderkrankengeld, Mutterschaftsgeld, Verletztengeld, Elterngeld
+  variants, steuerfreie Altersteilzeit-Aufstockung and IfSG-Verdienstausfall.
+  Bürgergeld/Arbeitslosengeld II, Wohngeld, Pflegegeld, Kindergeld, BAföG,
+  private Krankentagegeld, pauschal versteuerte Minijobs and foreign/treaty
+  income are excluded. The amounts are added tax-free to net but raise the tax
+  rate on remaining income via the Progressionsvorbehalt. Unused employee
+  allowance reduces the progression amount. Income fields carry a green
+  `+ Einnahme` badge and green left border; every expense/loss field has a red
+  `− Ausgabe` badge and red left border. The written badge carries the meaning,
+  so colour is never the only cue.
 - Optimization values affect all four severance cases, both assessment modes,
   the tables, the summary, the heatmap, the 3D surface and both AbfWork charts.
   They are part of the sweep cache keys.
@@ -111,7 +178,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - Overall partner names are **Partner #1** and **Partner #2**.
 - No use of “Mann” or “Frau”.
 - Results include a household summary, per-partner tables, a comparison table
-  and a dedicated **Abfindung** tab.
+  and a dedicated **Abfindung** tab. In single mode the per-partner tables omit
+  the redundant total column and show only `Partner #1`.
 - A small, muted `by gortego` credit appears below the main content.
 
 ### Visible scope notice
@@ -119,14 +187,15 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - A visible German notice sits at the top of `main`, before the input card.
 - It states that the page is **KEINE Steuerberatung**, does not replace
   individual tax advice, and returns only a simplified comparison estimate.
-- It states that the model is intended for married couples where both partners
-  are sozialversicherungspflichtig beschäftigt (for example employees, no
-  Minijob and no self-employment). It explicitly warns that joint assessment is
-  shown for single people but is not applicable to them.
+- It states that the model is intended for couples where the partners are
+  sozialversicherungspflichtig beschäftigt (for example employees, no Minijob
+  and no self-employment). It explains that unticking
+  `Zusammenveranlagung ist möglich` calculates only Partner #1 and individual
+  assessment.
 - It names the main excluded cases: betriebliche Altersvorsorge or capital
-  income as a KV/PV contribution base, wage-replacement benefits other than
-  Arbeitslosengeld, and a Kindergeld/Kinderfreibetrag Günstigerprüfung that
-  accounts for the Abfindung.
+  income as a KV/PV contribution base, wage-replacement benefits outside the
+  grouped § 32b benefits, and a Kindergeld/Kinderfreibetrag Günstigerprüfung
+  that accounts for the Abfindung.
 - The notice stays readable in the dark theme, the light theme and print output.
 
 ## 6. Heatmap — bestes Netto/Jahr
@@ -197,19 +266,27 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   the positive-salary worst case across Partner #2 salaries. The depth axis is
   explicitly drawn and labelled as the Partner #2 gross salary, and zero guides
   mark both gross axes. The cell data is computed once and shared by both views.
+- In single mode (`jointAllowed === false`) `computeHeatmapData()` uses `ny = 1`
+  and Partner #2 gross `0` for all cells, the flat map centres that row and
+  suppresses Partner #2 ticks and axis title, the surface renderer is skipped,
+  and `#heatModeNote` explains the reduced view. All sweep cache keys include
+  `jointAllowed` and every per-person optimization field.
 - The compact curve is titled `Absolutes Netto` and its Y axis is labelled
   `Bestes Netto/Jahr`. It sweeps Partner #1 while Partner #2 stays at its
-  selected value.
+  selected value. In single mode the Partner #2 slider is hidden.
 - The four linked sliders for that compact curve sit in one row between the
   curve and the flat heatmap: Brutto Partner #1, Brutto Partner #2, Abfindung
   Partner #1 and Abfindung Partner #2. They write the main number inputs and
-  drive both charts.
-- A card at the end of the page explains the Nettoquote formula in German and
-  shows a worked example using Partner #1 gross `50000`, Partner #2 gross
-  `60000` and Partner #1 Abfindung `200000` (Partner #2 Abfindung `0`). The
-  numerator is computed from the current year, children, state and insurance
-  settings; the former supplied `72,51 %` example is removed. It distinguishes
-  the primary quote from the separate “Quote vs. ohne Gehalt”.
+  drive both charts; only the two Partner #1 sliders remain visible in single
+  mode.
+- A card at the end of the page explains the Nettoquote formula in German. With
+  joint assessment it shows a worked example using Partner #1 gross `50000`,
+  Partner #2 gross `60000` and Partner #1 Abfindung `200000` (Partner #2
+  Abfindung `0`); in single mode it uses Partner #1 gross `50000` and Abfindung
+  `200000` only. The numerator is computed from the current year, children,
+  state and insurance settings; the former supplied `72,51 %` example is
+  removed. It distinguishes the primary quote from the separate
+  “Quote vs. ohne Gehalt”.
 - The 3D surface has its own four linked sliders: Brutto Partner #1, Brutto
   Partner #2, Abfindung Partner #1 and Abfindung Partner #2. They write the main
   number inputs, so both diagrams and all tables update together.
@@ -275,12 +352,18 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - Black dashed guides connect the current “mit Gehalt” points to the Y axis.
 - On the compact absolute-net curve, the moving current-point label is red when
   its text says `weniger als ohne Gehalt` and green otherwise.
-- Text must say four curves plus two reference lines.
+- Text must say four curves plus two reference lines when joint assessment is
+  enabled. In single mode only the two individual-assessment curves and one
+  reference line are drawn; the Partner #2 slider is hidden, the worst-case
+  marker is omitted, the legend and live intro text are reduced, and
+  `renderAbfWorkSteps()` lists only the two available cases.
 
 ## 8. Themes
 
-- Funky **dark** theme is the default; funky light theme is also available.
-- The header button toggles the design immediately.
+- Funky **light** theme is the default; funky dark theme is also available.
+- The header button label names the design it switches to and toggles the design
+  immediately. Toggling stores the new theme in the saved defaults as well as in
+  the theme key, so it survives a reload.
 - Choice is stored locally and also saved by **speichern**.
 - Dark and light colours come from `config.ini` (`colors` / `colors_dark`).
 - SVGs must be redrawn with the active palette. Bar-total labels in
@@ -299,8 +382,9 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 
 - ESt, SolZu and KiSt come from embedded 1000 €-step PDF tables with linear
   interpolation.
-- Both assessment modes are always computed. Joint Splitting tax is allocated
-  by `zvE` share.
+- When joint assessment is enabled, both assessment modes are computed and the
+  better net result is used; when disabled, only individual assessment is
+  computed. Joint Splitting tax is allocated by `zvE` share.
 - 2027 values are a draft and are clearly marked as such.
 - Fünftelregelung:
 
@@ -320,10 +404,14 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   bases are clamped to zero, while genuine expenses and losses may make the
   taxable income and the resulting household net negative. No chart scale is
   clamped at zero.
-- The capped optimization expenses, household loss split and
+- The per-partner optimization values, capped where applicable, and the grouped
   Progressionsvorbehalt described in section 4 apply to every scenario and all
-  four Abfindung cases. Alg is added tax-free to net but is not part of the
-  primary Nettoquote denominator.
+  available Abfindung cases. Tax-free wage replacement benefits are added to
+  net but are not part of the primary Nettoquote denominator. Interest is
+  taxed separately at `25 %` after the per-partner Sparer-Pauschbetrag and
+  stays outside progressive zvE and KV/PV. Donations are deducted from zvE only
+  up to `20 %` of the pre-Sonderausgaben Gesamtbetrag der Einkünfte as described
+  in section 4.
 - Break-even = last crossing of the negative-inclusive Partner #1 sweep where
   the best net reaches the best net at Partner #1 gross `0`. The value is
   computed from the current inputs; no fixed example is assumed.
@@ -344,9 +432,14 @@ py -3 tools/verify_calculation.py
 
 Expected: four tables, 1040 rows each, PDF-vs-HTML max diff `0.00e+00`.
 Browser checks use a cache-busted URL, must show no console errors and no
-`NaN`/`Infinity`, and must render nine SVGs. They also verify the dark default
-and persisted theme toggle, **speichern** persistence, automatic cap clamping
-and the cap callout, the zero guides and the labelled 3D depth axis, negative
-Partner #1/Partner #2 salaries, negative net values in the scales and axes,
-positive-only worst-case markers, and the red/green compact-curve comparison
-label.
+`NaN`/`Infinity`, and must render nine SVGs with joint assessment enabled. They
+also verify the light default and persisted theme toggle, the voluntary-base
+Auto checkbox following gross salary and the manual override when unticked,
+**speichern** persistence, automatic cap clamping and the cap callout, the zero
+guides and the labelled 3D depth axis, negative Partner #1/Partner #2 salaries,
+negative net values in the scales and axes, positive-only worst-case markers,
+and the red/green compact-curve comparison label. With joint assessment unticked,
+they verify that Partner #2 fields/sliders, the joint/compare tabs and the 3D
+surface disappear, the heatmap has one centred row without a Partner #2 axis,
+the AbfWork chart has only individual curves, and hidden Partner #2 DOM values
+survive a mode toggle.
