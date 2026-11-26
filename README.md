@@ -8,7 +8,9 @@ social-insurance and private-insurance burden of two parents in Germany under:
 
 The user interface and all results are in German, apart from the small
 `by gortego` credit at the bottom of the page. The browser title and page
-heading are `Abfindung, Steuerlast & Netto`. This document is in English.
+heading are `Abfindung, Steuerlast & Netto`. The favicon is an inline teal
+rounded square with a white euro sign, so no external icon file or request is
+needed. This document is in English.
 
 ## Scope and limitations
 
@@ -59,9 +61,9 @@ interpreting the results.
    The result tables then contain only **Position** and **Partner #1**, with
    Kindergeld and the full net shown in that column. Saved hidden values are
    preserved.
-3. Choose one insurance mode per partner with the radio buttons: **GKV
-   pflichtversichert (Arbeitnehmer)**, **GKV freiwillig versichert** or **PKV
-   privat versichert**. For voluntary GKV, expand **Erweiterte Annahmen**: the
+3. Choose one insurance mode per partner with the radio buttons: **GKV –
+   pflichtversichert (Arbeitnehmer)**, **GKV – freiwillig versichert** or **PKV
+   – privat versichert**. For voluntary GKV, expand **Erweiterte Annahmen**: the
    annual KV/PV contribution base has an **Auto** checkbox to its right. With
    Auto on (the default), the base always follows that partner's current gross
    salary plus any active Minijob gross, capped at the KV/PV contribution
@@ -100,17 +102,19 @@ interpreting the results.
    and a toggle also updates the saved theme so it survives a reload. Clearing
    site data restores the built-in light default.
 11. Optional: click **PDF herunterladen** in the header, immediately left of the
-    light/dark toggle. The app renders a complete German A4 landscape report to
-    a canvas and downloads it directly as
-    `Abfindung-Steuerlast-Netto-<year>-<date>.pdf`; no print dialog opens. It
-    contains every current input (including hidden conditional fields), all
-    hints and comments, all result panels, expanded calculation details and
-    every SVG chart. The embedded generator needs no runtime library or network
-    request. The original details state and window title are restored after the
-    download. Manual browser printing still uses the light print stylesheet.
+    light/dark toggle. The app writes a complete German A4 landscape report as
+    real PDF text and vector graphics and downloads it directly as
+    `Abfindung-Steuerlast-Netto-<year>-<date>.pdf`; no print dialog opens. Text,
+    table content and chart labels are selectable, and plots keep their exact
+    SVG colours as vector paths. The report contains every current input
+    (including hidden conditional fields), all hints and comments, all result
+    panels, expanded calculation details and every SVG chart. The embedded
+    generator needs no runtime library or network request. The original details
+    state and window title are restored after the download. Manual browser
+    printing still uses the light print stylesheet.
 
 The built-in defaults are tax year 2026, gross salaries of `50,000 EUR` for
-both partners, one child, federal state NW, **GKV freiwillig versichert** for
+both partners, one child, federal state NW, **GKV – freiwillig versichert** for
 both partners with Auto bases following their salaries, no church tax, joint
 assessment enabled, Partner #1 Abfindung
 `100,000 EUR` and Partner #2 Abfindung `0 EUR`. Both partners start with
@@ -171,8 +175,9 @@ Results are shown as:
      the worst case to the break-even; its `Differenz` / `Worst case →
      Break-even` label sits in the right margin and is connected to the bracket
      by a dashed arrow. Break-even and worst-case salary labels
-     sit above the plot; `Einzel ohne Gehalt`, `Zusammen ohne Gehalt` and
-     `Worst case Netto` sit in the right margin with short leader lines, so the
+     sit above the plot; `Einzelveranlagung ohne Gehalt`,
+     `Zusammenveranlagung ohne Gehalt` and `Worst case Netto` sit in the right
+     margin with short leader lines, so the
      labels do not cover the curves. In single mode only the individual baseline
      is shown.
      Break-even, worst case and gap are on separate lines in the callout; the
@@ -220,10 +225,10 @@ implemented behind `CONFIG.general.show_optimum_curves`, which is currently
 false, so they are hidden from both charts and both legends.
 
 Only the compact **Absolutes Netto** curve and the detailed salary curve
-(**Haushaltsnetto gegen Gehalt von Partner #1** in joint mode, **Netto gegen
-Gehalt von Partner #1** in single mode) support axis-limit zoom. Drag a
-rectangle inside one of those plots
-to set new X/Y limits and redraw the chart at the same pixel size; `↺ Zoom
+(**Haushaltsnetto bei unterschiedlichem Gehalt von Partner #1** in joint mode,
+**Netto bei unterschiedlichem Gehalt von Partner #1** in single mode) support
+axis-limit zoom. Drag a rectangle inside one of those plots to set new X/Y
+limits and redraw the chart at the same pixel size; `↺ Zoom
 aufheben` restores the configured limits. The SVG viewBox is never scaled, line
 widths stay unchanged, and the heatmap, 3D surface, bar charts, progression and
 marginal-rate chart have no drag zoom. State is per chart in memory, survives
@@ -340,10 +345,11 @@ zvE = max(0, gross salary
       − child allowance, if favourable)
 ```
 
-The unemployment-insurance contribution is **not** part of the simplified
-Vorsorgepauschale used here. The optimization section adds the modelled real
-expenses and losses; other deductions and special tax rules remain outside this
-simplified estimate.
+The simplified Vorsorgepauschale is the employee pension contribution plus the
+employee statutory health and care contributions (or the capped private-insurance
+equivalent). Unemployment insurance is **not** part of it. The optimization
+section adds the modelled real expenses and losses; other deductions and special
+tax rules remain outside this simplified estimate.
 
 ### Income tax, solidarity surcharge and church tax
 
@@ -364,16 +370,20 @@ while avoiding visible jumps between table rows.
 - Individual assessment: each parent's `zvE` is looked up in the Grundtabelle.
 - Joint assessment: the summed `zvE` is looked up in the Splittingtabelle. The
   joint ESt, SolZu and KiSt are allocated to the two parents in proportion to
-  their `zvE`.
+  their `zvE`. This is a display allocation, not an individual tax assessment;
+  a parent's displayed net can therefore be negative while the household net is
+  correct.
 - Church tax comes directly from the table's 8%/9% column for individual
   assessment. For joint assessment it is calculated from the allocated ESt;
   because the table columns are exactly `ESt × rate`, the household total
   agrees with the table.
 
 A SolZu of `0 €` is not an error: the embedded table already applies the
-Freigrenze and the Anstiegsklausel. The detailed tables show the `zvE` and ESt
-for each parent, and the comparison table shows the household `zvE` for both
-assessment modes. A callout explicitly explains zero SolZu values.
+Freigrenze and the Anstiegsklausel; at high ESt values its rate reaches `5.5 %`
+naturally. The detailed tables show the `zvE` and ESt for each parent, and the
+comparison table shows the household `zvE` for both assessment modes. A callout
+explicitly explains zero SolZu values. Differences between displayed amounts are
+rounded to cents from the same cent-rounded values shown in the rows.
 
 ### Children
 
@@ -384,7 +394,9 @@ For each child the tool compares:
   and child in individual assessment; full allowance in joint assessment).
 
 The child allowance is applied only while it is more favourable than child
-benefit. Children also affect the care-insurance rate as described above.
+benefit. The detailed tables list the allowance as an amount already included
+in `zvE`, and the Kindergeld row names how many of the children actually receive
+child benefit. Children also affect the care-insurance rate as described above.
 
 ### Optimization inputs in the severance year
 
@@ -609,8 +621,8 @@ markers still use the best of all four variants at each salary.
   amounts. With no Abfindung it shows `0 €`. The `bestes Netto mit Abfindung`
   amount is styled as a highlighted key value in this callout and in the
   step-by-step calculation.
-- The highlighted key takeaway is `Bei aktuellem BruttoGehalt ... bringt Arbeiten ...
-  weniger/mehr Netto als ohne Gehalt.` It is red below the break-even (working
+- The highlighted key takeaway is `Bei aktuellem Bruttogehalt ... bringt Arbeiten
+  ... weniger/mehr Netto als ohne Gehalt.` It is red below the break-even (working
   reduces household net) and green above it. The former EUR `45,000` example and
   the separate "Ohne Gehalt" line have been removed; the `+1,000 EUR` marginal
   readout is no longer shown because a positive marginal gain can coexist with
@@ -619,8 +631,8 @@ markers still use the best of all four variants at each salary.
   explains every displayed value: inputs, the base scenarios without Abfindung,
   all four current severance cases with tax/Soli/church tax/social contributions,
   additional expenses/losses and tax-free payments, the Abfindung net gain, the
-  "ohne Gehalt P1" reference, the negative-inclusive sweep formulas for
-  break-even/worst case/gap and the current comparison.
+  "ohne Gehalt von Partner #1" reference, the negative-inclusive sweep formulas
+  for break-even/worst case/gap and the current comparison.
 - Black dashed guides run horizontally from the two current "mit Gehalt"
   points to the Y axis. They move with the Partner #1 salary slider; changing
   the Partner #2 slider moves the current point and recalculates all curves.
@@ -659,8 +671,10 @@ mode.
 ### Abfindung and Fünftelregelung
 
 Each severance amount is treated as a one-off gross payment in the selected
-tax year. No social contributions are charged on it. Two treatments are shown
-for both assessment modes:
+tax year. No social contributions are charged on it, which models a genuine
+severance on loss of employment; wage arrears, unused holiday pay or disguised
+salary would be contribution-liable and are outside the model. Two treatments
+are shown for both assessment modes:
 
 - **Regular (mit Abfindung):** the full amount is added to `zvE` and the tax
   comes directly from the Grundtabelle (individual) or Splittingtabelle (joint).
@@ -679,10 +693,12 @@ Anstiegsklausel remain exactly as in the PDF. Church tax is `ESt × 8%/9%` as
 usual. The child-allowance decision and social contributions are taken from
 the scenario without severance; this is a deliberate simplification.
 
-The report always shows all six combinations. In reality the Fünftelregelung
-may only be used when it is more favourable (§ 34 Abs. 1 Satz 5 EStG) and only
-if the statutory conditions apply — neither is checked by this tool. A
-callout compares the regular and fifth-based tax for each assessment mode.
+The report always shows all six combinations. The Fünftelregelung is modelled
+as a possible treatment in the income-tax declaration, not as automatic payroll
+withholding. In reality it may only be used when it is more favourable
+(§ 34 Abs. 1 Satz 5 EStG) and only if the statutory conditions apply — neither
+is checked by this tool. A callout compares the regular and fifth-based tax for
+each assessment mode.
 
 ## Parameters and sources
 
@@ -806,24 +822,45 @@ and fifth-based ESt formulas, the SolZu inverse lookup, the income-expense
 decomposition and the zero-severance identity with the base scenarios all
 passed (maximum floating-point error `2.9e-11`).
 
-The current cache-busted browser check (`?v=144`) rendered eleven SVGs in joint
-mode and nine in single mode with no console messages and no `NaN`/`Infinity`.
+The current cache-busted browser check (`?v=163`) rendered eleven SVGs in joint
+mode with no console messages and no `NaN`/`Infinity`; after disabling joint
+assessment it rendered nine SVGs, hid the 3D surface and left no visible
+`Partner #2`, `P2`, `Zusammenveranlagung`, `Splitting` or `Haushalt` text. A
+freshly prepared single-mode PDF also contained none of those terms.
 It confirmed that the year selector contains only `2026 (endgültige Werte)`,
 `2027 (Regierungsentwurf)` and `2028 (Prognose)`, and that each timeline plot
 has eight curves with the 2028 curve dashed and labelled as a prognosis. The
 German timeline note explains the `250 EUR` shift as `106 EUR` ESt difference
-divided by the `42 %` marginal rate. Both timeline Y labels are vertical, the
-palette followed both themes without changing the saved theme, and the header
-PDF button sits immediately left of the light/dark toggle. The `bestes Netto mit
-Abfindung` amount is highlighted in the AbfWork callout and both step-by-step
-lines, with theme-aware colours. The PDF button downloaded a valid `%PDF-1.4`
+divided by the `42 %` marginal rate. A wording pass clarified German labels,
+field hints, chart legends, step-by-step notes and the Nettoquote card: visible
+text now uses `Partner #1` / `Partner #2` instead of `P1` / `P2`, spells out
+`Einzelveranlagung` and `Zusammenveranlagung`, and avoids abbreviations such as
+`Tooltip`, `U-Form`, `Maximum =` and `Gehalts-Paar`. Both timeline Y labels are
+vertical, the palette followed both themes without changing the saved theme, and
+the header PDF button sits immediately left of the light/dark toggle. The
+`bestes Netto mit Abfindung` amount is highlighted in the AbfWork callout and
+both step-by-step lines, with theme-aware colours. The PDF button downloaded a
+valid `%PDF-1.4`
 file directly in joint and single mode; `window.print()` was stubbed and called
-zero times. An earlier check after clearing local storage confirmed that
+zero times. The vector writer emits Helvetica text objects and no image
+XObjects; `€`, umlauts and quotes use WinAnsi bytes, and chart text uses unit
+text matrices so labels no longer overlap plots. A PDF.js render check of the
+final export confirmed that all chart curves and labels are visible; the earlier
+blank plots were caused by reversed PDF path operators, and `pdfSvgPolyline()`
+now emits `x y m` / `x y l` with operands before operators. HTML legends are
+now written into the PDF as vector swatches and text, including the eight-year
+timeline legend with its dashed `2028 Prognose` swatch.
+The light-blue `bestes Netto mit Abfindung` highlight is aligned to its text
+baseline and limited to the amount, so it reads as a badge instead of a block
+above the line.
+An earlier check after clearing
+local storage confirmed that
 `Zusammenveranlagung ist möglich` is ticked and Partner #2 Abfindung is `0` by
-default. It also checked that the break-even and worst-case labels sit above both
-net plots, while the `Einzel ohne Gehalt`, `Zusammen ohne Gehalt`, `Ohne Gehalt`
-and `Worst case Netto` labels sit in the right margin, and that the compact plot
-is 150 px high. It verified the three insurance modes, their conditional
+default. It also checked that the break-even and worst-case labels sit above
+both net plots, while the `Einzelveranlagung ohne Gehalt`,
+`Zusammenveranlagung ohne Gehalt`, `Ohne Gehalt` and `Worst case Netto` labels
+sit in the right margin, and that the compact plot is 150 px high. It verified
+the three insurance modes, their conditional
 fields and mode-specific KV-Vorauszahlung caps, the voluntary KV/PV Auto
 checkbox following gross salary and the manual override when it is unticked,
 inline concrete Höchstbeträge in the field hints, old checkbox migration, saved
@@ -852,6 +889,39 @@ one centred row without a depth axis, and the source note named only
 the mode was off and returned when joint assessment was re-enabled, restoring
 all eleven SVGs in the current build.
 
+A final interaction pass at `?v=154` toggled the theme dark/light and back, with
+the button label, the theme key and the theme inside saved defaults all following
+and ending light. It cycled the year selector through `2026`, `2028` and back to
+`2027`, with the `2028 Prognose` badge and no `NaN`/`Infinity`. A real header
+button click in single mode downloaded
+`Abfindung-Steuerlast-Netto-2027-2026-11-26.pdf` with 20 pages, selectable text
+and no image XObjects; details, button label, title and joint mode were restored
+afterwards. The saved scenario remained at year `2027`, gross `50,000` /
+`80,000`, Abfindung `360,000` and light theme.
+
+A final joint-mode pass at `?v=163` toggled the theme dark and back to light,
+leaving the button label, theme key and saved-defaults theme aligned. The header
+PDF button downloaded
+`Abfindung-Steuerlast-Netto-2027-2026-11-26.pdf` with 29 pages, `580832` bytes,
+1,241 WinAnsi `€` bytes and no image XObjects; `window.print()` was stubbed and
+called zero
+times. Details state, button label and document title were restored, the console
+stayed empty, no `NaN`/`Infinity` appeared, all eleven SVGs remained, and the
+saved scenario stayed at year `2027`, gross `50,000` / `80,000`, Abfindung
+`360,000` and light theme. The export content checked in that pass put the red
+shade before the curves, emitted the corrected `x y m` / `x y l` path line and
+placed all three blue highlight bands inside their text lines.
+
+A reporting-clarity pass at `?v=163` added explicit German explanations for the
+zvE-based display allocation under joint assessment, the already-applied child
+allowance versus the remaining Kindergeld recipients, the 5.5 % high-income
+SolZu table rate, the scope of the Fünftelregelung, the social-contribution
+assumption for genuine severance and the manually selected statutory insurance
+above the JAEG. It also corrected the Vorsorgepauschale wording to include care
+insurance, made displayed differences use the same cent rounding as the
+displayed rows, and added a single-mode Grundtabelle timeline note with its own
+render-cache key so no `Splitting` wording survives when joint assessment is off.
+
 The same `?v=135` run also verified Minijob handling. With cleared storage both
 partners started with `Kein Minijob`, `0 EUR`, no exemption and hidden detail
 blocks. A pauschal Minijob of `6,000 EUR` stayed outside `zvE`, deducted only
@@ -869,7 +939,7 @@ gap bracket's dashed arrow and right-margin `Differenz` label kept their
 previous positions.
 
 Additional cache-busted checks (`?v=133`–`?v=135`) confirmed that fresh storage
-now starts both partners on **GKV freiwillig versichert** with Auto bases
+now starts both partners on **GKV – freiwillig versichert** with Auto bases
 `50,000 EUR`, while saved scenarios still load unchanged. The German
 **PDF herunterladen** button builds a 55-row input snapshot that includes hidden
 Minijob/PKV fields and the theme, expands all details blocks, downloads a dated

@@ -87,7 +87,9 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   `Partner #2`, `P2`, `Zusammenveranlagung`, `Splitting` or `Haushalt`,
   including hints, notes, chart legends, intros, result tables and the
   source-table filename; single-mode alternatives are supplied instead. The
-  detailed result tables have only `Position` and `Partner #1`, with Kindergeld
+  Grundtabelle timeline note has its own single-mode wording, and the timeline
+  render cache key includes joint eligibility so that note updates immediately.
+  The detailed result tables have only `Position` and `Partner #1`, with Kindergeld
   and the full net in that column. The worked Nettoquote example uses
   `jointAllowed: false` in single mode, with Partner #1 gross `50000` and
   Abfindung `200000`.
@@ -117,9 +119,9 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 ### PDF export
 
 - A German **PDF herunterladen** button sits in the header immediately left of
-  the light/dark toggle. It renders the report to canvases and downloads a valid
-  PDF directly through an anchor; `window.print()` is not called. The embedded
-  generator adds no external runtime library and makes no network request.
+  the light/dark toggle. It writes a valid vector PDF directly through an anchor;
+  `window.print()` is not called. The embedded generator adds no external runtime
+  library and makes no network request.
 - The download filename is `Abfindung-Steuerlast-Netto-<year>-<date>.pdf`.
 - Before generating, the app builds a German `#pdfInputs` table containing every
   current input and its hint, including hidden Minijob, voluntary-GKV and PKV
@@ -128,8 +130,19 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - All `<details>` blocks (input notes, optimization notes, severance tables and
   step-by-step calculation) are temporarily opened, and every result panel is
   included, so the PDF contains all comments, all information and all SVG plots.
-- Pages are light, readable A4 landscape canvases. SVGs are rasterised from their
-  own serialized markup so their exact colours survive.
+  HTML chart legends are rendered as vector swatches and text too, including the
+  eight-year Grundtabelle timeline legend and its dashed 2028 projection swatch.
+- Pages are light, readable A4 landscape vector pages. Body text, table cells and
+  chart labels are real PDF text using Helvetica with WinAnsi encoding, so `€`,
+  umlauts and quotes remain selectable. SVG charts are drawn as vector lines,
+  rectangles, circles and polygons with their exact colours, gradients, hatch
+  patterns and dash patterns; no raster image XObjects are embedded.
+- PDF path operators follow their operands (`x y m`, then `x y l` for each
+  segment), so polylines such as chart curves render in PDF viewers instead of
+  appearing blank.
+- The light-blue highlight for `bestes Netto mit Abfindung` is centred on the
+  matching text line and covers only the phrase plus amount. It must not appear
+  as a blue block above or over the text.
 - The document title is temporarily set to a dated filename suggestion; the
   previous title and details state are restored after generation and on
   `afterprint` for manual browser printing. Print CSS still forces a light,
@@ -232,17 +245,24 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 ## 5. Naming and layout
 
 - Overall partner names are **Partner #1** and **Partner #2**.
+- Visible German text uses the full partner names in labels, hints, legends,
+  tooltips and notes; `P1` / `P2` abbreviations are not shown. Assessment modes
+  are written out as `Einzelveranlagung` and `Zusammenveranlagung`, and wording
+  avoids opaque shorthand such as `Tooltip`, `U-Form`, `Maximum =` or
+  `Gehalts-Paar`.
 - No use of “Mann” or “Frau”.
 - Results include a household summary, per-partner tables, a comparison table
   and a dedicated **Abfindung** tab. In single mode the per-partner tables omit
   the redundant total column and show only `Partner #1`.
 - A small, muted `by gortego` credit appears below the main content.
+- The page favicon is an inline SVG data URI showing a white `€` on an
+  accent-coloured rounded square; no external icon file or request is used.
 
 ### Visible scope notice
 
 - A visible German notice sits at the top of `main`, before the input card.
 - It states that the page is **KEINE Steuerberatung**, does not replace
-  individual tax advice, and returns only a simplified comparison estimate.
+  individual advice, and returns only a simplified comparison estimate.
 - It states that the model is intended for couples where the partners are
   sozialversicherungspflichtig beschäftigt or have a Minijob (for example
   employees or Minijob holders, but no self-employment). It explains that unticking
@@ -306,9 +326,10 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   legend. Negative cells remain visible and feed the break-even and scales.
 - Two extra curves use the same cells and maximise the Nettoquote
   (`score / (gross salaries + Minijob-Bruttos + Abfindungen)`), not absolute net:
-  `Opt. P1 je P2`
+  `Opt. Partner #1 je Partner #2`
   gives the best Partner #1 salary for every Partner #2 salary, and
-  `Opt. P2 je P1` gives the best Partner #2 salary for every Partner #1 salary.
+  `Opt. Partner #2 je Partner #1` gives the best Partner #2 salary for every
+  Partner #1 salary.
   Their drawing code is kept but disabled by
   `CONFIG.general.show_optimum_curves = false`; while hidden, neither curve,
   current-point marker nor legend entry is rendered. The optimum data still
@@ -352,18 +373,18 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   Partner #2, Abfindung Partner #1 and Abfindung Partner #2. They write the main
   number inputs, so both diagrams and all tables update together.
 - Axis-limit drag zoom applies only to `Absolutes Netto` and `Haushaltsnetto
-  gegen Gehalt von Partner #1`. Dragging a rectangle inside the plot defines new
-  X/Y minimum and maximum values; the chart is redrawn at the same pixel size
-  with those axis limits, so the SVG viewBox, line widths and cached sweep data
-  are unchanged. `↺ Zoom aufheben` restores the configured limits. State is kept
+  bei unterschiedlichem Gehalt von Partner #1`. Dragging a rectangle inside the
+  plot defines new X/Y minimum and maximum values; the chart is redrawn at the
+  same pixel size with those axis limits, so the SVG viewBox, line widths and
+  cached sweep data are unchanged. `↺ Zoom aufheben` restores the configured limits. State is kept
   per chart in memory, survives recalculation and theme changes, and is not
   saved to local storage. The heatmap, 3D surface, bar charts, progression and
   marginal-rate chart have no drag zoom.
 
 ## 7. AbfWork chart — “Lohnt sich Arbeiten im Abfindungsjahr?”
 
-- The detailed 2D chart heading is `Haushaltsnetto gegen Gehalt von Partner #1`
-  (the former `2D: ` prefix is removed).
+- The detailed 2D chart heading is `Haushaltsnetto bei unterschiedlichem Gehalt
+  von Partner #1` (the former `2D: ` prefix is removed).
 - Four net curves: individual and joint assessment, each with and without the
   Fünftelregelung, all **with** Partner #1 salary. Curves with Fünftelregelung
   are solid; curves without are dash-dot.
@@ -373,8 +394,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - Partner #2 gross has its own slider and stays constant while curves are
   sampled. The Partner #1 sweep starts at the configured negative plot minimum
   (extending for typed values below it) so negative income and negative net are
-  visible; the dashed “ohne Gehalt P1” reference is still evaluated at gross
-  `0`.
+  visible; the dashed “ohne Gehalt von Partner #1” reference is still evaluated
+  at gross `0`.
 - Red area is clipped at the break-even.
 - Purple dashed line: break-even. Red dotted vertical line at the worst-case
   gross plus a horizontal red dashed line at the worst-case net level. The
@@ -387,9 +408,9 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   bracket midpoint to that label. The same gap is written on its own line in the
   note.
 - Marker labels are placed outside the plotted rectangle: break-even and
-  worst-case salary labels above it, and `Einzel ohne Gehalt`,
-  `Zusammen ohne Gehalt`, `Worst case Netto` and the gap label in the right
-  margin with short leader lines. Close right-margin labels are staggered with
+  worst-case salary labels above it, and `Einzelveranlagung ohne Gehalt`,
+  `Zusammenveranlagung ohne Gehalt`, `Worst case Netto` and the gap label in the
+  right margin with short leader lines. Close right-margin labels are staggered with
   enough room for the gap label's second line. In single mode only the individual
   baseline label appears, and no worst-case or gap labels are drawn.
 - The note places break-even, worst case and the gap on separate lines. It also
@@ -398,8 +419,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   with both Abfindungen set to zero, plus the total gross Abfindung and both net
   amounts. It is `0 €` when no Abfindung is entered. The `bestes Netto mit Abfindung` value must be visibly highlighted
   as the key amount in both the callout and the step-by-step calculation.
-- The highlighted key takeaway is `Bei aktuellem BruttoGehalt ... bringt Arbeiten ...
-  weniger/mehr Netto als ohne Gehalt.` It compares current household net with
+- The highlighted key takeaway is `Bei aktuellem Bruttogehalt ... bringt Arbeiten
+  ... weniger/mehr Netto als ohne Gehalt.` It compares current household net with
   the best net at Partner #1 gross zero. It is red below the break-even and
   green above it. The `45000` EUR example and the separate "Ohne Gehalt" line
   are removed; the `+1000` EUR marginal readout is no longer shown because a
@@ -409,8 +430,9 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   all four current severance cases (including zvE, social contributions,
   additional expenses/losses, tax-free wage replacement payments, ESt, SolZu,
   KiSt, Kindergeld, Abfindung and net), the Abfindung net gain, the
-  "ohne Gehalt P1" reference cases, the sweep interpolation for break-even, the
-  worst case and the gap, and the current comparison. It uses German UI text.
+  "ohne Gehalt von Partner #1" reference cases, the sweep interpolation for
+  break-even, the worst case and the gap, and the current comparison. It uses
+  German UI text.
 - The marginal-rate chart marks the start after the Grundfreibetrag, the tariff
   zone changes at about `24 %` and `42 %`, and the top rate (`45 %` for 2026,
   `47 %` for the 2027 draft) with dashed lines. Its X axis reaches `600000` zvE
@@ -462,7 +484,14 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   interpolation.
 - When joint assessment is enabled, both assessment modes are computed and the
   better net result is used; when disabled, only individual assessment is
-  computed. Joint Splitting tax is allocated by `zvE` share.
+  computed. Joint Splitting tax is allocated by `zvE` share. The report explains
+  that this is a display allocation, not an individual tax assessment, so a
+  parent's displayed net may be negative while the household net remains the
+  authoritative result.
+- Detailed tables show the child allowance already included in `zvE` and list
+  Kindergeld only for the children who actually receive it. The German notes
+  explain that `0 Kinder x Kindergeld` means the child allowance won the
+  Günstigerprüfung, not that the family has no children.
 - 2027 values are a draft and are clearly marked as such.
 - A pauschal Minijob adds gross to `effectiveGross` but not to `taxGross`, the
   regular RV/AV/KV/PV bases or progressive `zvE`. It deducts only the separate
@@ -483,11 +512,27 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - Both the Fünftelregelung and the ordinary tariff variant are always computed
   for each assessment mode; the user selects nothing, the more favourable net
   result is used everywhere. The detailed **Abfindung** tab still lists all
-  three treatments (ohne Abfindung / mit Fünftel / ohne Fünftel).
-- Abfindung has no social contributions.
+  three treatments (ohne Abfindung / mit Fünftel / ohne Fünftel). The report
+  frames the Fünftelregelung as a possible income-tax declaration treatment,
+  not automatic payroll withholding, and repeats that its statutory conditions
+  and the legal Günstigerprüfung are not checked.
+- Abfindung has no social contributions. This models a genuine severance on loss
+  of employment; the report warns that wage arrears, holiday pay or disguised
+  salary would be contribution-liable and are not modelled.
+- The JAEG note says statutory GKV cover normally ends above the threshold and
+  that manually choosing `GKV pflichtversichert` there is a simplifying
+  assumption rather than an automatic insurance-status check.
 - SolZu is derived from the resulting ESt by inverse table lookup so the
-  Freigrenze and Anstiegsklausel remain exact.
+  Freigrenze and Anstiegsklausel remain exact. The report explains that the
+  embedded table reaches `5,5 %` at high ESt values rather than applying a flat
+  rate to every amount.
 - Church tax is `ESt × 8 %/9 %` depending on the federal state.
+- The simplified Vorsorgepauschale is labelled and explained as employee RV plus
+  statutory KV and PV contributions (or the capped private-insurance
+  equivalent), not only RV plus GKV.
+- Displayed two-decimal amounts and derived differences use symmetric cent
+  rounding from the same cent-rounded row values, so
+  `21.396,26 € − 21.378,83 €` is shown as `17,43 €`, never `17,42 €`.
 - Negative gross salaries are allowed in number fields. Social-contribution
   bases are clamped to zero, while genuine expenses and losses may make the
   taxable income and the resulting household net negative. No chart scale is
@@ -579,7 +624,14 @@ include Minijob inputs, that the voluntary-GKV Auto base follows salary plus
 Minijob gross, and that saved defaults and the theme toggle include Minijob
 mode, amount and exemption. They also click **PDF herunterladen** with printing
 stubbed, confirm that `window.print()` is never called, that a direct anchor
-download produces a valid `%PDF-1.4` file, that a full input/hint snapshot is
-built, all details open and the dated title is restored afterwards, and verify
+download produces a valid `%PDF-1.4` vector file with no image XObjects, that
+body/chart text uses WinAnsi Helvetica with unit text-matrix scaling so `€` and
+umlauts survive and chart labels do not overlap, that a full input/hint snapshot
+is built, all details open and the dated title is restored afterwards, and verify
 that moving Partner #1's gross under voluntary-GKV Auto leaves both sweep cache
 keys and cached data unchanged while updating the base and the current point.
+A reporting-clarity pass also checks the joint-allocation note, the explicit
+child-allowance row, the `Kindergeld (N von M Kindern ...)` row, the corrected
+Vorsorgepauschale wording, the high-income SolZu note, the declaration-only
+Fünftelregelung wording, the genuine-severance social-contribution caveat and
+cent-consistent displayed differences in the generated report.
