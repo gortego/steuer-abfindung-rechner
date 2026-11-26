@@ -132,6 +132,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   included, so the PDF contains all comments, all information and all SVG plots.
   HTML chart legends are rendered as vector swatches and text too, including the
   eight-year Grundtabelle timeline legend and its dashed 2028 projection swatch.
+  Gradient stop parsing removes the colour token before reading positions, so
+  hex colours cannot corrupt dash lengths and leave dashed swatches invisible.
 - Pages are light, readable A4 landscape vector pages. Body text, table cells and
   chart labels are real PDF text using Helvetica with WinAnsi encoding, so `€`,
   umlauts and quotes remain selectable. SVG charts are drawn as vector lines,

@@ -822,7 +822,7 @@ and fifth-based ESt formulas, the SolZu inverse lookup, the income-expense
 decomposition and the zero-severance identity with the base scenarios all
 passed (maximum floating-point error `2.9e-11`).
 
-The current cache-busted browser check (`?v=163`) rendered eleven SVGs in joint
+The current cache-busted browser check (`?v=164`) rendered eleven SVGs in joint
 mode with no console messages and no `NaN`/`Infinity`; after disabling joint
 assessment it rendered nine SVGs, hid the 3D surface and left no visible
 `Partner #2`, `P2`, `Zusammenveranlagung`, `Splitting` or `Haushalt` text. A
@@ -849,7 +849,9 @@ final export confirmed that all chart curves and labels are visible; the earlier
 blank plots were caused by reversed PDF path operators, and `pdfSvgPolyline()`
 now emits `x y m` / `x y l` with operands before operators. HTML legends are
 now written into the PDF as vector swatches and text, including the eight-year
-timeline legend with its dashed `2028 Prognose` swatch.
+timeline legend with its dashed `2028 Prognose` swatch. Gradient stop parsing
+strips hex colour digits first, so dashed swatches such as
+`Einzelveranlagung · ohne Fünftel` keep their visible coloured segments.
 The light-blue `bestes Netto mit Abfindung` highlight is aligned to its text
 baseline and limited to the amount, so it reads as a badge instead of a block
 above the line.
@@ -899,10 +901,10 @@ and no image XObjects; details, button label, title and joint mode were restored
 afterwards. The saved scenario remained at year `2027`, gross `50,000` /
 `80,000`, Abfindung `360,000` and light theme.
 
-A final joint-mode pass at `?v=163` toggled the theme dark and back to light,
+A final joint-mode pass at `?v=164` toggled the theme dark and back to light,
 leaving the button label, theme key and saved-defaults theme aligned. The header
 PDF button downloaded
-`Abfindung-Steuerlast-Netto-2027-2026-11-26.pdf` with 29 pages, `580832` bytes,
+`Abfindung-Steuerlast-Netto-2027-2026-11-26.pdf` with 29 pages, `581794` bytes,
 1,241 WinAnsi `€` bytes and no image XObjects; `window.print()` was stubbed and
 called zero
 times. Details state, button label and document title were restored, the console
@@ -912,7 +914,7 @@ saved scenario stayed at year `2027`, gross `50,000` / `80,000`, Abfindung
 shade before the curves, emitted the corrected `x y m` / `x y l` path line and
 placed all three blue highlight bands inside their text lines.
 
-A reporting-clarity pass at `?v=163` added explicit German explanations for the
+A reporting-clarity pass at `?v=164` added explicit German explanations for the
 zvE-based display allocation under joint assessment, the already-applied child
 allowance versus the remaining Kindergeld recipients, the 5.5 % high-income
 SolZu table rate, the scope of the Fünftelregelung, the social-contribution

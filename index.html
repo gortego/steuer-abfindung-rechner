@@ -4818,7 +4818,10 @@ function pdfSwatchSpec(swatch) {
     const stops = gradient[2].split(/,(?![^(]*\))/).map(part => {
       const text = part.trim();
       const color = (text.match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|transparent/i) || [""])[0];
-      const nums = (text.match(/(\d+(?:\.\d+)?)(?:px)?/g) || []).map(v => parseFloat(v));
+      // Strip the colour token first: hex colours such as #2563eb contain digits
+      // that would otherwise be mistaken for gradient stop positions.
+      const positions = color ? text.replace(color, " ") : text;
+      const nums = (positions.match(/(\d+(?:\.\d+)?)(?:px)?/g) || []).map(v => parseFloat(v));
       return { color, start: nums[0] || 0, end: nums[1] || nums[0] || 0 };
     }).filter(stop => stop.color);
     const opaque = stops.filter(stop => pdfSwatchColor(stop.color));
