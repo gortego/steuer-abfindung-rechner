@@ -27,10 +27,11 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 - `config.ini` is the build-time source of truth for:
   - defaults,
   - input limits,
-  - tax/social parameters for 2026 and 2027,
+  - tax/social parameters for 2026, 2027 and 2028,
+  - the fixed zvE shifts used to project the 2028 tax tables,
   - federal states,
   - light and dark colour palettes,
-  - chart geometry,
+  - chart geometry, including both Grundtabelle timeline plots,
   - notes and default theme.
 - `tools/generate_config.py` embeds `config.ini` into `index.html`.
 - Never edit the embedded `const CONFIG` block directly; edit `config.ini` and
@@ -115,20 +116,24 @@ Provide a dependency-free HTML calculator that compares, for two partners:
 
 ### PDF export
 
-- A German **PDF herunterladen** button opens the browser's native print dialog;
-  the user saves the report as PDF. No runtime PDF library or network request is
-  added to `index.html`.
-- Before printing, the app builds a German `#pdfInputs` table containing every
+- A German **PDF herunterladen** button sits in the header immediately left of
+  the light/dark toggle. It renders the report to canvases and downloads a valid
+  PDF directly through an anchor; `window.print()` is not called. The embedded
+  generator adds no external runtime library and makes no network request.
+- The download filename is `Abfindung-Steuerlast-Netto-<year>-<date>.pdf`.
+- Before generating, the app builds a German `#pdfInputs` table containing every
   current input and its hint, including hidden Minijob, voluntary-GKV and PKV
   fields and the selected theme. In single mode Partner #2 fields stay hidden so
   no forbidden Partner #2 wording appears.
 - All `<details>` blocks (input notes, optimization notes, severance tables and
   step-by-step calculation) are temporarily opened, and every result panel is
-  shown, so the PDF contains all comments, all information and all SVG plots.
-- Print CSS forces a light, readable A4 landscape report, hides buttons/tabs/
-  sliders, keeps SVG colours exact and lets wide tables wrap.
-- The document title is temporarily set to a dated filename suggestion, and the
-  previous title and details state are restored on `afterprint`.
+  included, so the PDF contains all comments, all information and all SVG plots.
+- Pages are light, readable A4 landscape canvases. SVGs are rasterised from their
+  own serialized markup so their exact colours survive.
+- The document title is temporarily set to a dated filename suggestion; the
+  previous title and details state are restored after generation and on
+  `afterprint` for manual browser printing. Print CSS still forces a light,
+  readable A4 landscape report, hides buttons/tabs/sliders and wraps wide tables.
 
 ### Minijobs
 
@@ -391,7 +396,8 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   shows `Netto aus der Abfindung (bei den aktuellen Gehältern)`: the best net
   with the entered Abfindungen minus the best net at the same gross salaries
   with both Abfindungen set to zero, plus the total gross Abfindung and both net
-  amounts. It is `0 €` when no Abfindung is entered.
+  amounts. It is `0 €` when no Abfindung is entered. The `bestes Netto mit Abfindung` value must be visibly highlighted
+  as the key amount in both the callout and the step-by-step calculation.
 - The highlighted key takeaway is `Bei aktuellem BruttoGehalt ... bringt Arbeiten ...
   weniger/mehr Netto als ohne Gehalt.` It compares current household net with
   the best net at Partner #1 gross zero. It is red below the break-even and
@@ -502,6 +508,35 @@ Provide a dependency-free HTML calculator that compares, for two partners:
   Its salary and net come from the same sweep; negative samples remain plotted
   and feed break-even, but cannot win the minimum. No fixed example is assumed.
 
+### Tax years and 2028 projection
+
+- The year selector contains exactly `2026 (endgültige Werte)`,
+  `2027 (Regierungsentwurf)` and `2028 (Prognose)`. Tables for 2021–2025 are
+  embedded only for the timeline and verification; they are not selectable.
+- 2028 is always labelled as a non-official prognosis. Its tax tables are
+  generated from 2027 by shifting the Grundtabelle `250 EUR` and the
+  Splittingtabelle `500 EUR` to the right in zvE. The other parameters are
+  carried forward from the 2027 draft.
+- The fixed shift is explained in German: for zvE between `80,000` and
+  `200,000 EUR`, 2026 ESt is `106 EUR` higher than 2027; at the `42 %` marginal
+  rate that is about `250 EUR` of right shift. The Splittingtabelle step is
+  about twice as large. This keeps the 2028 curve parallel to the recent annual
+  offsets instead of fanning out with income.
+
+### Grundtabelle timeline
+
+- A card before the notes contains two pure-SVG timeline plots: absolute
+  ESt over zvE (`0`–`300,000 EUR` on X, `0`–`140,000 EUR` on Y) and tax relief
+  against 2021 (`tax 2021 − tax year`, with a `0`–`3,000 EUR` Y axis).
+- Both plots show the historical Grundtabellen 2021–2027 plus a dashed, clearly
+  labelled `2028 Prognose` curve. The second plot makes the small yearly gaps
+  visible.
+- Both Y-axis labels are rotated vertically and remain readable. The charts use
+  the active palette, redraw on theme changes, contain no joint-assessment
+  wording and stay visible in single mode.
+- The German note states the fixed-shift assumption and the `106 EUR / 42 %`
+  derivation, and says that earlier years are not in the year selector.
+
 ## 11. Verification
 
 Run after relevant changes:
@@ -512,9 +547,13 @@ py -3 tools/generate_tables.py
 py -3 tools/verify_calculation.py
 ```
 
-Expected: four tables, 1040 rows each, PDF-vs-HTML max diff `0.00e+00`.
-Browser checks use a cache-busted URL, must show no console errors or warnings
-and no `NaN`/`Infinity`, and must render nine SVGs with joint assessment enabled.
+Expected: fourteen PDF tables plus the two generated 2028 projections, 1040
+rows each; PDF-vs-HTML max diff `0.00e+00`. Browser checks use a cache-busted
+URL, must show no console errors or warnings and no `NaN`/`Infinity`, and must
+render eleven SVGs with joint assessment enabled and nine in single mode. They
+check the three-option year selector, two timeline plots with eight curves each,
+vertical timeline Y labels, the dashed `2028 Prognose` curve and the header PDF
+button immediately left of the theme toggle.
 After clearing local storage they confirm that the joint-assessment checkbox is
 ticked and Partner #2 Abfindung is `0`. They verify that break-even and
 worst-case labels sit above both net plots, that the baseline and worst-case-net
@@ -539,7 +578,8 @@ year's annual ceiling, that the Nettoquote denominator and both sweep caches
 include Minijob inputs, that the voluntary-GKV Auto base follows salary plus
 Minijob gross, and that saved defaults and the theme toggle include Minijob
 mode, amount and exemption. They also click **PDF herunterladen** with printing
-stubbed, confirm that a full input/hint snapshot is built, all details open and
-the dated title is restored afterwards, and verify that moving Partner #1's
-gross under voluntary-GKV Auto leaves both sweep cache keys and cached data
-unchanged while updating the base and the current point.
+stubbed, confirm that `window.print()` is never called, that a direct anchor
+download produces a valid `%PDF-1.4` file, that a full input/hint snapshot is
+built, all details open and the dated title is restored afterwards, and verify
+that moving Partner #1's gross under voluntary-GKV Auto leaves both sweep cache
+keys and cached data unchanged while updating the base and the current point.

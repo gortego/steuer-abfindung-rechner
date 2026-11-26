@@ -136,12 +136,13 @@ After changing JS/CSS, open a cache-busted URL in the browser, for example
 
 ### PDF export
 
-- The German **PDF herunterladen** button uses native `window.print()`; no
-  runtime PDF library is allowed.
+- The German **PDF herunterladen** button downloads a PDF directly from an
+  embedded canvas-to-PDF generator; `window.print()` is not called and no
+  external runtime library or network request is allowed.
 - `buildPdfInputs()` must list every input plus its hint, including hidden
   Minijob/voluntary-GKV/PKV fields; single mode omits Partner #2 fields.
-- Temporarily open all `<details>` and show all panels for the printout, then
-  restore the exact previous state on `afterprint`.
+- Temporarily open all `<details>` and include all panels for the report, then
+  restore the exact previous state after generation and on `afterprint`.
 - Print CSS: A4 landscape, light colours, no buttons/tabs/sliders, exact SVG
   colours and wrapped wide tables.
 

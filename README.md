@@ -36,18 +36,21 @@ interpreting the results.
 | --- | --- |
 | `config.ini` | Single source of truth for defaults, limits, tax parameters, states, colours, chart geometry and notes. |
 | `index.html` | The complete application. Open it in a browser; no server or runtime dependency is required. It contains the embedded config and tax tables. |
-| `tabelle/*.pdf` | Source tax tables in 1,000 EUR steps for 2026 and 2027. Needed only for the build/verification steps, not at runtime. |
+| `tabelle/*.pdf` | Fourteen source tax tables in 1,000 EUR steps for 2021–2027 (Grundtabelle and Splittingtabelle for each year). Needed only for the build/verification steps, not at runtime. |
 | `tools/generate_config.py` | Build-time helper that embeds `config.ini` as `const CONFIG` into `index.html`. |
-| `tools/generate_tables.py` | Build-time helper that extracts the PDF tables from `tabelle/` into `index.html`. |
-| `tools/verify_calculation.py` | Build-time helper that verifies the embedded tables against the PDFs in `tabelle/`. |
+| `tools/generate_tables.py` | Build-time helper that extracts all PDF tables from `tabelle/` and generates the two clearly labelled 2028 projection tables into `index.html`. |
+| `tools/verify_calculation.py` | Build-time helper that verifies the embedded tables against the PDFs in `tabelle/` and checks both projections. |
 | `REQUIREMENTS.md` | Complete, human-readable list of all product requirements. |
 | `AGENTS.md` | Agent/skills file: working rules, build commands and verification checklist. |
 
 ## Usage
 
 1. Open `index.html` in any modern browser.
-2. Select the tax year, enter both gross annual salaries (or drag the sliders
-   underneath them), the number of children and the federal state. Number
+2. Select the tax year — `2026` (final), `2027` (draft government proposal) or
+   `2028` (prognosis, not official values) — then enter both gross annual
+   salaries (or drag the sliders underneath them), the number of children and
+   the federal state. Historical tables from 2021–2025 are not selectable; they
+   appear only in the timeline chart. Number
    fields accept negative annual income down to `-1,000,000 EUR`; the sliders
    remain at `0`–`150,000 EUR`. Untick **Zusammenveranlagung ist möglich** when
    joint assessment is not available; this hides all Partner #2 inputs and
@@ -96,13 +99,15 @@ interpreting the results.
    light is the built-in default. The button shows the design it switches to,
    and a toggle also updates the saved theme so it survives a reload. Clearing
    site data restores the built-in light default.
-11. Optional: click **PDF herunterladen**. The app opens the browser's print
-    dialog with a complete German report: every current input (including
-    hidden conditional fields), all hints and comments, all result panels,
-    expanded calculation details and every SVG chart. Choose **Save as PDF** as
-    the printer destination to create the file. The built-in print stylesheet
-    forces light, readable A4 landscape output and uses no runtime library.
-    The details and window title are restored after the dialog closes.
+11. Optional: click **PDF herunterladen** in the header, immediately left of the
+    light/dark toggle. The app renders a complete German A4 landscape report to
+    a canvas and downloads it directly as
+    `Abfindung-Steuerlast-Netto-<year>-<date>.pdf`; no print dialog opens. It
+    contains every current input (including hidden conditional fields), all
+    hints and comments, all result panels, expanded calculation details and
+    every SVG chart. The embedded generator needs no runtime library or network
+    request. The original details state and window title are restored after the
+    download. Manual browser printing still uses the light print stylesheet.
 
 The built-in defaults are tax year 2026, gross salaries of `50,000 EUR` for
 both partners, one child, federal state NW, **GKV freiwillig versichert** for
@@ -138,7 +143,7 @@ Results are shown as:
 - a dedicated **Abfindung** tab with a six-column household matrix
   (individual/joint × without severance / with severance / with severance plus
   Fünftelregelung), expandable per-parent detail tables and its own chart,
-- in joint-assessment mode, nine SVG charts:
+- in joint-assessment mode, nine SVG charts in the charts card:
   1. where the gross income goes (salary plus Minijob gross, social
      contributions, taxes, net pay, child benefit), with dashed reference lines
      at the gross-income levels for comparison,
@@ -182,11 +187,19 @@ Results are shown as:
   7. household net income as the gross salary of Partner #1 varies,
   8. approximate marginal tax rates for the Grund- and Splittingtabelle, with
      dashed lines at the start after the Grundfreibetrag, the zone changes
-     (~24 %, 42 %) and the top rate (45 % for 2026, 47 % for the 2027 draft),
+     (~24 %, 42 %) and the top rate (45 % for 2026, 47 % for the 2027 draft and 2028 prognosis),
      non-overlapping `G`/`S` rate labels on the Y axis, short zvE labels in
      three staggered rows below the X axis, and `Aktuell ...` markers with dark
      dashed guides for both tariffs,
   9. severance impact on household net income and total tax burden.
+
+A separate card immediately before **Hinweise, Steuersätze und
+Bemessungsgrenzen** contains two more SVGs: the Grundtabelle timeline and a
+difference plot of tax relief relative to 2021. Both show the historical
+Grundtabellen 2021–2027 and a dashed, clearly labelled `2028 Prognose` curve.
+They are rendered in both joint and single mode and use the active colour
+palette. The page therefore contains eleven SVGs in joint mode and nine in
+single mode.
 
 With joint assessment disabled, only individual results are shown: the
 comparison chart, the 3D surface and all Partner #2 sliders are hidden, the
@@ -223,7 +236,7 @@ styles from the internet.
 
 | Input | Notes |
 | --- | --- |
-| Tax year | `2026` (final values) or `2027` (draft government proposal). |
+| Tax year | `2026` (final values), `2027` (draft government proposal) or `2028` (non-official prognosis). Historical years 2021–2025 are not selectable. |
 | Gross annual salary | One number field with `1,000` spinner steps plus a linked slider (`0`–`150,000` EUR, step `1,000`) per parent. Number fields accept negative annual income down to `-1,000,000 EUR` and large positive values; only the slider clamps to its fixed range. Moving a slider updates the field and recalculates immediately. |
 | Joint assessment | Checkbox `Zusammenveranlagung ist möglich`, on by default. Unticking hides Partner #2 and all joint-mode outputs, removes visible joint-mode wording, leaves only the Partner #1 results column, and preserves hidden values for when it is ticked again. |
 | Insurance type | One radio choice per parent: `gkv`, `gkv_freiwillig` or `pkv`. |
@@ -237,13 +250,13 @@ styles from the internet.
 | Church tax | Per-parent checkbox. |
 | Abfindung | One-off gross severance per parent with `1,000` spinner steps; default `100,000` EUR for Partner #1 and `0` for Partner #2. Drives the **Abfindung** report. |
 | Minijob mode | `Kein Minijob` (default), `Pauschal versteuert` or `Individuell versteuert` per parent. Selecting a mode reveals the annual gross field; the pension-exemption checkbox appears only for the pauschal option. |
-| Minijob gross | Annual Minijob gross per parent, capped at `7,236 EUR` for 2026 and `7,596 EUR` in the 2027 draft. Included in net income and in the Nettoquote denominator. |
+| Minijob gross | Annual Minijob gross per parent, capped at `7,236 EUR` for 2026, `7,596 EUR` in the 2027 draft and `7,752 EUR` in the 2028 prognosis. Included in net income and in the Nettoquote denominator. |
 | Minijob RV exemption | Per-parent checkbox. For a pauschal Minijob it removes the employee pension contribution; the employer lump sum remains. |
 | KV-Zusatzbeitrag | GKV supplementary rate; default 2.9%. |
 | Children under 25 | Only then do additional children reduce the GKV care-insurance contribution. |
 | Weiterbildung / other Werbungskosten | Annual deductible expenses per parent; uncapped in this model. |
 | KV prepayments | Annual health/care-insurance prepayments per parent, capped at three times the current-year statutory contributions (or the modelled PKV deductible). |
-| Extra RV contributions | Annual pension contributions per parent beyond the employee contribution, capped at `30,826 EUR` individual / `61,652 EUR` joint in 2026 and `32,308 EUR` / `64,616 EUR` in 2027, reduced by twice the modelled employee RV. |
+| Extra RV contributions | Annual pension contributions per parent beyond the employee contribution, capped at `30,826 EUR` individual / `61,652 EUR` joint in 2026, `32,308 EUR` / `64,616 EUR` in 2027 and `32,954 EUR` / `65,908 EUR` in the 2028 prognosis, reduced by twice the modelled employee RV. |
 | Tax-free wage replacement benefits | One grouped annual field per parent under `Steuerfreie Lohnersatzleistungen` (§ 32b EStG); added tax-free to net and applied through the Progressionsvorbehalt. |
 | Donations | Annual donations and membership fees per parent, capped jointly or individually at `20 %` of the Gesamtbetrag der Einkünfte before Sonderausgaben. |
 | Rental losses / rental profits | Separate uncapped annual fields per parent; losses reduce zvE and profits increase zvE. |
@@ -284,20 +297,21 @@ private insurance is not modelled.
 ### Minijobs
 
 Each partner can have one Minijob in addition to ordinary employment. The annual
-Minijob gross is capped at `7,236 EUR` in 2026 and `7,596 EUR` in the 2027 draft
-(`603`/`633 EUR` per month); the number field uses `1 EUR` steps and input
-clamping applies the same cap on calculation and save.
+Minijob gross is capped at `7,236 EUR` in 2026, `7,596 EUR` in the 2027 draft and
+`7,752 EUR` in the 2028 prognosis (`603`/`633`/`646 EUR` per month); the number
+field uses `1 EUR` steps and input clamping applies the same cap on calculation
+and save.
 
 - **Pauschal versteuert:** the gross stays outside progressive `zvE` and outside
   the regular social-contribution bases. Employee pension insurance is
   `3.6 %` unless the per-partner exemption is checked. Employer pension
   insurance is `15 %` on at least `2,100 EUR/year` (`175 EUR/month`), which is
   shown as information only. For GKV partners, employer health insurance is
-  `13 %` in 2026 / `17.5 %` in the 2027 draft and employer care insurance is
-  `0 %` in both years. For PKV partners, no employer KV/PV contribution is
-  shown. The employer-paid Pauschsteuer is `2 %` in 2026 / `5 %` in the 2027
-  draft and is also information only. Neither employer contributions nor
-  Pauschsteuer reduce employee net pay.
+  `13 %` in 2026 / `17.5 %` in the 2027 draft and 2028 prognosis and employer
+  care insurance is `0 %` in all selected years. For PKV partners, no employer
+  KV/PV contribution is shown. The employer-paid Pauschsteuer is `2 %` in 2026 /
+  `5 %` in the 2027 draft and 2028 prognosis and is also information only.
+  Neither employer contributions nor Pauschsteuer reduce employee net pay.
 - **Individuell versteuert:** the gross is added to taxable gross and to the RV,
   AV, KV and PV bases, so regular employee contributions apply. There is no
   Pauschsteuer and no separate Minijob employer lump-sum display. The pension
@@ -333,8 +347,10 @@ simplified estimate.
 
 ### Income tax, solidarity surcharge and church tax
 
-Income tax is **not** calculated from a formula. The four supplied PDF tables
-are embedded in `index.html` as JSON. Each row contains:
+Income tax is **not** calculated from a formula. The fourteen supplied PDF tables
+for 2021–2027 and the two generated 2028 projection tables are embedded in
+`index.html` as JSON. Only 2026, 2027 and 2028 are selectable calculation years;
+the older tables support the timeline and verification. Each row contains:
 
 ```text
 zvE | ESt | SolZu | KiSt 8% | KiSt 9%
@@ -381,9 +397,9 @@ outflows and income for each partner separately; no per-partner amount is split
 - Health-insurance prepayments are limited to three times the modelled
   KV/PV contributions (§ 10 EStG).
 - Extra pension contributions are limited to `30,826 EUR` individual /
-  `61,652 EUR` joint in 2026 and `32,308 EUR` / `64,616 EUR` joint in 2027,
-  reduced by twice the modelled employee RV; joint inputs are scaled jointly
-  when necessary.
+  `61,652 EUR` joint in 2026, `32,308 EUR` / `64,616 EUR` joint in 2027 and
+  `32,954 EUR` / `65,908 EUR` joint in the 2028 prognosis, reduced by twice the
+  modelled employee RV; joint inputs are scaled jointly when necessary.
 - Donations are limited to `20 %` of the Gesamtbetrag der Einkünfte before
   Sonderausgaben (§ 10b EStG). The cap uses gross pay plus Abfindung, after the
   employee allowance and actual Werbungskosten and after rental/business
@@ -590,7 +606,9 @@ markers still use the best of all four variants at each salary.
   reports `Netto aus der Abfindung (bei den aktuellen Gehältern)`: the best net
   with the entered Abfindungen minus the best net at the same salaries with both
   Abfindungen set to zero, together with the gross Abfindung and both net
-  amounts. With no Abfindung it shows `0 €`.
+  amounts. With no Abfindung it shows `0 €`. The `bestes Netto mit Abfindung`
+  amount is styled as a highlighted key value in this callout and in the
+  step-by-step calculation.
 - The highlighted key takeaway is `Bei aktuellem BruttoGehalt ... bringt Arbeiten ...
   weniger/mehr Netto als ohne Gehalt.` It is red below the break-even (working
   reduces household net) and green above it. The former EUR `45,000` example and
@@ -612,14 +630,31 @@ markers still use the best of all four variants at each salary.
 The marginal-rate chart uses dashed lines to mark where each tariff changes
 zone: the start after the Grundfreibetrag, the change into the second
 progression zone (~`24 %`), the entry into the `42 %` zone and the start of the
-top rate (`45 %` for 2026). The X axis reaches `600,000 EUR` zvE so the 45 %
-threshold is visible for both the Grundtarif and the Splittingtarif. The
-matching rate is written on the Y axis as `G ...` (Grundtarif) or `S ...`
-(Splittingtarif), with overlapping labels shifted apart. The corresponding zvE
-values are written as short amounts in three staggered, rotated rows below the
-X axis, so nearby markers stay readable. Dark dashed guides and circles labelled
-`Aktuell ...` mark the current values of both tariffs; their zvE amounts are
-bold in the axis labels.
+top rate (`45 %` for 2026, `47 %` for the 2027 draft and 2028 prognosis). The X
+axis reaches `600,000 EUR` zvE so the top-rate threshold is visible for both the
+Grundtarif and the Splittingtarif. The matching rate is written on the Y axis as
+`G ...` (Grundtarif) or `S ...` (Splittingtarif), with overlapping labels shifted
+apart. The corresponding zvE values are written as short amounts in three
+staggered, rotated rows below the X axis, so nearby markers stay readable. Dark
+dashed guides and circles labelled `Aktuell ...` mark the current values of both
+tariffs; their zvE amounts are bold in the axis labels.
+
+### Grundtabelle timeline
+
+The card before the notes contains two pure-SVG charts. The first shows income
+tax under the Grundtabelle with `zvE` from `0` to `300,000 EUR` on the X axis and
+ESt from `0` to `140,000 EUR` on the Y axis. The second shows the tax relief
+relative to 2021 (`tax 2021 − tax year`) on a `0`–`3,000 EUR` Y axis, so the small
+yearly gaps that are compressed in the absolute plot become visible. Both have
+vertical Y-axis labels. The solid curves are the historical tables for
+2021–2027; the dashed violet curve is `2028 Prognose`, made by shifting the 2027
+draft table `250 EUR` to the right in zvE (the Splittingtabelle projection uses
+`500 EUR`). That fixed shift continues the recent near-constant annual offset
+instead of fanning out with income. The 2028 curve is explicitly labelled as a
+prognosis in the chart legend and explanatory note; it is not an official
+tariff. Both charts use the active light/dark palette and are redrawn on a theme
+change. They contain no joint-assessment wording and stay visible in single
+mode.
 
 ### Abfindung and Fünftelregelung
 
@@ -679,11 +714,38 @@ callout compares the regular and fifth-based tax for each assessment mode.
   employer-pension basis
 - Minijob employer KV/PV: 17.5 % / 0 %; employer Pauschsteuer: 5 %
 
+### 2028 (prognosis)
+
+This is a forecast, not an official tariff. The 2027 draft tax table is shifted
+right by a fixed `250 EUR` in zvE for the Grundtabelle and `500 EUR` for the
+Splittingtabelle; the social and family parameters are carried forward from the
+2027 draft and indexed where appropriate. The historical 2021–2027 tables in the
+timeline provide the context for that assumption and keep the projected curve
+roughly parallel to the recent annual offsets.
+
+- RV/AV ceiling: 108,324 EUR/year
+- KV/PV ceiling: 78,030 EUR/year
+- Jahresarbeitsentgeltgrenze: 85,833 EUR/year
+- Employee allowance: 1,459 EUR
+- Child allowance: 10,257 EUR per child
+- Child benefit: 272 EUR/month per child
+- Contribution rates and supplementary rates are assumed unchanged where the
+  draft does not specify otherwise.
+- Minijob ceiling: 646 EUR/month / 7,752 EUR/year
+- Minijob employee/employer pension: 3.6 % / 15 %, with a 175 EUR/month minimum
+  employer-pension basis
+- Minijob employer KV/PV: 17.5 % / 0 %; employer Pauschsteuer: 5 %
+
 Sources:
 
-- Supplied 1,000 EUR overview tables in `tabelle/`
+- Supplied 1,000 EUR overview tables in `tabelle/` for 2021–2027
   (`grundtabelle-*-ueberblick-klein.pdf`,
-  `splittingtabelle-*-ueberblick-klein.pdf`, finanz-tools.de).
+  `splittingtabelle-*-ueberblick-klein.pdf`, finanz-tools.de). These tables are
+  embedded for the timeline and verification; only 2026–2028 are calculation
+  years.
+- 2028 tables: generated from the 2027 draft tables by configured fixed zvE
+  shifts (`250 EUR` individual, `500 EUR` joint) in `tools/generate_tables.py`.
+  No official 2028 tables are used.
 - 2027 draft: Regierungsentwurf EStReformG 2027, cabinet decision
   02.09.2026, status 06.11.2026 (BT-Drs. 21/8235).
   <https://www.bundesfinanzministerium.de/Content/DE/Pressemitteilungen/Finanzpolitik/2026/09/2026-09-02-einkommensteuerreform.html>
@@ -720,30 +782,43 @@ py -3 tools/verify_calculation.py
 
 `generate_config.py` replaces the JSON between the `CONFIG_START` /
 `CONFIG_END` markers. `generate_tables.py` replaces the JSON between the
-`TABLES_START` and `TABLES_END` markers in `index.html` and reads the four PDFs
-from `tabelle/`. `verify_calculation.py` checks that:
+`TABLES_START` and `TABLES_END` markers in `index.html`, reads all fourteen PDFs
+from `tabelle/` and creates the two 2028 projection tables from the configured
+base year and fixed zvE shifts. `verify_calculation.py` checks that:
 
-- every one of the 1,040 rows in each of the four PDFs is present in
+- every one of the 1,040 rows in each of the fourteen PDFs is present in
   `index.html` with identical values,
+- both 2028 tables match the configured fixed zvE shifts of the 2027 tables,
 - the 1,000 EUR steps are consecutive,
 - exact table rows, interpolation midpoints and extrapolation beyond the last
   row are reproduced by the Python mirror of the JavaScript `lookup()`,
 - the church-tax columns equal `ESt × 8%` / `ESt × 9%`.
 
-Current verification result: all four tables pass with a maximum difference of
-`0.00e+00` between PDF and embedded values. A browser-side check of the actual
-JavaScript `lookup()` covered 8,316 row and midpoint values with a maximum
-floating-point error of `3.6e-15`; 512 tax-scenario combinations and 1,280
-`zvE` checks also passed. A dedicated browser check of the severance logic
-covered 6,912 assertions across both years, three federal states, several
-salary/children/severance combinations and both assessment modes: the regular
+Current verification result: all fourteen PDF tables and both projections pass,
+with a maximum PDF-vs-HTML difference of `0.00e+00`. A browser-side check of the
+actual JavaScript `lookup()` covered 8,316 row and midpoint values with a
+maximum floating-point error of `3.6e-15`; 512 tax-scenario combinations and
+1,280 `zvE` checks also passed. A dedicated browser check of the severance logic
+covered 6,912 assertions across the 2026 and 2027 scenarios, three federal
+states, several salary/children/severance combinations and both assessment
+modes: the regular
 and fifth-based ESt formulas, the SolZu inverse lookup, the income-expense
 decomposition and the zero-severance identity with the base scenarios all
 passed (maximum floating-point error `2.9e-11`).
 
-The final cache-busted browser check (`?v=135`) rendered nine SVGs in joint mode
-and seven in single mode with no console errors, no console warnings and no
-`NaN`/`Infinity`. After clearing local storage it confirmed that
+The current cache-busted browser check (`?v=144`) rendered eleven SVGs in joint
+mode and nine in single mode with no console messages and no `NaN`/`Infinity`.
+It confirmed that the year selector contains only `2026 (endgültige Werte)`,
+`2027 (Regierungsentwurf)` and `2028 (Prognose)`, and that each timeline plot
+has eight curves with the 2028 curve dashed and labelled as a prognosis. The
+German timeline note explains the `250 EUR` shift as `106 EUR` ESt difference
+divided by the `42 %` marginal rate. Both timeline Y labels are vertical, the
+palette followed both themes without changing the saved theme, and the header
+PDF button sits immediately left of the light/dark toggle. The `bestes Netto mit
+Abfindung` amount is highlighted in the AbfWork callout and both step-by-step
+lines, with theme-aware colours. The PDF button downloaded a valid `%PDF-1.4`
+file directly in joint and single mode; `window.print()` was stubbed and called
+zero times. An earlier check after clearing local storage confirmed that
 `Zusammenveranlagung ist möglich` is ticked and Partner #2 Abfindung is `0` by
 default. It also checked that the break-even and worst-case labels sit above both
 net plots, while the `Einzel ohne Gehalt`, `Zusammen ohne Gehalt`, `Ohne Gehalt`
@@ -775,7 +850,7 @@ one centred row without a depth axis, and the source note named only
 `tabelle/grundtabelle-2026-ueberblick-klein.pdf`. Hidden Partner #2 values
 (gross `777,777`, Abfindung `123,456`, donations `4,321`) were preserved while
 the mode was off and returned when joint assessment was re-enabled, restoring
-all nine SVGs.
+all eleven SVGs in the current build.
 
 The same `?v=135` run also verified Minijob handling. With cleared storage both
 partners started with `Kein Minijob`, `0 EUR`, no exemption and hidden detail
@@ -796,14 +871,14 @@ previous positions.
 Additional cache-busted checks (`?v=133`–`?v=135`) confirmed that fresh storage
 now starts both partners on **GKV freiwillig versichert** with Auto bases
 `50,000 EUR`, while saved scenarios still load unchanged. The German
-**PDF herunterladen** button calls `window.print()` once, builds a 55-row input
-snapshot that includes hidden Minijob/PKV fields and the theme, expands all
-details blocks, sets a dated print title and restores the previous details and
-title on `afterprint`. With saved voluntary-GKV Auto insurance, moving Partner
+**PDF herunterladen** button builds a 55-row input snapshot that includes hidden
+Minijob/PKV fields and the theme, expands all details blocks, downloads a dated
+PDF directly without calling `window.print()` and restores the previous details
+and title. With saved voluntary-GKV Auto insurance, moving Partner
 #1's gross changed the displayed contribution base but left both sweep cache
 keys, cached data and the break-even/worst-case values untouched; moving it back
 restored the original inputs. No console messages, `NaN` or `Infinity` appeared,
-and joint mode still rendered nine SVGs.
+and the current build renders eleven SVGs in joint mode.
 
 ## Disclaimer
 

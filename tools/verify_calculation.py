@@ -13,14 +13,9 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-ROOT = Path(__file__).resolve().parent.parent
+from generate_tables import SOURCES, project_table, projection_settings
 
-SOURCES = {
-    ("2026", "grund"): "tabelle/grundtabelle-2026-ueberblick-klein.pdf",
-    ("2026", "split"): "tabelle/splittingtabelle-2026-ueberblick-klein.pdf",
-    ("2027", "grund"): "tabelle/grundtabelle-2027-ueberblick-klein.pdf",
-    ("2027", "split"): "tabelle/splittingtabelle-2027-ueberblick-klein.pdf",
-}
+ROOT = Path(__file__).resolve().parent.parent
 
 # A PDF data line has five numeric tokens: zvE, ESt, SolZu, KiSt 8 %, KiSt 9 %.
 NUMBER = re.compile(r"^-?[\d.,]+$")
@@ -136,9 +131,51 @@ def main() -> None:
             f"KiSt checks {'ok' if kist_failures == 0 else f'{kist_failures} failed'}"
         )
 
+    for year, settings in projection_settings().items():
+        base = settings["base_year"]
+        for tariff in ("grund", "split"):
+            label = f"{year} {tariff}"
+            shift = settings["shifts"][tariff]
+            expected_rows = project_table(tables[base][tariff], shift)
+            embedded_rows = tables[year][tariff]
+            if [row[0] for row in expected_rows] != [row[0] for row in embedded_rows]:
+                print(f"FAIL {label}: projected zvE grid does not match HTML")
+                failures += 1
+                continue
+
+            max_table_diff = 0.0
+            max_lookup_diff = 0.0
+            kist_failures = 0
+            for expected, actual in zip(expected_rows, embedded_rows):
+                for e, a in zip(expected[1:], actual[1:]):
+                    max_table_diff = max(max_table_diff, abs(e - a))
+                if abs(expected[1] * 0.08 - expected[3]) > 1e-8:
+                    kist_failures += 1
+                if abs(expected[1] * 0.09 - expected[4]) > 1e-8:
+                    kist_failures += 1
+                got = lookup(embedded_rows, expected[0])
+                for e, g in zip(expected[1:], got):
+                    max_lookup_diff = max(max_lookup_diff, abs(e - g))
+
+            for a_row, b_row in zip(embedded_rows, embedded_rows[1:]):
+                expected = [(e + a) / 2 for e, a in zip(a_row[1:], b_row[1:])]
+                got = lookup(embedded_rows, (a_row[0] + b_row[0]) / 2)
+                for e, g in zip(expected, got):
+                    max_lookup_diff = max(max_lookup_diff, abs(e - g))
+
+            ok = max_table_diff <= TOL and max_lookup_diff <= TOL and kist_failures == 0
+            if not ok:
+                failures += 1
+            print(
+                f"{'OK  ' if ok else 'FAIL'} {label}: {len(embedded_rows):>4} rows, "
+                f"projection-vs-HTML max diff {max_table_diff:.2e}, "
+                f"lookup/interpolation max diff {max_lookup_diff:.2e}, "
+                f"KiSt checks {'ok' if kist_failures == 0 else f'{kist_failures} failed'}"
+            )
+
     if failures:
         raise SystemExit(f"{failures} verification group(s) failed")
-    print("All embedded tables and interpolation checks match the source PDFs.")
+    print("All embedded tables, projections and interpolation checks match their sources.")
 
 
 if __name__ == "__main__":
